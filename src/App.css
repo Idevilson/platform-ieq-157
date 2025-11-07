@@ -93,6 +93,21 @@
   }
 }
 
+@keyframes pilarFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+}
+
 .header-content h1 {
   font-size: 3.5rem;
   color: #fff;
@@ -271,9 +286,36 @@
 
 .pilar-icon {
   font-size: 3rem;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 1rem;
   filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.3));
+  height: 120px;
+}
+
+.pilar-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  animation: pilarFloat 4s ease-in-out infinite;
+  filter: brightness(1.2) contrast(0.9);
+}
+
+.pilar:nth-child(1) .pilar-img {
+  animation-delay: 0s;
+}
+
+.pilar:nth-child(2) .pilar-img {
+  animation-delay: 0.5s;
+}
+
+.pilar:nth-child(3) .pilar-img {
+  animation-delay: 1s;
+}
+
+.pilar:nth-child(4) .pilar-img {
+  animation-delay: 1.5s;
 }
 
 .pilar h4 {
@@ -1496,6 +1538,12 @@
 
   .pilar-icon {
     font-size: 2.5rem;
+    height: 90px;
+  }
+
+  .pilar-img {
+    width: 70px;
+    height: 70px;
   }
 
   .pilar h4 {
@@ -1799,5 +1847,164 @@
 
   .footer-slogan {
     font-size: 0.85rem;
+  }
+}
+
+/* Responsive - Tablets Pequenos e Médios */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .evento-header {
+    padding: 3rem 0;
+    min-height: 450px;
+  }
+
+  .simbolos-container {
+    gap: 3rem;
+    max-width: 900px;
+  }
+
+  .simbolo {
+    width: 180px;
+    height: 180px;
+  }
+
+  .header-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .header-content h1 {
+    font-size: 2.8rem;
+  }
+
+  .tema-evento h2 {
+    font-size: 1.8rem;
+  }
+
+  .subtema {
+    font-size: 1.2rem;
+  }
+
+  .evento-main {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .sobre-section h2,
+  .local-section h2,
+  .oque-levar-section h2,
+  .inscricoes-section h2,
+  .palestrantes-section h2 {
+    font-size: 2.2rem;
+  }
+
+  .beneficios-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .evangelho-quadrangular {
+    padding: 2.5rem;
+  }
+
+  .evangelho-quadrangular h3 {
+    font-size: 1.8rem;
+  }
+
+  .pilares-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .transformacao-box {
+    padding: 2.5rem;
+  }
+
+  .levar-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .local-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .endereco-card {
+    padding: 1.8rem;
+  }
+
+  .categorias-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .formulario-inscricao {
+    max-width: 550px;
+    padding: 1.8rem;
+  }
+
+  .pagamento-container {
+    padding: 2.5rem;
+  }
+
+  .pagamento-container h2 {
+    font-size: 2.2rem;
+  }
+
+  .qrcode-container {
+    padding: 1.5rem;
+  }
+
+  .codigo-pix-box {
+    gap: 0.8rem;
+  }
+
+  .btn-copiar {
+    padding: 0.9rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .comprovante-whatsapp {
+    padding: 1.8rem;
+  }
+}
+
+/* Responsive - Tablets Grandes */
+@media (min-width: 1025px) and (max-width: 1200px) {
+  .simbolos-container {
+    gap: 4rem;
+    max-width: 1100px;
+  }
+
+  .simbolo {
+    width: 200px;
+    height: 200px;
+  }
+
+  .header-content h1 {
+    font-size: 3.2rem;
+  }
+
+  .tema-evento h2 {
+    font-size: 1.9rem;
+  }
+
+  .evento-main {
+    max-width: 1000px;
+    padding: 2.8rem 2rem;
+  }
+
+  .beneficios-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pilares-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .categorias-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pagamento-container {
+    padding: 2.8rem;
   }
 }

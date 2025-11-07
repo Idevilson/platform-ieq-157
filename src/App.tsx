@@ -13,6 +13,7 @@ function App() {
     null,
   );
   const formularioRef = useRef<HTMLDivElement>(null);
+  const pagamentoRef = useRef<HTMLDivElement>(null);
   const [mostrarPagamento, setMostrarPagamento] = useState(false);
   const [dadosInscricao, setDadosInscricao] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,18 @@ function App() {
       }, 100);
     }
   }, [categoriaInscricao]);
+
+  // Scroll suave para a tela de pagamento quando for exibida
+  useEffect(() => {
+    if (mostrarPagamento && pagamentoRef.current) {
+      setTimeout(() => {
+        pagamentoRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [mostrarPagamento]);
 
   // Validação de CPF
   const validarCPF = (cpf: string): boolean => {
@@ -123,7 +136,7 @@ function App() {
     {
       id: 2,
       nome: "Inscrição de Participação",
-      valor: 150,
+      valor: 180,
       descricao: "Para participantes que desejam vivenciar o encontro",
       beneficios: [
         "Acesso completo a todas as ministrações e pregações",
@@ -314,7 +327,7 @@ Venha viver uma experiência transformadora de encontro com o Senhor! Um momento
 📋 *Trabalho no Evento* - R$ 100,00
    → Sirva no Reino e participe das atividades
 
-🎯 *Participação* - R$ 150,00
+🎯 *Participação* - R$ 180,00
    → Vivência completa do encontro
 
 ━━━━━━━━━━━━━━━━━━━
@@ -356,7 +369,7 @@ _Mateus 18:20_
             <div className="pagamento-container">
               <h2>Pagamento via PIX</h2>
 
-              <div className="pagamento-sucesso">
+              <div className="pagamento-sucesso" ref={pagamentoRef}>
                 <span className="icone-sucesso">✓</span>
                 <p>Inscrição recebida com sucesso!</p>
               </div>
@@ -384,6 +397,23 @@ _Mateus 18:20_
                 <p className="valor-destaque">
                   <strong>Valor:</strong> R$ {dadosInscricao.valor}
                 </p>
+              </div>
+
+              <div className="instrucoes-pagamento">
+                <h3>Instruções</h3>
+                <ol>
+                  <li>Escaneie o QR Code ou copie o código PIX</li>
+                  <li>Abra o aplicativo do seu banco</li>
+                  <li>
+                    Escolha a opção PIX e cole o código ou escaneie o QR Code
+                  </li>
+                  <li>Confirme o pagamento de R$ {dadosInscricao.valor}</li>
+                  <li>
+                    <strong>
+                      Após o pagamento, envie o comprovante para o WhatsApp
+                    </strong>
+                  </li>
+                </ol>
               </div>
 
               <div className="qrcode-container">
@@ -418,23 +448,6 @@ _Mateus 18:20_
                     Copiar Código
                   </button>
                 </div>
-              </div>
-
-              <div className="instrucoes-pagamento">
-                <h3>Instruções</h3>
-                <ol>
-                  <li>Escaneie o QR Code ou copie o código PIX</li>
-                  <li>Abra o aplicativo do seu banco</li>
-                  <li>
-                    Escolha a opção PIX e cole o código ou escaneie o QR Code
-                  </li>
-                  <li>Confirme o pagamento de R$ {dadosInscricao.valor}</li>
-                  <li>
-                    <strong>
-                      Após o pagamento, envie o comprovante para o WhatsApp
-                    </strong>
-                  </li>
-                </ol>
               </div>
 
               <div className="comprovante-whatsapp">
@@ -568,22 +581,30 @@ _Mateus 18:20_
               <h3>O Evangelho Quadrangular</h3>
               <div className="pilares-grid">
                 <div className="pilar">
-                  <span className="pilar-icon">💝</span>
+                  <div className="pilar-icon">
+                    <img src={cruzImg} alt="Cruz" className="pilar-img" />
+                  </div>
                   <h4>Jesus Salvador</h4>
                   <p>Que salva do pecado</p>
                 </div>
                 <div className="pilar">
-                  <span className="pilar-icon">✨</span>
+                  <div className="pilar-icon">
+                    <img src={pombaImg} alt="Pomba" className="pilar-img" />
+                  </div>
                   <h4>Batizador no Espírito Santo</h4>
                   <p>Que empodera os crentes</p>
                 </div>
                 <div className="pilar">
-                  <span className="pilar-icon">🙌</span>
+                  <div className="pilar-icon">
+                    <img src={caliceImg} alt="Cálice" className="pilar-img" />
+                  </div>
                   <h4>Jesus Curador</h4>
                   <p>Que restaura corpo e alma</p>
                 </div>
                 <div className="pilar">
-                  <span className="pilar-icon">👑</span>
+                  <div className="pilar-icon">
+                    <img src={coroaImg} alt="Coroa" className="pilar-img" />
+                  </div>
                   <h4>Rei Vindouro</h4>
                   <p>Que promete retorno</p>
                 </div>
