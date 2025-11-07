@@ -7,6 +7,8 @@ import pombaImg from "../imagens/pomba.png";
 import caliceImg from "../imagens/calice.png";
 import coroaImg from "../imagens/coroa.png";
 import logoIEQ from "../imagens/logoIEQ.png";
+import onlyLogo from "../imagens/only-logo.png";
+import pastoresImg from "../imagens/pr-heitor-e-pra-val.png";
 
 function EncontroComDeus() {
   const [categoriaInscricao, setCategoriaInscricao] = useState<number | null>(
@@ -350,10 +352,10 @@ _Mateus 18:20_
       <div className="evento-container">
         <header className="evento-header">
           <div className="simbolos-container">
-            <img src={cruzImg} alt="Cruz" className="simbolo" />
-            <img src={pombaImg} alt="Pomba" className="simbolo" />
-            <img src={caliceImg} alt="Cálice" className="simbolo" />
-            <img src={coroaImg} alt="Coroa" className="simbolo" />
+            <img src={cruzImg} alt="Cruz - Jesus Salvador que salva do pecado" className="simbolo" />
+            <img src={pombaImg} alt="Pomba - Jesus Batizador no Espírito Santo" className="simbolo" />
+            <img src={caliceImg} alt="Cálice - Jesus Curador que restaura corpo e alma" className="simbolo" />
+            <img src={coroaImg} alt="Coroa - Jesus Rei Vindouro" className="simbolo" />
           </div>
           <div className="header-content">
             <div className="tema-evento">
@@ -501,7 +503,7 @@ _Mateus 18:20_
         <footer className="evento-footer">
           <img
             src={logoIEQ}
-            alt="Logo IEQ"
+            alt="Logo Igreja do Evangelho Quadrangular Redenção-PA Campo 157"
             className="logo-ieq-footer"
           />
           <p>Igreja Do Evangelho Quadrangular</p>
@@ -525,10 +527,10 @@ _Mateus 18:20_
     <div className="evento-container">
       <header className="evento-header">
         <div className="simbolos-container">
-          <img src={cruzImg} alt="Cruz" className="simbolo" />
-          <img src={pombaImg} alt="Pomba" className="simbolo" />
-          <img src={caliceImg} alt="Cálice" className="simbolo" />
-          <img src={coroaImg} alt="Coroa" className="simbolo" />
+          <img src={cruzImg} alt="Cruz - Jesus Salvador que salva do pecado" className="simbolo" />
+          <img src={pombaImg} alt="Pomba - Jesus Batizador no Espírito Santo" className="simbolo" />
+          <img src={caliceImg} alt="Cálice - Jesus Curador que restaura corpo e alma" className="simbolo" />
+          <img src={coroaImg} alt="Coroa - Jesus Rei Vindouro" className="simbolo" />
         </div>
         <div className="header-content">
           <div className="tema-evento">
@@ -582,28 +584,28 @@ _Mateus 18:20_
               <div className="pilares-grid">
                 <div className="pilar">
                   <div className="pilar-icon">
-                    <img src={cruzImg} alt="Cruz" className="pilar-img" />
+                    <img src={cruzImg} alt="Cruz representando Jesus Salvador" className="pilar-img" />
                   </div>
                   <h4>Jesus Salvador</h4>
                   <p>Que salva do pecado</p>
                 </div>
                 <div className="pilar">
                   <div className="pilar-icon">
-                    <img src={pombaImg} alt="Pomba" className="pilar-img" />
+                    <img src={pombaImg} alt="Pomba representando o Espírito Santo" className="pilar-img" />
                   </div>
                   <h4>Batizador no Espírito Santo</h4>
                   <p>Que empodera os crentes</p>
                 </div>
                 <div className="pilar">
                   <div className="pilar-icon">
-                    <img src={caliceImg} alt="Cálice" className="pilar-img" />
+                    <img src={caliceImg} alt="Cálice representando Jesus Curador" className="pilar-img" />
                   </div>
                   <h4>Jesus Curador</h4>
                   <p>Que restaura corpo e alma</p>
                 </div>
                 <div className="pilar">
                   <div className="pilar-icon">
-                    <img src={coroaImg} alt="Coroa" className="pilar-img" />
+                    <img src={coroaImg} alt="Coroa representando Jesus Rei Vindouro" className="pilar-img" />
                   </div>
                   <h4>Rei Vindouro</h4>
                   <p>Que promete retorno</p>
@@ -653,6 +655,37 @@ _Mateus 18:20_
                 <div className="aviso-importante">
                   <span className="aviso-icon">⚠️</span>
                   <strong>NÃO QUEBRE NENHUMA DESTAS REGRAS!</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="datas-section">
+          <div className="datas-container">
+            <div className="datas-icon">📅</div>
+            <div className="datas-content">
+              <h2>Data do Evento</h2>
+              <p className="datas-periodo">28 a 30 de Novembro de 2025</p>
+              <p className="datas-local">IEQ Sede - Redenção/PA</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="organizadores-section">
+          <h2>Organizadores</h2>
+          <div className="organizadores-container">
+            <div className="organizadores-content">
+              <div className="logo-organizadores">
+                <img src={onlyLogo} alt="Logo da Igreja do Evangelho Quadrangular com os quatro símbolos: Cruz, Pomba, Cálice e Coroa" className="logo-simbolos" />
+              </div>
+              <div className="pastores-organizadores">
+                <img src={pastoresImg} alt="Pastor Heitor Alexandre Diretor do Campo 157 e Pastora Val Nery Coordenadora de Células - Organizadores do Encontro com Deus 2025" className="foto-pastores" />
+                <div className="texto-organizadores">
+                  <p className="nome-pastor"><strong>Pr. Heitor Alexandre</strong></p>
+                  <p className="cargo-pastor">Diretor do Campo 157</p>
+                  <p className="nome-pastor"><strong>Pra. Val Nery</strong></p>
+                  <p className="cargo-pastor">Ministra do Evangelho e Coordenadora de Células</p>
                 </div>
               </div>
             </div>
@@ -990,7 +1023,7 @@ _Mateus 18:20_
       <footer className="evento-footer">
         <img
           src={logoIEQ}
-          alt="Logo IEQ"
+          alt="Logo Igreja do Evangelho Quadrangular Redenção-PA Campo 157"
           className="logo-ieq-footer"
         />
         <p>Igreja Do Evangelho Quadrangular</p>
