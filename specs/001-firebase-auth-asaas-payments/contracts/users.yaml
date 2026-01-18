@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: IEQ 157 - Users API
+  version: 1.0.0
+  description: API de gerenciamento de perfil de usuário
+
+paths:
+  /api/users/me:
+    get:
+      summary: Obter perfil do usuário autenticado
+      operationId: getMyProfile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Atualizar perfil do usuário autenticado
+      operationId: updateMyProfile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Dados inválidos (ex: CPF inválido)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: CPF já cadastrado por outro usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/{userId}:
+    get:
+      summary: Obter dados de um usuário (admin only)
+      operationId: getUserById
+      tags:
+        - Users
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dados do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sem permissão (não é admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID Token
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "abc123"
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+        nome:
+          type: string
+          example: "João Silva"
+        telefone:
+          type: string
+          nullable: true
+          example: "11999998888"
+        cpf:
+          type: string
+          nullable: true
+          example: "12345678901"
+        cpfFormatado:
+          type: string
+          nullable: true
+          example: "123.456.789-01"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        isProfileComplete:
+          type: boolean
+          description: True se cpf está preenchido
+          example: false
+        asaasCustomerId:
+          type: string
+          nullable: true
+          description: ID do cliente no Asaas (interno)
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+          minLength: 2
+          example: "João Silva Santos"
+        telefone:
+          type: string
+          pattern: '^\d{10,11}$'
+          example: "11999998888"
+        cpf:
+          type: string
+          pattern: '^\d{11}$'
+          description: CPF apenas dígitos (11 caracteres)
+          example: "12345678901"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "CPF inválido"
+        code:
+          type: string
+          example: "INVALID_CPF"
+        details:
+          type: object
+          nullable: true

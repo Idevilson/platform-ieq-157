@@ -1,0 +1,426 @@
+openapi: 3.0.3
+info:
+  title: IEQ 157 - Inscriptions API
+  version: 1.0.0
+  description: API de inscrições em eventos
+
+paths:
+  /api/inscriptions:
+    post:
+      summary: Criar nova inscrição
+      operationId: createInscription
+      description: |
+        Cria uma nova inscrição em um evento.
+        - Se autenticado, vincula ao userId
+        - Se não autenticado, requer guestData
+      tags:
+        - Inscriptions
+      security:
+        - bearerAuth: []
+        - {} # Permite acesso sem autenticação para visitantes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInscriptionRequest'
+      responses:
+        '201':
+          description: Inscrição criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionResponse'
+        '400':
+          description: Dados inválidos ou CPF não preenchido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Usuário já inscrito neste evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/inscriptions/me:
+    get:
+      summary: Listar minhas inscrições (usuário autenticado)
+      operationId: listMyInscriptions
+      tags:
+        - Inscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendente, confirmado, cancelado]
+      responses:
+        '200':
+          description: Lista de inscrições
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InscriptionWithEvent'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/inscriptions/lookup:
+    post:
+      summary: Consultar inscrições por CPF (para visitantes)
+      operationId: lookupInscriptionsByCPF
+      description: Permite que visitantes consultem suas inscrições informando CPF
+      tags:
+        - Inscriptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupRequest'
+      responses:
+        '200':
+          description: Inscrições encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InscriptionWithEvent'
+        '400':
+          description: CPF inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/inscriptions/{inscriptionId}:
+    get:
+      summary: Obter detalhes de uma inscrição
+      operationId: getInscriptionById
+      tags:
+        - Inscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: inscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalhes da inscrição
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionDetail'
+        '403':
+          description: Sem permissão (não é dono nem admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Inscrição não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Cancelar inscrição
+      operationId: cancelInscription
+      description: Cancela uma inscrição pendente. Não permite cancelar confirmadas.
+      tags:
+        - Inscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: inscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inscrição cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionResponse'
+        '400':
+          description: Não é possível cancelar inscrição confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/events/{eventId}/inscriptions:
+    get:
+      summary: Listar inscrições de um evento (admin only)
+      operationId: listEventInscriptions
+      tags:
+        - Inscriptions
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendente, confirmado, cancelado]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de inscrições
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InscriptionListResponse'
+        '403':
+          description: Sem permissão (não é admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreateInscriptionRequest:
+      type: object
+      required:
+        - eventId
+        - categoryId
+      properties:
+        eventId:
+          type: string
+        categoryId:
+          type: string
+        guestData:
+          $ref: '#/components/schemas/GuestData'
+          description: Obrigatório se não autenticado
+
+    GuestData:
+      type: object
+      required:
+        - nome
+        - email
+        - telefone
+        - cpf
+      properties:
+        nome:
+          type: string
+          example: "Maria Santos"
+        email:
+          type: string
+          format: email
+          example: "maria@email.com"
+        telefone:
+          type: string
+          pattern: '^\d{10,11}$'
+          example: "11999997777"
+        cpf:
+          type: string
+          pattern: '^\d{11}$'
+          example: "98765432100"
+
+    LookupRequest:
+      type: object
+      required:
+        - eventId
+        - cpf
+      properties:
+        eventId:
+          type: string
+        cpf:
+          type: string
+          pattern: '^\d{11}$'
+          example: "98765432100"
+
+    InscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        categoryId:
+          type: string
+        valor:
+          type: integer
+          description: Em centavos
+        valorFormatado:
+          type: string
+          example: "R$ 150,00"
+        status:
+          type: string
+          enum: [pendente, confirmado, cancelado]
+        criadoEm:
+          type: string
+          format: date-time
+
+    InscriptionWithEvent:
+      allOf:
+        - $ref: '#/components/schemas/InscriptionResponse'
+        - type: object
+          properties:
+            evento:
+              type: object
+              properties:
+                id:
+                  type: string
+                titulo:
+                  type: string
+                dataInicio:
+                  type: string
+                  format: date-time
+                local:
+                  type: string
+            categoria:
+              type: object
+              properties:
+                id:
+                  type: string
+                nome:
+                  type: string
+
+    InscriptionDetail:
+      allOf:
+        - $ref: '#/components/schemas/InscriptionWithEvent'
+        - type: object
+          properties:
+            userId:
+              type: string
+              nullable: true
+            guestData:
+              $ref: '#/components/schemas/GuestData'
+              nullable: true
+            paymentId:
+              type: string
+              nullable: true
+            payment:
+              $ref: '#/components/schemas/PaymentSummary'
+              nullable: true
+
+    PaymentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        metodoPagamento:
+          type: string
+        pixCopiaECola:
+          type: string
+          nullable: true
+        boletoUrl:
+          type: string
+          nullable: true
+
+    InscriptionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InscriptionAdmin'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    InscriptionAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+        participante:
+          type: object
+          properties:
+            nome:
+              type: string
+            email:
+              type: string
+            telefone:
+              type: string
+            cpf:
+              type: string
+            tipo:
+              type: string
+              enum: [usuario, visitante]
+        categoria:
+          type: object
+          properties:
+            id:
+              type: string
+            nome:
+              type: string
+        valor:
+          type: integer
+        valorFormatado:
+          type: string
+        status:
+          type: string
+          enum: [pendente, confirmado, cancelado]
+        pagamento:
+          type: object
+          nullable: true
+          properties:
+            status:
+              type: string
+            metodoPagamento:
+              type: string
+        criadoEm:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          nullable: true

@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  title: IEQ 157 - Payments API
+  version: 1.0.0
+  description: API de pagamentos via Asaas
+
+paths:
+  /api/payments:
+    post:
+      summary: Criar pagamento para uma inscrição
+      operationId: createPayment
+      description: |
+        Cria um pagamento no Asaas para a inscrição especificada.
+        Se já existe um pagamento pendente, retorna o existente.
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+        - {} # Permite acesso sem autenticação para visitantes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: Pagamento criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '200':
+          description: Pagamento existente retornado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Dados inválidos ou método não permitido para o evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Inscrição não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/{paymentId}:
+    get:
+      summary: Obter detalhes de um pagamento
+      operationId: getPaymentById
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalhes do pagamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pagamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/{paymentId}/status:
+    get:
+      summary: Consultar status atualizado do pagamento
+      operationId: getPaymentStatus
+      description: Consulta o status atual no Asaas e atualiza localmente se necessário
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status do pagamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+        '404':
+          description: Pagamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/me:
+    get:
+      summary: Listar meus pagamentos (usuário autenticado)
+      operationId: listMyPayments
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, RECEIVED, CONFIRMED, OVERDUE, REFUNDED, CANCELLED]
+      responses:
+        '200':
+          description: Lista de pagamentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentWithInscription'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/payments/webhook:
+    post:
+      summary: Webhook do Asaas
+      operationId: processAsaasWebhook
+      description: |
+        Recebe notificações de pagamento do Asaas.
+        Valida o token de autenticação e processa o evento.
+      tags:
+        - Payments
+        - Webhook
+      parameters:
+        - name: asaas-access-token
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Token de autenticação do webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsaasWebhookPayload'
+      responses:
+        '200':
+          description: Webhook processado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+        '401':
+          description: Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '202':
+          description: Webhook enfileirado para retry (pagamento ainda não existe)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "queued"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CreatePaymentRequest:
+      type: object
+      required:
+        - inscriptionId
+        - metodoPagamento
+      properties:
+        inscriptionId:
+          type: string
+        metodoPagamento:
+          type: string
+          enum: [PIX, BOLETO, CREDIT_CARD]
+        cardData:
+          $ref: '#/components/schemas/CardData'
+          description: Obrigatório se metodoPagamento é CREDIT_CARD
+
+    CardData:
+      type: object
+      required:
+        - holderName
+        - number
+        - expiryMonth
+        - expiryYear
+        - ccv
+      properties:
+        holderName:
+          type: string
+          example: "JOAO S SILVA"
+        number:
+          type: string
+          example: "4111111111111111"
+        expiryMonth:
+          type: string
+          example: "12"
+        expiryYear:
+          type: string
+          example: "2025"
+        ccv:
+          type: string
+          example: "123"
+
+    PaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        inscriptionId:
+          type: string
+        asaasPaymentId:
+          type: string
+        valor:
+          type: integer
+          description: Em centavos
+        valorFormatado:
+          type: string
+          example: "R$ 150,00"
+        status:
+          type: string
+          enum: [PENDING, RECEIVED, CONFIRMED, OVERDUE, REFUNDED, CANCELLED]
+        statusLabel:
+          type: string
+          example: "Aguardando pagamento"
+        metodoPagamento:
+          type: string
+          enum: [PIX, BOLETO, CREDIT_CARD]
+        pixQrCode:
+          type: string
+          nullable: true
+          description: QR Code PIX em base64
+        pixCopiaECola:
+          type: string
+          nullable: true
+          description: Código PIX para copiar e colar
+        boletoUrl:
+          type: string
+          nullable: true
+          description: URL do boleto
+        dataVencimento:
+          type: string
+          format: date
+        dataPagamento:
+          type: string
+          format: date-time
+          nullable: true
+        criadoEm:
+          type: string
+          format: date-time
+
+    PaymentStatusResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RECEIVED, CONFIRMED, OVERDUE, REFUNDED, CANCELLED]
+        statusLabel:
+          type: string
+        inscriptionStatus:
+          type: string
+          enum: [pendente, confirmado, cancelado]
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentWithInscription:
+      allOf:
+        - $ref: '#/components/schemas/PaymentResponse'
+        - type: object
+          properties:
+            inscricao:
+              type: object
+              properties:
+                id:
+                  type: string
+                status:
+                  type: string
+            evento:
+              type: object
+              properties:
+                id:
+                  type: string
+                titulo:
+                  type: string
+                dataInicio:
+                  type: string
+                  format: date-time
+
+    AsaasWebhookPayload:
+      type: object
+      properties:
+        event:
+          type: string
+          enum: [PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE, PAYMENT_REFUNDED, PAYMENT_CANCELLED]
+        payment:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID do pagamento no Asaas
+            status:
+              type: string
+            value:
+              type: number
+            netValue:
+              type: number
+            billingType:
+              type: string
+            externalReference:
+              type: string
+              description: ID da inscrição
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          nullable: true

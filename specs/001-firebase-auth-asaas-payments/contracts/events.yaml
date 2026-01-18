@@ -1,0 +1,497 @@
+openapi: 3.0.3
+info:
+  title: IEQ 157 - Events API
+  version: 1.0.0
+  description: API de eventos da igreja
+
+paths:
+  /api/events:
+    get:
+      summary: Listar eventos
+      operationId: listEvents
+      tags:
+        - Events
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [rascunho, aberto, fechado, encerrado, cancelado]
+          description: Filtrar por status (público só vê aberto/fechado/encerrado)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+
+    post:
+      summary: Criar novo evento (admin only)
+      operationId: createEvent
+      tags:
+        - Events
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Evento criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/events/{eventId}:
+    get:
+      summary: Obter detalhes de um evento
+      operationId: getEventById
+      tags:
+        - Events
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalhes do evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Atualizar evento (admin only)
+      operationId: updateEvent
+      tags:
+        - Events
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Evento atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/events/{eventId}/categories:
+    get:
+      summary: Listar categorias de um evento
+      operationId: listEventCategories
+      tags:
+        - Events
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventCategory'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Adicionar categoria ao evento (admin only)
+      operationId: addEventCategory
+      tags:
+        - Events
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventCategory'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/events/{eventId}/stats:
+    get:
+      summary: Obter estatísticas do evento (admin only)
+      operationId: getEventStats
+      tags:
+        - Events
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estatísticas do evento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventStats'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    EventListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    EventSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        titulo:
+          type: string
+        subtitulo:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        dataInicio:
+          type: string
+          format: date-time
+        local:
+          type: string
+        status:
+          type: string
+          enum: [rascunho, aberto, fechado, encerrado, cancelado]
+        imagemUrl:
+          type: string
+          nullable: true
+
+    EventDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        titulo:
+          type: string
+        subtitulo:
+          type: string
+          nullable: true
+        descricao:
+          type: string
+        descricaoCompleta:
+          type: string
+          nullable: true
+        dataInicio:
+          type: string
+          format: date-time
+        dataFim:
+          type: string
+          format: date-time
+          nullable: true
+        local:
+          type: string
+        endereco:
+          type: string
+        googleMapsUrl:
+          type: string
+          nullable: true
+        whatsappContato:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [rascunho, aberto, fechado, encerrado, cancelado]
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum: [PIX, BOLETO, CREDIT_CARD]
+        categorias:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventCategory'
+        imagemUrl:
+          type: string
+          nullable: true
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+
+    EventCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+          example: "Individual"
+        valor:
+          type: integer
+          description: Valor em centavos
+          example: 15000
+        valorFormatado:
+          type: string
+          example: "R$ 150,00"
+        descricao:
+          type: string
+          nullable: true
+        ordem:
+          type: integer
+          nullable: true
+
+    CreateEventRequest:
+      type: object
+      required:
+        - titulo
+        - descricao
+        - dataInicio
+        - local
+        - endereco
+        - metodosPagamento
+      properties:
+        titulo:
+          type: string
+        subtitulo:
+          type: string
+        descricao:
+          type: string
+        descricaoCompleta:
+          type: string
+        dataInicio:
+          type: string
+          format: date-time
+        dataFim:
+          type: string
+          format: date-time
+        local:
+          type: string
+        endereco:
+          type: string
+        googleMapsUrl:
+          type: string
+        whatsappContato:
+          type: string
+        status:
+          type: string
+          enum: [rascunho, aberto]
+          default: rascunho
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum: [PIX, BOLETO, CREDIT_CARD]
+        imagemUrl:
+          type: string
+
+    UpdateEventRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+        subtitulo:
+          type: string
+        descricao:
+          type: string
+        descricaoCompleta:
+          type: string
+        dataInicio:
+          type: string
+          format: date-time
+        dataFim:
+          type: string
+          format: date-time
+        local:
+          type: string
+        endereco:
+          type: string
+        googleMapsUrl:
+          type: string
+        whatsappContato:
+          type: string
+        status:
+          type: string
+          enum: [rascunho, aberto, fechado, encerrado, cancelado]
+        metodosPagamento:
+          type: array
+          items:
+            type: string
+            enum: [PIX, BOLETO, CREDIT_CARD]
+        imagemUrl:
+          type: string
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - nome
+        - valor
+      properties:
+        nome:
+          type: string
+          example: "Casal"
+        valor:
+          type: integer
+          description: Valor em centavos
+          example: 25000
+        descricao:
+          type: string
+        ordem:
+          type: integer
+
+    EventStats:
+      type: object
+      properties:
+        totalInscricoes:
+          type: integer
+        inscricoesPorStatus:
+          type: object
+          properties:
+            pendente:
+              type: integer
+            confirmado:
+              type: integer
+            cancelado:
+              type: integer
+        totalArrecadado:
+          type: integer
+          description: Em centavos
+        totalArrecadadoFormatado:
+          type: string
+          example: "R$ 4.500,00"
+        inscricoesPorCategoria:
+          type: array
+          items:
+            type: object
+            properties:
+              categoriaId:
+                type: string
+              categoriaNome:
+                type: string
+              total:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+          nullable: true

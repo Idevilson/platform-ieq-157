@@ -1,0 +1,256 @@
+openapi: 3.0.3
+info:
+  title: IEQ 157 - Auth API
+  version: 1.0.0
+  description: API de autenticação para plataforma IEQ 157
+
+paths:
+  /api/auth/register:
+    post:
+      summary: Cadastrar novo usuário
+      operationId: registerUser
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      summary: Login com email/senha
+      operationId: loginUser
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/google:
+    post:
+      summary: Login/Cadastro via Google OAuth
+      operationId: googleAuth
+      description: Recebe o token do Google e cria/autentica usuário
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleAuthRequest'
+      responses:
+        '200':
+          description: Autenticação bem-sucedida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/password-reset:
+    post:
+      summary: Solicitar redefinição de senha
+      operationId: requestPasswordReset
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Email de redefinição enviado (se existir)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Se o email existir, um link de redefinição foi enviado"
+        '400':
+          description: Email inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/verify:
+    get:
+      summary: Verificar token e retornar dados do usuário
+      operationId: verifyToken
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Token inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID Token
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - nome
+      properties:
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+        password:
+          type: string
+          minLength: 6
+          example: "senha123"
+        nome:
+          type: string
+          example: "João Silva"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+        password:
+          type: string
+          example: "senha123"
+
+    GoogleAuthRequest:
+      type: object
+      required:
+        - idToken
+      properties:
+        idToken:
+          type: string
+          description: ID Token do Google OAuth
+
+    PasswordResetRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        token:
+          type: string
+          description: Firebase ID Token
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "abc123"
+        email:
+          type: string
+          format: email
+          example: "joao@email.com"
+        nome:
+          type: string
+          example: "João Silva"
+        telefone:
+          type: string
+          nullable: true
+          example: "11999998888"
+        cpf:
+          type: string
+          nullable: true
+          example: "12345678901"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        isProfileComplete:
+          type: boolean
+          description: True se cpf está preenchido
+          example: false
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Erro de validação"
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        details:
+          type: object
+          nullable: true
