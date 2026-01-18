@@ -67,3 +67,4 @@ Thumbs.db
 
 # Firebase Admin SDK credentials
 portal-ieq-sede-firebase-adminsdk-*.json
+.env.vercel

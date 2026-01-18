@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Configuracoes do Next.js 15
+  env: {
+    FIREBASE_CLIENT_CONFIG: process.env.FIREBASE_CLIENT_CONFIG,
+  },
 }
 
 export default nextConfig

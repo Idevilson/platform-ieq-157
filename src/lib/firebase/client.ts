@@ -2,14 +2,28 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+function getFirebaseConfig() {
+  const configJson = process.env.FIREBASE_CLIENT_CONFIG
+
+  if (!configJson) {
+    throw new Error('Missing FIREBASE_CLIENT_CONFIG environment variable')
+  }
+
+  try {
+    // Try raw JSON first
+    try {
+      return JSON.parse(configJson)
+    } catch {
+      // Try base64 decoding
+      const decoded = atob(configJson)
+      return JSON.parse(decoded)
+    }
+  } catch {
+    throw new Error('Invalid FIREBASE_CLIENT_CONFIG format. Use raw JSON or base64 encoded JSON.')
+  }
 }
+
+const firebaseConfig = getFirebaseConfig()
 
 let app: FirebaseApp | null = null
 let auth: Auth | null = null

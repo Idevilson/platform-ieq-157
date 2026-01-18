@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth'
-import { getFirebaseAuth } from '../config/client'
+import { getFirebaseAuth } from '@/lib/firebase/client'
 
 export interface AuthCredentials {
   email: string

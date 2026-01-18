@@ -2,21 +2,53 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app'
 import { getAuth, Auth } from 'firebase-admin/auth'
 import { getFirestore, Firestore } from 'firebase-admin/firestore'
-import serviceAccount from '../../../../portal-ieq-sede-firebase-adminsdk-fbsvc-e5560b6ccd.json'
 
 // Cached instances
 let _adminAuth: Auth | null = null
 let _adminFirestore: Firestore | null = null
 let _initialized = false
 
+function getServiceAccountCredentials() {
+  const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT
+
+  if (!serviceAccountJson) {
+    throw new Error(
+      'Missing FIREBASE_ADMIN_SERVICE_ACCOUNT environment variable. Set it with the Firebase service account JSON (raw or base64 encoded).'
+    )
+  }
+
+  try {
+    // Try parsing as raw JSON first
+    let parsed
+    try {
+      parsed = JSON.parse(serviceAccountJson)
+    } catch {
+      // If raw JSON fails, try base64 decoding
+      const decoded = Buffer.from(serviceAccountJson, 'base64').toString('utf-8')
+      parsed = JSON.parse(decoded)
+    }
+
+    return {
+      projectId: parsed.project_id,
+      clientEmail: parsed.client_email,
+      privateKey: parsed.private_key,
+    }
+  } catch {
+    throw new Error(
+      'Invalid FIREBASE_ADMIN_SERVICE_ACCOUNT format. Provide valid JSON or base64 encoded JSON.'
+    )
+  }
+}
+
 function ensureInitialized() {
   if (_initialized) return
 
   // Initialize app if not already done
   if (getApps().length === 0) {
+    const credentials = getServiceAccountCredentials()
     initializeApp({
-      credential: cert(serviceAccount as Parameters<typeof cert>[0]),
-      projectId: serviceAccount.project_id,
+      credential: cert(credentials),
+      projectId: credentials.projectId,
     })
   }
 
