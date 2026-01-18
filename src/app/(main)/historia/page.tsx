@@ -114,7 +114,7 @@ export default function HistoriaPage() {
                 seu salvador e decidiu seguir a sua vida com Cristo.
               </p>
               <p>
-                Anos mais tarde, nessa mesma igreja, uma bela jovem chamada <strong className="text-text-primary">Valdeci Aneri</strong> se
+                Anos mais tarde, nessa mesma igreja, uma bela jovem chamada <strong className="text-text-primary">Valdicinha Nery</strong> se
                 entregava a Jesus com apenas 14 anos de idade. Mesmo jovens, eles decidiram mudar suas vidas e serem
                 novas criaturas, atendendo ao chamado do Senhor Jesus.
               </p>
@@ -266,7 +266,7 @@ export default function HistoriaPage() {
           </section>
 
           <section className="bg-bg-secondary rounded-2xl p-8 border border-gold/10">
-            <h2 className="text-2xl font-semibold text-gold mb-6">22 Anos de Frutos</h2>
+            <h2 className="text-2xl font-semibold text-gold mb-6">24 Anos de Frutos</h2>
 
             <div className="relative aspect-video rounded-xl overflow-hidden mb-6">
               <Image src={img11} alt="Evento Reencontro" fill className="object-cover" />

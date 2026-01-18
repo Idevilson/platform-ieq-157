@@ -94,16 +94,16 @@ export function ShareableReceipt({
             {/* Event images - 2x2 grid */}
             <div className="grid grid-cols-2 gap-2 w-[140px] shrink-0">
               <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
-                <Image src="/images/startup/leão.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
-              </div>
-              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
-                <Image src="/images/startup/aguia.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
-              </div>
-              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
                 <Image src="/images/startup/homem.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
               </div>
               <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
+                <Image src="/images/startup/leão.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
+              </div>
+              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
                 <Image src="/images/startup/boi.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
+              </div>
+              <div className="aspect-square rounded-lg overflow-hidden border-2 border-gold/30">
+                <Image src="/images/startup/aguia.jpeg" alt="" width={70} height={70} className="object-cover w-full h-full" />
               </div>
             </div>
 
