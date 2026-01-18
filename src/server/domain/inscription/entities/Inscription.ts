@@ -2,6 +2,7 @@
 import { Money } from '@/server/domain/shared/value-objects/Money'
 import { InscriptionStatus, Timestamps, INSCRIPTION_STATUS_LABELS } from '@/server/domain/shared/types'
 import { GuestData, GuestDataInput } from '../value-objects/GuestData'
+import { Gender, InscriptionPaymentMethod } from '@/shared/constants'
 
 export interface InscriptionProps {
   id: string
@@ -12,6 +13,7 @@ export interface InscriptionProps {
   valor: Money
   status: InscriptionStatus
   paymentId?: string
+  preferredPaymentMethod: InscriptionPaymentMethod
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -22,6 +24,7 @@ export interface CreateInscriptionDTO {
   valor: number // in cents
   userId?: string
   guestData?: GuestDataInput
+  preferredPaymentMethod?: InscriptionPaymentMethod
 }
 
 export class Inscription implements Timestamps {
@@ -31,6 +34,7 @@ export class Inscription implements Timestamps {
   readonly categoryId: string
   readonly guestData?: GuestData
   readonly valor: Money
+  readonly preferredPaymentMethod: InscriptionPaymentMethod
   private _status: InscriptionStatus
   private _paymentId?: string
   readonly criadoEm: Date
@@ -43,6 +47,7 @@ export class Inscription implements Timestamps {
     this.categoryId = props.categoryId
     this.guestData = props.guestData
     this.valor = props.valor
+    this.preferredPaymentMethod = props.preferredPaymentMethod
     this._status = props.status
     this._paymentId = props.paymentId
     this.criadoEm = props.criadoEm
@@ -66,6 +71,7 @@ export class Inscription implements Timestamps {
       userId: dto.userId,
       guestData: dto.guestData ? GuestData.create(dto.guestData) : undefined,
       valor: Money.fromCents(dto.valor),
+      preferredPaymentMethod: dto.preferredPaymentMethod || 'PIX',
       status: 'pendente',
       criadoEm: now,
       atualizadoEm: now,
@@ -77,10 +83,18 @@ export class Inscription implements Timestamps {
     eventId: string
     userId?: string
     categoryId: string
-    guestData?: { nome: string; email: string; telefone: string; cpf: string }
+    guestData?: {
+      nome: string
+      email: string
+      telefone: string
+      cpf: string
+      dataNascimento: Date
+      sexo: Gender
+    }
     valor: number
     status: InscriptionStatus
     paymentId?: string
+    preferredPaymentMethod?: InscriptionPaymentMethod
     criadoEm: Date
     atualizadoEm: Date
   }): Inscription {
@@ -91,6 +105,7 @@ export class Inscription implements Timestamps {
       categoryId: data.categoryId,
       guestData: data.guestData ? GuestData.fromPersistence(data.guestData) : undefined,
       valor: Money.fromCents(data.valor),
+      preferredPaymentMethod: data.preferredPaymentMethod || 'PIX',
       status: data.status,
       paymentId: data.paymentId,
       criadoEm: data.criadoEm,
@@ -144,6 +159,14 @@ export class Inscription implements Timestamps {
     return this._status === 'pendente'
   }
 
+  isCashPayment(): boolean {
+    return this.preferredPaymentMethod === 'CASH'
+  }
+
+  isPixPayment(): boolean {
+    return this.preferredPaymentMethod === 'PIX'
+  }
+
   getCPF(): string | undefined {
     return this.guestData?.cpf.getValue()
   }
@@ -163,6 +186,15 @@ export class Inscription implements Timestamps {
     }
     this._status = 'confirmado'
     this._paymentId = paymentId
+    this._atualizadoEm = new Date()
+  }
+
+  confirmManually(confirmedBy: string): void {
+    if (this._status !== 'pendente') {
+      throw new Error('Apenas inscrições pendentes podem ser confirmadas')
+    }
+    this._status = 'confirmado'
+    this._paymentId = `MANUAL-${confirmedBy}-${Date.now()}`
     this._atualizadoEm = new Date()
   }
 
@@ -189,6 +221,7 @@ export class Inscription implements Timestamps {
       guestData: this.guestData?.toJSON(),
       valor: this.valor.getCents(),
       valorFormatado: this.valor.getFormatted(),
+      preferredPaymentMethod: this.preferredPaymentMethod,
       status: this._status,
       statusLabel: this.statusLabel,
       paymentId: this._paymentId,

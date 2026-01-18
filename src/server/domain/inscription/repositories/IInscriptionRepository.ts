@@ -7,7 +7,7 @@ export interface ListInscriptionsParams extends PaginationParams {
 }
 
 export interface IInscriptionRepository {
-  findById(id: string): Promise<Inscription | null>
+  findById(id: string, eventId?: string): Promise<Inscription | null>
   findByUserId(userId: string, params?: ListInscriptionsParams): Promise<Inscription[]>
   findByEventId(eventId: string, params?: ListInscriptionsParams): Promise<PaginatedResult<Inscription>>
   findByEventIdAndUserId(eventId: string, userId: string): Promise<Inscription | null>
@@ -15,7 +15,7 @@ export interface IInscriptionRepository {
   findByCPF(cpf: string): Promise<Inscription[]>
   save(inscription: Inscription): Promise<void>
   update(inscription: Inscription): Promise<void>
-  delete(id: string): Promise<void>
+  delete(id: string, eventId: string): Promise<void>
 
   // Stats
   countByEventId(eventId: string): Promise<number>

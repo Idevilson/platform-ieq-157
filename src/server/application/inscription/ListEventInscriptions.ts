@@ -2,6 +2,7 @@ import { IInscriptionRepository } from '@/server/domain/inscription/repositories
 import { IEventRepository } from '@/server/domain/event/repositories/IEventRepository'
 import { IUserRepository } from '@/server/domain/user/repositories/IUserRepository'
 import { InscriptionStatus } from '@/server/domain/shared/types'
+import { InscriptionPaymentMethod } from '@/shared/constants'
 
 export interface ListEventInscriptionsInput {
   eventId: string
@@ -26,6 +27,7 @@ export interface InscriptionWithDetails {
   valor: number
   valorFormatado: string
   paymentId?: string
+  preferredPaymentMethod: InscriptionPaymentMethod
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -74,10 +76,11 @@ export class ListEventInscriptions {
       } else if (inscription.userId) {
         const user = await this.userRepository.findById(inscription.userId)
         if (user) {
-          nome = user.nome
-          email = user.email.getValue()
-          cpf = user.cpf?.getValue() || ''
-          telefone = user.telefone?.getValue() || ''
+          const userData = user.toJSON()
+          nome = userData.nome
+          email = userData.email
+          cpf = userData.cpf || ''
+          telefone = userData.telefone || ''
         }
       }
 
@@ -97,6 +100,7 @@ export class ListEventInscriptions {
         valor: inscription.valorCents,
         valorFormatado: inscription.valorFormatado,
         paymentId: inscription.paymentId,
+        preferredPaymentMethod: inscription.preferredPaymentMethod,
         criadoEm: inscription.criadoEm,
         atualizadoEm: inscription.atualizadoEm,
       })

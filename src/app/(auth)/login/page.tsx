@@ -91,6 +91,19 @@ export default function LoginPage() {
           </div>
 
           <GoogleLoginButton />
+
+          <div className="pt-4 text-center">
+            <p className="text-sm text-text-muted mb-3">Nao deseja fazer login agora?</p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-transparent border border-gold/30 text-text-secondary hover:text-text-primary hover:border-gold/50 rounded-lg transition-all no-underline"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Continuar para o site
+            </Link>
+          </div>
         </div>
       </div>
     </div>

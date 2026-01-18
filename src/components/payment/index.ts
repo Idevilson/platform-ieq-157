@@ -1,0 +1,1 @@
+export { ShareableReceipt } from './ShareableReceipt'

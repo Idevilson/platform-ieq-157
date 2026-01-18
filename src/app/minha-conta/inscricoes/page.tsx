@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRequireAuth } from '@/hooks'
 import { useUserInscriptions } from '@/hooks/queries/useUserInscriptions'
 import { InscriptionStatus, INSCRIPTION_STATUS_LABELS } from '@/shared/constants'
-import { UserInscriptionDTO } from '@/lib/services/userService'
+import { UserInscriptionDTO, PaymentInfo } from '@/lib/services/userService'
 
 export default function MinhasInscricoesPage() {
   const { user, loading: authLoading } = useRequireAuth()
@@ -50,6 +50,21 @@ export default function MinhasInscricoesPage() {
     return { class: config[status], label: INSCRIPTION_STATUS_LABELS[status] }
   }
 
+  const getPaymentStatusBadge = (payment?: PaymentInfo) => {
+    if (!payment) return null
+
+    const config: Record<string, { class: string; label: string }> = {
+      PENDING: { class: 'bg-yellow-500/20 text-yellow-400', label: 'Pagamento Pendente' },
+      CONFIRMED: { class: 'bg-green-500/20 text-green-400', label: 'Pago' },
+      RECEIVED: { class: 'bg-green-500/20 text-green-400', label: 'Pago' },
+      OVERDUE: { class: 'bg-red-500/20 text-red-400', label: 'Vencido' },
+      REFUNDED: { class: 'bg-gray-500/20 text-gray-400', label: 'Reembolsado' },
+      CANCELLED: { class: 'bg-gray-500/20 text-gray-400', label: 'Cancelado' },
+    }
+
+    return config[payment.status] || { class: 'bg-gray-500/20 text-gray-400', label: payment.statusLabel }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -78,12 +93,29 @@ export default function MinhasInscricoesPage() {
         <div className="space-y-4">
           {inscricoes.map((inscricao: UserInscriptionDTO) => {
             const statusBadge = getStatusBadge(inscricao.status)
+            const paymentBadge = getPaymentStatusBadge(inscricao.payment)
+            const isPendingPayment = inscricao.payment?.status === 'PENDING'
+            const isPaid = inscricao.payment?.status === 'CONFIRMED' || inscricao.payment?.status === 'RECEIVED'
 
             return (
-              <div key={inscricao.id} className="card">
+              <div key={inscricao.id} className={`card ${isPendingPayment ? 'border-2 border-yellow-500/50' : ''}`}>
                 <div className="flex items-center justify-between gap-4 mb-4 pb-4 border-b border-gold/10">
-                  <h3 className="text-lg font-semibold text-text-primary">{inscricao.eventTitulo}</h3>
-                  <span className={`badge ${statusBadge.class}`}>{statusBadge.label}</span>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-text-primary">{inscricao.eventTitulo}</h3>
+                    {isPendingPayment && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 animate-pulse">
+                        Aguardando pagamento
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {paymentBadge && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${paymentBadge.class}`}>
+                        {paymentBadge.label}
+                      </span>
+                    )}
+                    <span className={`badge ${statusBadge.class}`}>{statusBadge.label}</span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -106,12 +138,23 @@ export default function MinhasInscricoesPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 pt-4 border-t border-gold/10">
-                  {inscricao.status === 'pendente' && inscricao.paymentId && (
-                    <Link href={`/minha-conta/pagamentos/${inscricao.paymentId}`} className="btn-primary">
+                  {isPendingPayment && (
+                    <Link
+                      href={`/eventos/startup/confirmado?inscriptionId=${inscricao.id}&eventId=${inscricao.eventId}`}
+                      className="btn btn-primary"
+                    >
                       Pagar agora
                     </Link>
                   )}
-                  <Link href={`/eventos/${inscricao.eventId}`} className="btn-secondary">
+                  {isPaid && (
+                    <Link
+                      href={`/eventos/startup/confirmado?inscriptionId=${inscricao.id}&eventId=${inscricao.eventId}`}
+                      className="btn btn-secondary"
+                    >
+                      Ver comprovante
+                    </Link>
+                  )}
+                  <Link href={`/eventos/${inscricao.eventId}`} className="btn btn-secondary">
                     Ver evento
                   </Link>
                 </div>

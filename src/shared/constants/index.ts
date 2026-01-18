@@ -1,5 +1,15 @@
 // Shared constants and enums - used by both frontend and backend
 
+// Gender
+export type Gender = 'masculino' | 'feminino'
+
+export const GENDERS: readonly Gender[] = ['masculino', 'feminino'] as const
+
+export const GENDER_LABELS: Record<Gender, string> = {
+  masculino: 'Masculino',
+  feminino: 'Feminino',
+}
+
 // User roles
 export type UserRole = 'user' | 'admin'
 
@@ -72,16 +82,31 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 }
 
 // Payment method
-export type PaymentMethod = 'PIX' | 'BOLETO' | 'CREDIT_CARD'
+export type PaymentMethod = 'PIX' | 'BOLETO' | 'CREDIT_CARD' | 'CASH'
 
 export const PAYMENT_METHODS: readonly PaymentMethod[] = [
   'PIX',
   'BOLETO',
   'CREDIT_CARD',
+  'CASH',
 ] as const
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   PIX: 'PIX',
   BOLETO: 'Boleto',
   CREDIT_CARD: 'Cartão de Crédito',
+  CASH: 'Dinheiro',
+}
+
+// Payment methods available for event inscription
+export type InscriptionPaymentMethod = 'PIX' | 'CASH'
+
+export const INSCRIPTION_PAYMENT_METHODS: readonly InscriptionPaymentMethod[] = [
+  'PIX',
+  'CASH',
+] as const
+
+export const INSCRIPTION_PAYMENT_METHOD_LABELS: Record<InscriptionPaymentMethod, string> = {
+  PIX: 'PIX',
+  CASH: 'Dinheiro',
 }

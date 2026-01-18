@@ -4,19 +4,36 @@ import { getAuth, Auth } from 'firebase-admin/auth'
 import { getFirestore, Firestore } from 'firebase-admin/firestore'
 import serviceAccount from '../../../../portal-ieq-sede-firebase-adminsdk-fbsvc-e5560b6ccd.json'
 
-// Check if app is already initialized to prevent duplicate initialization
-if (getApps().length === 0) {
-  initializeApp({
-    credential: cert(serviceAccount as Parameters<typeof cert>[0]),
-    projectId: serviceAccount.project_id,
-  })
-}
-
 // Cached instances
 let _adminAuth: Auth | null = null
 let _adminFirestore: Firestore | null = null
+let _initialized = false
+
+function ensureInitialized() {
+  if (_initialized) return
+
+  // Initialize app if not already done
+  if (getApps().length === 0) {
+    initializeApp({
+      credential: cert(serviceAccount as Parameters<typeof cert>[0]),
+      projectId: serviceAccount.project_id,
+    })
+  }
+
+  // Configure Firestore settings (must be before any operations)
+  const db = getFirestore()
+  try {
+    db.settings({ ignoreUndefinedProperties: true })
+  } catch {
+    // Settings already configured, ignore
+  }
+  _adminFirestore = db
+
+  _initialized = true
+}
 
 export function getAdminAuth(): Auth {
+  ensureInitialized()
   if (!_adminAuth) {
     _adminAuth = getAuth()
   }
@@ -24,11 +41,8 @@ export function getAdminAuth(): Auth {
 }
 
 export function getAdminFirestore(): Firestore {
-  if (!_adminFirestore) {
-    _adminFirestore = getFirestore()
-    _adminFirestore.settings({ ignoreUndefinedProperties: true })
-  }
-  return _adminFirestore
+  ensureInitialized()
+  return _adminFirestore!
 }
 
 // Lazy-initialized exports for backwards compatibility

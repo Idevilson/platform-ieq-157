@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEventsList } from '@/hooks/queries/useEvents'
 import { EventStatus, EVENT_STATUS_LABELS } from '@/shared/constants'
 import { EventSummaryDTO } from '@/shared/types'
+import { InscriptionLookup } from '@/components/inscription/InscriptionLookup'
 
 type StatusFiltro = 'todos' | EventStatus
 
@@ -79,6 +80,11 @@ export default function Eventos() {
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-gold mb-3">Eventos</h1>
           <p className="text-text-secondary">Confira todos os eventos da nossa igreja</p>
+        </div>
+
+        {/* Consulta de Inscrição por CPF */}
+        <div className="mb-10">
+          <InscriptionLookup />
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mb-8">

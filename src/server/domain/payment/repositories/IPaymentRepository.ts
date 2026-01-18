@@ -7,13 +7,13 @@ export interface ListPaymentsParams extends PaginationParams {
 }
 
 export interface IPaymentRepository {
-  findById(id: string): Promise<Payment | null>
+  findById(id: string, eventId?: string, inscriptionId?: string): Promise<Payment | null>
   findByAsaasPaymentId(asaasPaymentId: string): Promise<Payment | null>
-  findByInscriptionId(inscriptionId: string): Promise<Payment | null>
+  findByInscriptionId(inscriptionId: string, eventId?: string): Promise<Payment | null>
   findByUserId(userId: string, params?: ListPaymentsParams): Promise<Payment[]>
-  save(payment: Payment): Promise<void>
-  update(payment: Payment): Promise<void>
-  delete(id: string): Promise<void>
+  save(payment: Payment, eventId: string): Promise<void>
+  update(payment: Payment, eventId: string): Promise<void>
+  delete(id: string, eventId: string, inscriptionId: string): Promise<void>
 
   // Stats
   sumConfirmedByEventId(eventId: string): Promise<number>

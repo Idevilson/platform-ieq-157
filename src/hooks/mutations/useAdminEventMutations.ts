@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { adminService, CreateEventInput, CreateEventResponse, UpdateEventStatusResponse } from '@/lib/services/adminService'
+import { adminService, CreateEventInput, CreateEventResponse, UpdateEventStatusResponse, ConfirmInscriptionResponse } from '@/lib/services/adminService'
 import { EventStatus } from '@/shared/constants'
 
 export function useCreateEvent() {
@@ -22,6 +22,18 @@ export function useUpdateEventStatus() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'events'] })
       queryClient.invalidateQueries({ queryKey: ['events', data.id] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
+export function useConfirmInscription() {
+  const queryClient = useQueryClient()
+
+  return useMutation<ConfirmInscriptionResponse, Error, { inscriptionId: string; eventId: string }>({
+    mutationFn: ({ inscriptionId, eventId }) => adminService.confirmInscription(inscriptionId, eventId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events', variables.eventId, 'inscriptions'] })
+      queryClient.invalidateQueries({ queryKey: ['inscriptions'] })
     },
   })
 }

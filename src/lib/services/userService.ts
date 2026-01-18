@@ -11,6 +11,17 @@ interface ApiResponse<T> {
   error?: string
 }
 
+export interface PaymentInfo {
+  id: string
+  status: string
+  statusLabel: string
+  metodoPagamento: string
+  pixCopiaECola?: string
+  boletoUrl?: string
+  valor: string
+  dataVencimento: string
+}
+
 export interface UserInscriptionDTO {
   id: string
   eventId: string
@@ -23,6 +34,7 @@ export interface UserInscriptionDTO {
   status: InscriptionStatus
   statusLabel: string
   paymentId?: string
+  payment?: PaymentInfo
   criadoEm: string
   atualizadoEm: string
 }

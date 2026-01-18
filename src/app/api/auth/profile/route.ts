@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminFirestore } from '@/server/infrastructure/firebase/admin'
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { extractBearerToken, mapUserDocumentToResponse, UserDocument } from '../shared'
+import { Gender, GENDERS } from '@/shared/constants'
 
 interface UpdateProfileRequest {
   nome?: string
   cpf?: string
   telefone?: string
+  dataNascimento?: string
+  sexo?: Gender
 }
 
 function sanitizeDigits(value: string): string {
@@ -28,6 +31,16 @@ function buildUpdateData(requestBody: UpdateProfileRequest): Record<string, unkn
 
   if (requestBody.telefone !== undefined) {
     updateData.telefone = sanitizeDigits(requestBody.telefone)
+  }
+
+  if (requestBody.dataNascimento !== undefined) {
+    updateData.dataNascimento = Timestamp.fromDate(new Date(requestBody.dataNascimento))
+  }
+
+  if (requestBody.sexo !== undefined) {
+    if (GENDERS.includes(requestBody.sexo)) {
+      updateData.sexo = requestBody.sexo
+    }
   }
 
   return updateData

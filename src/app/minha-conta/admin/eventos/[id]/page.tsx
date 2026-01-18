@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useEventById } from '@/hooks/queries/useEvents'
 import { useAdminEventInscriptions } from '@/hooks/queries/useAdminEvents'
-import { useUpdateEventStatus } from '@/hooks/mutations/useAdminEventMutations'
-import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus } from '@/shared/constants'
+import { useUpdateEventStatus, useConfirmInscription } from '@/hooks/mutations/useAdminEventMutations'
+import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
+import { InscriptionWithDetails } from '@/lib/services/adminService'
 
 function formatCPFSafe(cpf: string): string {
   if (!cpf) return '-'
@@ -88,23 +89,166 @@ function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
   )
 }
 
+interface ConfirmModalProps {
+  inscription: InscriptionWithDetails
+  onClose: () => void
+  onConfirm: () => void
+  isLoading: boolean
+}
+
+function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmModalProps) {
+  const isPending = inscription.status === 'pendente'
+  const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg bg-bg-secondary border border-gold/20 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-text-primary">Detalhes da Inscricao</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+            <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Nome</label>
+              <p className="text-text-primary font-medium">{inscription.nome}</p>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">CPF</label>
+              <p className="text-text-primary font-mono">{formatCPFSafe(inscription.cpf)}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Email</label>
+              <p className="text-text-primary text-sm">{inscription.email}</p>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">Telefone</label>
+              <p className="text-text-primary">{formatPhoneSafe(inscription.telefone)}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Categoria</label>
+              <p className="text-text-primary">{inscription.categoryNome}</p>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">Valor</label>
+              <p className="text-gold font-bold">{inscription.valorFormatado}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Metodo de Pagamento</label>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${inscription.preferredPaymentMethod === 'CASH' ? 'bg-orange-500/20 text-orange-400' : 'bg-sky-500/20 text-sky-400'}`}>
+                {INSCRIPTION_PAYMENT_METHOD_LABELS[inscription.preferredPaymentMethod] || 'PIX'}
+              </span>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">Status</label>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getInscriptionStatusClassName(inscription.status)}`}>
+                {inscription.statusLabel}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-text-muted">Data da Inscricao</label>
+            <p className="text-text-primary text-sm">{formatDateTime(inscription.criadoEm)}</p>
+          </div>
+
+          {isPending && (
+            <div className="pt-4 border-t border-gold/10">
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                <p className="text-sm text-yellow-400 font-medium mb-1">Confirmar Manualmente</p>
+                <p className="text-xs text-text-secondary">
+                  {hasPixPayment
+                    ? 'A cobranca PIX pendente no Asaas sera cancelada automaticamente.'
+                    : 'Esta inscricao sera marcada como confirmada.'}
+                </p>
+              </div>
+
+              <button
+                onClick={onConfirm}
+                disabled={isLoading}
+                className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Confirmando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Confirmar Inscricao
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminEventDetailPage() {
   const params = useParams()
   const eventId = params.id as string
   const [statusFilter, setStatusFilter] = useState<InscriptionStatus | ''>('')
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<InscriptionPaymentMethod | ''>('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
+  const [selectedInscription, setSelectedInscription] = useState<InscriptionWithDetails | null>(null)
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useEventById(eventId)
-  const { data: inscriptionsData, isLoading: inscriptionsLoading } = useAdminEventInscriptions(
+  const { data: inscriptionsData, isLoading: inscriptionsLoading, refetch: refetchInscriptions } = useAdminEventInscriptions(
     eventId,
-    { status: statusFilter || undefined, limit: 100 }
+    { status: statusFilter || undefined, limit: 500 }
   )
   const updateStatus = useUpdateEventStatus()
+  const confirmInscription = useConfirmInscription()
+
+  const inscriptions = useMemo(() => inscriptionsData?.inscriptions ?? [], [inscriptionsData?.inscriptions])
+
+  // Filter inscriptions by search term and payment method
+  const filteredInscriptions = useMemo(() => {
+    return inscriptions.filter(inscription => {
+      // Filter by payment method
+      if (paymentMethodFilter && inscription.preferredPaymentMethod !== paymentMethodFilter) {
+        return false
+      }
+
+      // Filter by search term
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase()
+        const matchesName = inscription.nome?.toLowerCase().includes(search)
+        const matchesCPF = inscription.cpf?.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
+        const matchesEmail = inscription.email?.toLowerCase().includes(search)
+        const matchesPhone = inscription.telefone?.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
+        return matchesName || matchesCPF || matchesEmail || matchesPhone
+      }
+
+      return true
+    })
+  }, [inscriptions, searchTerm, paymentMethodFilter])
 
   if (eventLoading) return <LoadingSpinner message="Carregando evento..." />
   if (!event) return <EventNotFound />
 
-  const inscriptions = inscriptionsData?.inscriptions ?? []
   const totalInscriptions = inscriptionsData?.total ?? 0
   const confirmedCount = inscriptions.filter(i => i.status === 'confirmado').length
   const pendingCount = inscriptions.filter(i => i.status === 'pendente').length
@@ -119,6 +263,17 @@ export default function AdminEventDetailPage() {
       refetchEvent()
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
+    }
+  }
+
+  const handleConfirmInscription = async () => {
+    if (!selectedInscription) return
+    try {
+      await confirmInscription.mutateAsync({ inscriptionId: selectedInscription.id, eventId })
+      setSelectedInscription(null)
+      refetchInscriptions()
+    } catch (error) {
+      console.error('Erro ao confirmar inscricao:', error)
     }
   }
 
@@ -262,21 +417,81 @@ export default function AdminEventDetailPage() {
 
       {/* Inscriptions Section */}
       <div className="bg-bg-secondary border border-gold/10 rounded-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-b border-gold/10">
-          <h2 className="text-lg font-semibold text-text-primary">Inscricoes</h2>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-text-secondary">Filtrar:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as InscriptionStatus | '')}
-              className="bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
-            >
-              <option value="">Todos</option>
-              {INSCRIPTION_STATUSES.map((status) => (
-                <option key={status} value={status}>{INSCRIPTION_STATUS_LABELS[status]}</option>
-              ))}
-            </select>
+        <div className="p-6 border-b border-gold/10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <h2 className="text-lg font-semibold text-text-primary">Inscricoes</h2>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search Input */}
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome, CPF, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-bg-tertiary border border-gold/20 rounded-lg pl-10 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold w-full sm:w-64"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as InscriptionStatus | '')}
+                className="bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
+              >
+                <option value="">Status: Todos</option>
+                {INSCRIPTION_STATUSES.map((status) => (
+                  <option key={status} value={status}>{INSCRIPTION_STATUS_LABELS[status]}</option>
+                ))}
+              </select>
+
+              {/* Payment Method Filter */}
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => setPaymentMethodFilter(e.target.value as InscriptionPaymentMethod | '')}
+                className="bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
+              >
+                <option value="">Pagamento: Todos</option>
+                <option value="PIX">PIX</option>
+                <option value="CASH">Dinheiro</option>
+              </select>
+            </div>
           </div>
+
+          {/* Active filters indicator */}
+          {(searchTerm || statusFilter || paymentMethodFilter) && (
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-xs text-text-muted">Filtros ativos:</span>
+              {searchTerm && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-gold/10 text-gold text-xs rounded-full">
+                  Busca: {searchTerm}
+                  <button onClick={() => setSearchTerm('')} className="hover:text-white">×</button>
+                </span>
+              )}
+              {statusFilter && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-gold/10 text-gold text-xs rounded-full">
+                  {INSCRIPTION_STATUS_LABELS[statusFilter]}
+                  <button onClick={() => setStatusFilter('')} className="hover:text-white">×</button>
+                </span>
+              )}
+              {paymentMethodFilter && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-gold/10 text-gold text-xs rounded-full">
+                  {INSCRIPTION_PAYMENT_METHOD_LABELS[paymentMethodFilter]}
+                  <button onClick={() => setPaymentMethodFilter('')} className="hover:text-white">×</button>
+                </span>
+              )}
+              <button
+                onClick={() => { setSearchTerm(''); setStatusFilter(''); setPaymentMethodFilter(''); }}
+                className="text-xs text-text-muted hover:text-gold"
+              >
+                Limpar todos
+              </button>
+            </div>
+          )}
         </div>
 
         {inscriptionsLoading && (
@@ -285,19 +500,22 @@ export default function AdminEventDetailPage() {
           </div>
         )}
 
-        {!inscriptionsLoading && inscriptions.length === 0 && (
+        {!inscriptionsLoading && filteredInscriptions.length === 0 && (
           <div className="text-center py-12 text-text-secondary">
             <svg className="w-12 h-12 mx-auto mb-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <p>Nenhuma inscricao encontrada</p>
-            {event.status === 'rascunho' && (
+            {searchTerm && (
+              <p className="text-sm mt-2">Tente ajustar os filtros de busca</p>
+            )}
+            {event.status === 'rascunho' && !searchTerm && (
               <p className="text-sm mt-2">Altere o status para &quot;Aberto&quot; para receber inscricoes</p>
             )}
           </div>
         )}
 
-        {!inscriptionsLoading && inscriptions.length > 0 && (
+        {!inscriptionsLoading && filteredInscriptions.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -307,13 +525,18 @@ export default function AdminEventDetailPage() {
                   <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">CPF</th>
                   <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">Categoria</th>
                   <th className="text-right py-3 px-6 text-sm font-medium text-text-secondary">Valor</th>
+                  <th className="text-center py-3 px-6 text-sm font-medium text-text-secondary">Pagamento</th>
                   <th className="text-center py-3 px-6 text-sm font-medium text-text-secondary">Status</th>
                   <th className="text-right py-3 px-6 text-sm font-medium text-text-secondary">Data</th>
                 </tr>
               </thead>
               <tbody>
-                {inscriptions.map((inscription) => (
-                  <tr key={inscription.id} className="border-b border-gold/5 hover:bg-gold/5 transition-colors">
+                {filteredInscriptions.map((inscription) => (
+                  <tr
+                    key={inscription.id}
+                    onClick={() => setSelectedInscription(inscription)}
+                    className="border-b border-gold/5 hover:bg-gold/5 transition-colors cursor-pointer"
+                  >
                     <td className="py-4 px-6">
                       <span className="font-medium text-text-primary">{inscription.nome ?? '-'}</span>
                     </td>
@@ -333,6 +556,11 @@ export default function AdminEventDetailPage() {
                       <span className="text-sm font-medium text-gold">{inscription.valorFormatado}</span>
                     </td>
                     <td className="py-4 px-6 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${inscription.preferredPaymentMethod === 'CASH' ? 'bg-orange-500/20 text-orange-400' : 'bg-sky-500/20 text-sky-400'}`}>
+                        {INSCRIPTION_PAYMENT_METHOD_LABELS[inscription.preferredPaymentMethod] || 'PIX'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getInscriptionStatusClassName(inscription.status)}`}>
                         {inscription.statusLabel}
                       </span>
@@ -347,12 +575,22 @@ export default function AdminEventDetailPage() {
           </div>
         )}
 
-        {inscriptionsData && inscriptionsData.total > inscriptionsData.limit && (
+        {filteredInscriptions.length > 0 && (
           <div className="p-4 text-center text-sm text-text-secondary border-t border-gold/10">
-            Exibindo {inscriptions.length} de {inscriptionsData.total} inscricoes
+            Exibindo {filteredInscriptions.length} {filteredInscriptions.length !== totalInscriptions && `de ${totalInscriptions}`} inscricoes
           </div>
         )}
       </div>
+
+      {/* Confirm Modal */}
+      {selectedInscription && (
+        <ConfirmModal
+          inscription={selectedInscription}
+          onClose={() => setSelectedInscription(null)}
+          onConfirm={handleConfirmInscription}
+          isLoading={confirmInscription.isPending}
+        />
+      )}
     </div>
   )
 }

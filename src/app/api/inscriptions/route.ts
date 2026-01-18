@@ -25,13 +25,14 @@ const createInscription = new CreateInscription(
 )
 const createGuestInscription = new CreateGuestInscription(
   inscriptionRepository,
-  eventRepository
+  eventRepository,
+  userRepository
 )
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { eventId, categoryId, guestData } = body
+    const { eventId, categoryId, guestData, preferredPaymentMethod } = body
 
     if (!eventId || !categoryId) {
       return NextResponse.json(
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         eventId,
         categoryId,
         guestData,
+        preferredPaymentMethod,
       })
     } else {
       return NextResponse.json(

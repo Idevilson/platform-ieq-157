@@ -18,7 +18,6 @@ import img11 from '@/assets/images/fotos_historia/11-reencontro.jpg'
 import img12 from '@/assets/images/fotos_historia/12-evento-moderno.jpg'
 import img13 from '@/assets/images/fotos_historia/13-acidente-carro-1.jpg'
 import img14 from '@/assets/images/fotos_historia/14-acidente-carro-2.jpg'
-import img15 from '@/assets/images/fotos_historia/15-igreja-atual.jpg'
 import img16 from '@/assets/images/fotos_historia/16-foto.jpg'
 import img17 from '@/assets/images/fotos_historia/17-foto.jpg'
 import img18 from '@/assets/images/fotos_historia/18-foto.jpg'
@@ -74,7 +73,7 @@ import img67 from '@/assets/images/fotos_historia/67-foto.jpg'
 
 const allImages: StaticImageData[] = [
   img01, img02, img03, img04, img05, img06, img07, img08, img08b, img09,
-  img10, img11, img12, img13, img14, img15, img16, img17, img18, img19,
+  img10, img11, img12, img13, img14, img16, img17, img18, img19,
   img20, img21, img22, img23, img24, img25, img26, img27, img28, img29,
   img30, img31, img32, img33, img34, img35, img36, img37, img38, img39,
   img40, img41, img42, img43, img44, img45, img46, img47, img48, img49,
@@ -269,13 +268,8 @@ export default function HistoriaPage() {
           <section className="bg-bg-secondary rounded-2xl p-8 border border-gold/10">
             <h2 className="text-2xl font-semibold text-gold mb-6">22 Anos de Frutos</h2>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <Image src={img11} alt="Evento Reencontro" fill className="object-cover" />
-              </div>
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <Image src={img12} alt="Evento moderno" fill className="object-cover" />
-              </div>
+            <div className="relative aspect-video rounded-xl overflow-hidden mb-6">
+              <Image src={img11} alt="Evento Reencontro" fill className="object-cover" />
             </div>
 
             <div className="space-y-4 text-text-secondary leading-relaxed">
@@ -330,7 +324,7 @@ export default function HistoriaPage() {
             </div>
 
             <div className="relative aspect-video rounded-xl overflow-hidden mt-6">
-              <Image src={img15} alt="Igreja atual" fill className="object-cover" />
+              <Image src={img12} alt="Evento moderno" fill className="object-cover" />
             </div>
           </section>
 

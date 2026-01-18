@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEventById, useEventCategories } from '@/hooks/queries/useEvents'
-import { useCreateGuestInscription } from '@/hooks/mutations/useInscriptionMutations'
+import { SmartInscriptionForm } from '@/components/inscription'
 import temaImg from '@/assets/images/startup/tema.png'
 import homemImg from '@/assets/images/startup/homem.jpeg'
 import leaoImg from '@/assets/images/startup/leao.jpeg'
@@ -17,64 +16,15 @@ export default function Startup() {
   const router = useRouter()
   const { data: evento } = useEventById(STARTUP_EVENT_ID)
   const { data: categorias } = useEventCategories(STARTUP_EVENT_ID)
-  const createInscription = useCreateGuestInscription()
-
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>('')
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    telefone: '',
-    cpf: ''
-  })
-  const [error, setError] = useState<string | null>(null)
 
   const handleInscricao = () => {
     document.getElementById('inscricao')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const formatCPF = (value: string) => {
-    const digits = value.replace(/\D/g, '')
-    if (digits.length <= 3) return digits
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
+  const handleInscriptionSuccess = (inscriptionId: string) => {
+    router.push(`/eventos/startup/confirmado?inscriptionId=${inscriptionId}&eventId=${STARTUP_EVENT_ID}`)
   }
 
-  const formatTelefone = (value: string) => {
-    const digits = value.replace(/\D/g, '')
-    if (digits.length <= 2) return `(${digits}`
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!categoriaSelecionada) {
-      setError('Selecione uma categoria')
-      return
-    }
-
-    setError(null)
-
-    try {
-      await createInscription.mutateAsync({
-        eventId: STARTUP_EVENT_ID,
-        categoryId: categoriaSelecionada,
-        guestData: {
-          nome: formData.nome,
-          email: formData.email,
-          telefone: formData.telefone.replace(/\D/g, ''),
-          cpf: formData.cpf.replace(/\D/g, ''),
-        },
-      })
-      router.push('/eventos/startup/confirmado')
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao processar inscricao. Tente novamente.'
-      setError(message)
-    }
-  }
-
-  const isLoading = createInscription.isPending
   const eventCategorias = categorias || evento?.categorias || []
 
   return (
@@ -238,7 +188,7 @@ export default function Startup() {
 
       <section id="inscricao" className="py-16 bg-bg-secondary">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-gold text-center mb-8">Faça sua Inscrição</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gold text-center mb-8">Faca sua Inscricao</h2>
           <div className="text-center mb-10">
             <div className="flex justify-center gap-3 mb-4">
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">30 JAN</span>
@@ -246,74 +196,17 @@ export default function Startup() {
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">01 FEV</span>
             </div>
             <p className="text-text-secondary">
-              Venha viver essa experiência única de transformação espiritual.
-              Três dias de imersão na presença de Deus!
+              Venha viver essa experiencia unica de transformacao espiritual.
+              Tres dias de imersao na presenca de Deus!
             </p>
           </div>
 
-          {eventCategorias.length > 0 && (
-            <div className="mb-10">
-              <h3 className="text-xl font-semibold text-text-primary mb-4 text-center">Escolha sua categoria:</h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {eventCategorias.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    className={`p-5 rounded-xl border-2 text-left transition-all ${
-                      categoriaSelecionada === cat.id
-                        ? 'bg-gold/10 border-gold'
-                        : 'bg-bg-tertiary border-transparent hover:border-gold/30'
-                    }`}
-                    onClick={() => setCategoriaSelecionada(cat.id)}
-                  >
-                    <h4 className="text-lg font-semibold text-text-primary mb-2">{cat.nome}</h4>
-                    <p className="text-2xl font-bold text-gold mb-3">{cat.valorFormatado}</p>
-                    {cat.descricao && (
-                      <p className="text-sm text-text-secondary mb-3">{cat.descricao}</p>
-                    )}
-                    {categoriaSelecionada === cat.id && (
-                      <span className="inline-block mt-3 px-3 py-1 bg-gold text-bg-primary text-xs font-bold rounded-full">✓ Selecionado</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="card max-w-xl mx-auto">
-            <h3 className="text-lg font-semibold text-text-primary mb-6">Seus dados:</h3>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="nome" className="block text-sm font-medium text-text-secondary">Nome completo *</label>
-                <input id="nome" type="text" required className="input" value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} placeholder="Digite seu nome completo" disabled={isLoading} />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-text-secondary">E-mail *</label>
-                <input id="email" type="email" required className="input" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="Digite seu e-mail" disabled={isLoading} />
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="telefone" className="block text-sm font-medium text-text-secondary">Telefone *</label>
-                  <input id="telefone" type="tel" required className="input" value={formData.telefone} onChange={(e) => setFormData({...formData, telefone: formatTelefone(e.target.value)})} placeholder="(00) 00000-0000" maxLength={15} disabled={isLoading} />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="cpf" className="block text-sm font-medium text-text-secondary">CPF *</label>
-                  <input id="cpf" type="text" required className="input" value={formData.cpf} onChange={(e) => setFormData({...formData, cpf: formatCPF(e.target.value)})} placeholder="000.000.000-00" maxLength={14} disabled={isLoading} />
-                </div>
-              </div>
-            </div>
-
-            {error && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">{error}</div>}
-
-            <button type="submit" className="w-full mt-6 px-8 py-4 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-bold text-lg rounded-xl hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled={isLoading || !categoriaSelecionada}>
-              {isLoading ? 'Processando...' : 'CONFIRMAR INSCRIÇÃO'}
-            </button>
-
-            <p className="mt-4 text-xs text-text-muted text-center">* Campos obrigatórios</p>
-          </form>
+          <SmartInscriptionForm
+            eventId={STARTUP_EVENT_ID}
+            eventTitle={evento?.titulo || 'STARTUP'}
+            categories={eventCategorias}
+            onSuccess={handleInscriptionSuccess}
+          />
         </div>
       </section>
     </>

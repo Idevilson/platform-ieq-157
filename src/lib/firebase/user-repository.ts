@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore'
 import { getFirestoreDb } from './client'
 import { UserDTO } from '@/shared/types'
-import { UserRole } from '@/shared/constants'
+import { UserRole, Gender } from '@/shared/constants'
 
 const COLLECTION = 'users'
 
@@ -18,6 +18,8 @@ interface UserDocument {
   nome: string
   telefone?: string
   cpf?: string
+  dataNascimento?: Timestamp
+  sexo?: Gender
   role: UserRole
   asaasCustomerId?: string
   criadoEm: Timestamp
@@ -29,7 +31,11 @@ function isClient(): boolean {
 }
 
 function isProfileComplete(user: UserDocument): boolean {
-  return !!(user.nome && user.cpf && user.telefone)
+  return !!user.cpf
+}
+
+function isProfileCompleteForEvent(user: UserDocument): boolean {
+  return !!user.cpf && !!user.telefone && !!user.dataNascimento && !!user.sexo
 }
 
 function formatCPF(cpf?: string): string | undefined {
@@ -47,9 +53,12 @@ function mapDocumentToDTO(data: UserDocument): UserDTO {
     telefone: data.telefone,
     cpf: data.cpf,
     cpfFormatado: formatCPF(data.cpf),
+    dataNascimento: data.dataNascimento?.toDate?.()?.toISOString(),
+    sexo: data.sexo,
     role: data.role,
     asaasCustomerId: data.asaasCustomerId,
     isProfileComplete: isProfileComplete(data),
+    isProfileCompleteForEvent: isProfileCompleteForEvent(data),
     criadoEm: data.criadoEm?.toDate?.()?.toISOString() || new Date().toISOString(),
     atualizadoEm: data.atualizadoEm?.toDate?.()?.toISOString() || new Date().toISOString(),
   }
@@ -57,7 +66,6 @@ function mapDocumentToDTO(data: UserDocument): UserDTO {
 
 export const userRepository = {
   async findById(id: string): Promise<UserDTO | null> {
-    // Only run on client
     if (!isClient()) {
       return null
     }
@@ -83,7 +91,6 @@ export const userRepository = {
     email: string
     nome: string
   }): Promise<UserDTO> {
-    // Only run on client
     if (!isClient()) {
       throw new Error('Cannot create user on server side')
     }
@@ -107,9 +114,14 @@ export const userRepository = {
 
   async update(
     id: string,
-    data: { nome?: string; cpf?: string; telefone?: string }
+    data: {
+      nome?: string
+      cpf?: string
+      telefone?: string
+      dataNascimento?: string | Date
+      sexo?: Gender
+    }
   ): Promise<UserDTO | null> {
-    // Only run on client
     if (!isClient()) {
       throw new Error('Cannot update user on server side')
     }
@@ -124,10 +136,16 @@ export const userRepository = {
     if (data.nome !== undefined) updateData.nome = data.nome
     if (data.cpf !== undefined) updateData.cpf = data.cpf.replace(/\D/g, '')
     if (data.telefone !== undefined) updateData.telefone = data.telefone.replace(/\D/g, '')
+    if (data.dataNascimento !== undefined) {
+      const date = data.dataNascimento instanceof Date
+        ? data.dataNascimento
+        : new Date(data.dataNascimento)
+      updateData.dataNascimento = Timestamp.fromDate(date)
+    }
+    if (data.sexo !== undefined) updateData.sexo = data.sexo
 
     await updateDoc(docRef, updateData)
 
-    // Return updated user
     return this.findById(id)
   },
 
@@ -136,7 +154,6 @@ export const userRepository = {
     email: string
     nome: string
   }): Promise<{ user: UserDTO; created: boolean }> {
-    // Only run on client
     if (!isClient()) {
       throw new Error('Cannot access Firestore on server side')
     }

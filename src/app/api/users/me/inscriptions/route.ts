@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ListUserInscriptions } from '@/server/application/inscription/ListUserInscriptions'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
+import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { adminAuth } from '@/server/infrastructure/firebase/admin'
 import { InscriptionStatus, INSCRIPTION_STATUSES } from '@/shared/constants'
 
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 const eventRepository = new FirebaseEventRepositoryAdmin()
+const paymentRepository = new FirebasePaymentRepositoryAdmin()
 
 const listUserInscriptions = new ListUserInscriptions(
   inscriptionRepository,
-  eventRepository
+  eventRepository,
+  paymentRepository
 )
 
 export async function GET(request: NextRequest) {

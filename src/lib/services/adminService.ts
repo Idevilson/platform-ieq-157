@@ -1,6 +1,6 @@
 import { firebaseAuthService } from '@/lib/firebase'
 import { EventDTO } from '@/shared/types'
-import { EventStatus, InscriptionStatus } from '@/shared/constants'
+import { EventStatus, InscriptionStatus, InscriptionPaymentMethod } from '@/shared/constants'
 
 const API_BASE_URL = '/api/admin'
 
@@ -41,6 +41,7 @@ export interface InscriptionWithDetails {
   valor: number
   valorFormatado: string
   paymentId?: string
+  preferredPaymentMethod: InscriptionPaymentMethod
   criadoEm: string
   atualizadoEm: string
 }
@@ -84,6 +85,15 @@ export interface UpdateEventStatusResponse {
   titulo: string
   status: string
   statusLabel: string
+}
+
+export interface ConfirmInscriptionResponse {
+  success: boolean
+  inscription: {
+    id: string
+    status: string
+    paymentId?: string
+  }
 }
 
 async function authFetch<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
@@ -183,5 +193,17 @@ export const adminService = {
       return response.data
     }
     throw new Error(response.error || 'Erro ao atualizar status do evento')
+  },
+
+  async confirmInscription(inscriptionId: string, eventId: string): Promise<ConfirmInscriptionResponse> {
+    const response = await authFetch<ConfirmInscriptionResponse>(`/inscriptions/${inscriptionId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ eventId }),
+    })
+
+    if (response.success && response.data) {
+      return response.data
+    }
+    throw new Error(response.error || 'Erro ao confirmar inscrição')
   },
 }
