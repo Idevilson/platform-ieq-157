@@ -95,7 +95,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   PIX: 'PIX',
   BOLETO: 'Boleto',
   CREDIT_CARD: 'Cartão de Crédito',
-  CASH: 'Dinheiro',
+  CASH: 'Dinheiro em espécie',
 }
 
 // Payment methods available for event inscription
@@ -108,5 +108,5 @@ export const INSCRIPTION_PAYMENT_METHODS: readonly InscriptionPaymentMethod[] = 
 
 export const INSCRIPTION_PAYMENT_METHOD_LABELS: Record<InscriptionPaymentMethod, string> = {
   PIX: 'PIX',
-  CASH: 'Dinheiro',
+  CASH: 'Dinheiro em espécie',
 }

@@ -1,11 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { CategorySelector } from './CategorySelector'
 import { useCreateGuestInscription } from '@/hooks'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from '@/shared/constants'
+
+const FIELD_LABELS: Record<string, string> = {
+  nome: 'Nome completo',
+  email: 'Email',
+  cpf: 'CPF',
+  telefone: 'Telefone',
+  idade: 'Idade',
+  sexo: 'Sexo',
+}
+
+// Converte idade para data de nascimento (1 de janeiro do ano calculado)
+function idadeParaDataNascimento(idade: number): string {
+  const anoAtual = new Date().getFullYear()
+  const anoNascimento = anoAtual - idade
+  return `${anoNascimento}-01-01`
+}
 
 interface Category {
   id: string
@@ -21,7 +37,7 @@ interface GuestFormData {
   email: string
   cpf: string
   telefone: string
-  dataNascimento: string
+  idade: number
   sexo: Gender
   observacoes?: string
 }
@@ -38,6 +54,18 @@ export function GuestInscriptionForm({
   onSuccess,
 }: GuestInscriptionFormProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+
+  // Pré-seleciona a categoria individual se existir
+  useEffect(() => {
+    if (!selectedCategoryId && categories.length > 0) {
+      const individualCategory = categories.find(c =>
+        c.id.toLowerCase().includes('individual') || c.nome.toLowerCase().includes('individual')
+      )
+      if (individualCategory) {
+        setSelectedCategoryId(individualCategory.id)
+      }
+    }
+  }, [categories, selectedCategoryId])
   const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>('PIX')
   const [error, setError] = useState<string | null>(null)
   const createGuestInscription = useCreateGuestInscription()
@@ -46,8 +74,28 @@ export function GuestInscriptionForm({
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
-  } = useForm<GuestFormData>()
+    watch,
+    formState: { errors, isSubmitted },
+  } = useForm<GuestFormData>({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+  })
+
+  const selectedSexo = watch('sexo')
+
+  const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId)
+
+  // Scroll para o primeiro campo com erro quando tentar submeter
+  useEffect(() => {
+    if (isSubmitted && Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0]
+      const element = document.getElementById(firstErrorField)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.focus()
+      }
+    }
+  }, [errors, isSubmitted])
 
   const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValue('cpf', formatCPF(event.target.value))
@@ -75,7 +123,7 @@ export function GuestInscriptionForm({
           email: data.email,
           cpf: data.cpf.replace(/\D/g, ''),
           telefone: data.telefone.replace(/\D/g, ''),
-          dataNascimento: data.dataNascimento,
+          dataNascimento: idadeParaDataNascimento(data.idade),
           sexo: data.sexo,
         },
       },
@@ -98,6 +146,7 @@ export function GuestInscriptionForm({
           <input
             id="nome"
             type="text"
+            className={errors.nome ? 'input-error' : ''}
             {...register('nome', {
               required: 'Nome e obrigatorio',
               minLength: { value: 2, message: 'Nome deve ter pelo menos 2 caracteres' },
@@ -113,6 +162,7 @@ export function GuestInscriptionForm({
           <input
             id="email"
             type="email"
+            className={errors.email ? 'input-error' : ''}
             {...register('email', {
               required: 'Email e obrigatorio',
               pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email invalido' },
@@ -129,6 +179,7 @@ export function GuestInscriptionForm({
             <input
               id="cpf"
               type="text"
+              className={errors.cpf ? 'input-error' : ''}
               {...register('cpf', {
                 required: 'CPF e obrigatorio',
                 pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'CPF invalido' },
@@ -146,6 +197,7 @@ export function GuestInscriptionForm({
             <input
               id="telefone"
               type="tel"
+              className={errors.telefone ? 'input-error' : ''}
               {...register('telefone', {
                 required: 'Telefone e obrigatorio',
                 pattern: { value: /^\(\d{2}\) \d{4,5}-\d{4}$/, message: 'Telefone invalido' },
@@ -159,43 +211,55 @@ export function GuestInscriptionForm({
           </div>
         </div>
 
-        <div className="form-row">
+        <div className="form-row form-row-aligned">
           <div className="form-group">
-            <label htmlFor="dataNascimento">Data de Nascimento *</label>
-            <input
-              id="dataNascimento"
-              type="date"
-              {...register('dataNascimento', {
-                required: 'Data de nascimento e obrigatoria',
-              })}
-              disabled={isLoading}
-            />
-            {errors.dataNascimento && <span className="error">{errors.dataNascimento.message}</span>}
+            <label htmlFor="idade">Idade *</label>
+            <div className={`age-input-wrapper ${errors.idade ? 'has-error' : ''}`}>
+              <input
+                id="idade"
+                type="number"
+                className="age-input"
+                min={1}
+                max={120}
+                placeholder="Ex: 25"
+                {...register('idade', {
+                  required: 'Idade e obrigatoria',
+                  min: { value: 1, message: 'Idade deve ser maior que 0' },
+                  max: { value: 120, message: 'Idade invalida' },
+                  valueAsNumber: true,
+                })}
+                disabled={isLoading}
+              />
+            </div>
+            {errors.idade && <span className="error">{errors.idade.message}</span>}
           </div>
 
           <div className="form-group">
             <label>Sexo *</label>
-            <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  value="masculino"
-                  {...register('sexo', { required: 'Sexo e obrigatorio' })}
-                  disabled={isLoading}
-                />
-                <span>Masculino</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  value="feminino"
-                  {...register('sexo', { required: 'Sexo e obrigatorio' })}
-                  disabled={isLoading}
-                />
-                <span>Feminino</span>
-              </label>
+            <input type="hidden" {...register('sexo', { required: 'Sexo e obrigatorio' })} />
+            <div className="gender-selector">
+              <button
+                type="button"
+                className={`gender-option ${selectedSexo === 'masculino' ? 'selected' : ''} ${errors.sexo && !selectedSexo ? 'has-error' : ''}`}
+                onClick={() => !isLoading && setValue('sexo', 'masculino', { shouldValidate: true })}
+                disabled={isLoading}
+              >
+                <span className="gender-icon">👨</span>
+                <span className="gender-label">Masculino</span>
+                {selectedSexo === 'masculino' && <span className="gender-check">✓</span>}
+              </button>
+              <button
+                type="button"
+                className={`gender-option ${selectedSexo === 'feminino' ? 'selected' : ''} ${errors.sexo && !selectedSexo ? 'has-error' : ''}`}
+                onClick={() => !isLoading && setValue('sexo', 'feminino', { shouldValidate: true })}
+                disabled={isLoading}
+              >
+                <span className="gender-icon">👩</span>
+                <span className="gender-label">Feminino</span>
+                {selectedSexo === 'feminino' && <span className="gender-check">✓</span>}
+              </button>
             </div>
-            {errors.sexo && <span className="error">{errors.sexo.message}</span>}
+            {errors.sexo && !selectedSexo && <span className="error">{errors.sexo.message}</span>}
           </div>
         </div>
       </div>
@@ -268,7 +332,52 @@ export function GuestInscriptionForm({
 
       {error && <div className="error-message">{error}</div>}
 
-      <button type="submit" disabled={isLoading || !selectedCategoryId} className="btn-primary btn-large">
+      {isSubmitted && hasErrors && (
+        <div className="validation-summary">
+          <div className="validation-summary-header">
+            <svg className="validation-summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Preencha os campos obrigatorios:</span>
+          </div>
+          <ul className="validation-summary-list">
+            {Object.keys(errors).map((field) => (
+              <li key={field}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const element = document.getElementById(field)
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      element.focus()
+                    }
+                  }}
+                  className="validation-summary-link"
+                >
+                  {FIELD_LABELS[field] || field}
+                </button>
+              </li>
+            ))}
+            {!selectedCategoryId && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.querySelector('.category-selector')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }}
+                  className="validation-summary-link"
+                >
+                  Categoria
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      <button type="submit" disabled={isLoading} className="btn-primary btn-large">
         {isLoading ? 'Processando...' : 'Confirmar inscricao'}
       </button>
 

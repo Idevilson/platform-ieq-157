@@ -1,11 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useCreateUserInscription } from '@/hooks/mutations/useInscriptionMutations'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { UserDTO } from '@/shared/types'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from '@/shared/constants'
+
+const FIELD_LABELS: Record<string, string> = {
+  cpf: 'CPF',
+  telefone: 'Telefone',
+  idade: 'Idade',
+  sexo: 'Sexo',
+}
+
+// Converte idade para data de nascimento (1 de janeiro do ano calculado)
+function idadeParaDataNascimento(idade: number): string {
+  const anoAtual = new Date().getFullYear()
+  const anoNascimento = anoAtual - idade
+  return `${anoNascimento}-01-01`
+}
 
 interface Category {
   id: string
@@ -19,7 +33,7 @@ interface Category {
 interface MissingFieldsForm {
   cpf?: string
   telefone?: string
-  dataNascimento?: string
+  idade?: number
   sexo?: Gender
 }
 
@@ -37,6 +51,18 @@ export function UserInscriptionForm({
   onSuccess,
 }: UserInscriptionFormProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+
+  // Pré-seleciona a categoria individual se existir
+  useEffect(() => {
+    if (!selectedCategoryId && categories.length > 0) {
+      const individualCategory = categories.find(c =>
+        c.id.toLowerCase().includes('individual') || c.nome.toLowerCase().includes('individual')
+      )
+      if (individualCategory) {
+        setSelectedCategoryId(individualCategory.id)
+      }
+    }
+  }, [categories, selectedCategoryId])
   const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>('PIX')
   const [error, setError] = useState<string | null>(null)
   const createUserInscription = useCreateUserInscription()
@@ -51,8 +77,28 @@ export function UserInscriptionForm({
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
-  } = useForm<MissingFieldsForm>()
+    watch,
+    formState: { errors, isSubmitted },
+  } = useForm<MissingFieldsForm>({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+  })
+
+  const selectedSexo = watch('sexo')
+
+  const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId)
+
+  // Scroll para o primeiro campo com erro quando tentar submeter
+  useEffect(() => {
+    if (isSubmitted && Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0]
+      const element = document.getElementById(firstErrorField)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.focus()
+      }
+    }
+  }, [errors, isSubmitted])
 
   const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValue('cpf', formatCPF(event.target.value))
@@ -70,10 +116,10 @@ export function UserInscriptionForm({
 
     setError(null)
 
-    const profileUpdate: MissingFieldsForm = {}
+    const profileUpdate: Record<string, string | undefined> = {}
     if (missingCpf && data.cpf) profileUpdate.cpf = data.cpf.replace(/\D/g, '')
     if (missingTelefone && data.telefone) profileUpdate.telefone = data.telefone.replace(/\D/g, '')
-    if (missingDataNascimento && data.dataNascimento) profileUpdate.dataNascimento = data.dataNascimento
+    if (missingDataNascimento && data.idade) profileUpdate.dataNascimento = idadeParaDataNascimento(data.idade)
     if (missingSexo && data.sexo) profileUpdate.sexo = data.sexo
 
     createUserInscription.mutate(
@@ -149,7 +195,7 @@ export function UserInscriptionForm({
                 onChange={handleCPFChange}
                 maxLength={14}
                 disabled={isLoading}
-                className="input"
+                className={`input ${errors.cpf ? 'input-error' : ''}`}
               />
               {errors.cpf && <span className="text-red-400 text-sm">{errors.cpf.message}</span>}
             </div>
@@ -169,55 +215,82 @@ export function UserInscriptionForm({
                 onChange={handlePhoneChange}
                 maxLength={15}
                 disabled={isLoading}
-                className="input"
+                className={`input ${errors.telefone ? 'input-error' : ''}`}
               />
               {errors.telefone && <span className="text-red-400 text-sm">{errors.telefone.message}</span>}
             </div>
           )}
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4 items-start">
             {missingDataNascimento && (
               <div className="space-y-2">
-                <label htmlFor="dataNascimento" className="block text-sm font-medium text-text-secondary">Data de Nascimento *</label>
-                <input
-                  id="dataNascimento"
-                  type="date"
-                  {...register('dataNascimento', {
-                    required: 'Data de nascimento e obrigatoria',
-                  })}
-                  disabled={isLoading}
-                  className="input"
-                />
-                {errors.dataNascimento && <span className="text-red-400 text-sm">{errors.dataNascimento.message}</span>}
+                <label htmlFor="idade" className="block text-sm font-medium text-text-secondary">Idade *</label>
+                <div className={`flex items-center justify-center h-[5.25rem] rounded-xl border-2 transition-all ${
+                  errors.idade
+                    ? 'border-red-500/50 bg-white/[0.03]'
+                    : 'border-gold/15 bg-white/[0.03] hover:border-gold/40 focus-within:border-gold/40'
+                }`}>
+                  <input
+                    id="idade"
+                    type="number"
+                    min={1}
+                    max={120}
+                    placeholder="Ex: 25"
+                    {...register('idade', {
+                      required: 'Idade e obrigatoria',
+                      min: { value: 1, message: 'Idade deve ser maior que 0' },
+                      max: { value: 120, message: 'Idade invalida' },
+                      valueAsNumber: true,
+                    })}
+                    disabled={isLoading}
+                    className="w-full h-full px-4 bg-transparent border-none text-text-primary text-xl text-center outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-text-muted placeholder:text-base"
+                  />
+                </div>
+                {errors.idade && <span className="text-red-400 text-sm">{errors.idade.message}</span>}
               </div>
             )}
 
             {missingSexo && (
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-text-secondary">Sexo *</label>
-                <div className="flex gap-4 pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="masculino"
-                      {...register('sexo', { required: 'Sexo e obrigatorio' })}
-                      className="w-4 h-4 text-gold"
-                      disabled={isLoading}
-                    />
-                    <span className="text-text-secondary">Masculino</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="feminino"
-                      {...register('sexo', { required: 'Sexo e obrigatorio' })}
-                      className="w-4 h-4 text-gold"
-                      disabled={isLoading}
-                    />
-                    <span className="text-text-secondary">Feminino</span>
-                  </label>
+                <input type="hidden" {...register('sexo', { required: 'Sexo e obrigatorio' })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className={`flex flex-col items-center justify-center gap-1 h-[5.25rem] rounded-xl border-2 transition-all ${
+                      selectedSexo === 'masculino'
+                        ? 'border-gold bg-gold/10'
+                        : errors.sexo && !selectedSexo
+                        ? 'border-red-500/50 bg-bg-tertiary'
+                        : 'border-transparent bg-bg-tertiary hover:border-gold/30'
+                    }`}
+                    onClick={() => !isLoading && setValue('sexo', 'masculino', { shouldValidate: true })}
+                    disabled={isLoading}
+                  >
+                    <span className="text-2xl">👨</span>
+                    <span className={`text-sm font-medium ${selectedSexo === 'masculino' ? 'text-gold' : 'text-text-secondary'}`}>
+                      Masculino
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex flex-col items-center justify-center gap-1 h-[5.25rem] rounded-xl border-2 transition-all ${
+                      selectedSexo === 'feminino'
+                        ? 'border-gold bg-gold/10'
+                        : errors.sexo && !selectedSexo
+                        ? 'border-red-500/50 bg-bg-tertiary'
+                        : 'border-transparent bg-bg-tertiary hover:border-gold/30'
+                    }`}
+                    onClick={() => !isLoading && setValue('sexo', 'feminino', { shouldValidate: true })}
+                    disabled={isLoading}
+                  >
+                    <span className="text-2xl">👩</span>
+                    <span className={`text-sm font-medium ${selectedSexo === 'feminino' ? 'text-gold' : 'text-text-secondary'}`}>
+                      Feminino
+                    </span>
+                  </button>
                 </div>
-                {errors.sexo && <span className="text-red-400 text-sm">{errors.sexo.message}</span>}
+                {errors.sexo && !selectedSexo && <span className="text-red-400 text-sm">{errors.sexo.message}</span>}
               </div>
             )}
           </div>
@@ -311,9 +384,51 @@ export function UserInscriptionForm({
         </div>
       )}
 
+      {isSubmitted && hasErrors && (
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+          <div className="flex items-center gap-2 text-red-500 font-semibold text-sm mb-3">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Preencha os campos obrigatorios:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(errors).map((field) => (
+              <button
+                key={field}
+                type="button"
+                onClick={() => {
+                  const element = document.getElementById(field)
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    element.focus()
+                  }
+                }}
+                className="px-3 py-1 bg-red-500/15 border border-red-500/30 text-red-400 text-xs rounded-full hover:bg-red-500/25 transition-colors"
+              >
+                {FIELD_LABELS[field] || field}
+              </button>
+            ))}
+            {!selectedCategoryId && (
+              <button
+                type="button"
+                onClick={() => {
+                  document.querySelector('.category-selector, [class*="grid"][class*="gap-3"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }}
+                className="px-3 py-1 bg-red-500/15 border border-red-500/30 text-red-400 text-xs rounded-full hover:bg-red-500/25 transition-colors"
+              >
+                Categoria
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={isLoading || !selectedCategoryId}
+        disabled={isLoading}
         className="w-full px-8 py-4 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-bold text-lg rounded-xl hover:shadow-gold hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? 'Processando...' : 'CONFIRMAR INSCRICAO'}

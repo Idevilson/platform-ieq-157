@@ -186,6 +186,109 @@ export default function Startup() {
         </div>
       </section>
 
+      <section className="py-16 bg-bg-primary">
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gold text-center mb-12">Programacao do Encontro</h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Sexta-feira */}
+            <div className="card">
+              <div className="bg-gold/10 -mx-6 -mt-6 px-6 py-4 mb-6 rounded-t-xl border-b border-gold/20">
+                <h3 className="text-xl font-bold text-gold">SEXTA-FEIRA</h3>
+                <p className="text-sm text-text-secondary">30/01/2026</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-gold font-semibold text-sm">19:30h</p>
+                  <p className="text-text-secondary text-sm">Louvor e Adoracao</p>
+                  <p className="text-text-muted text-xs">Edilene, Noemy e Ilca</p>
+                </div>
+
+                <div>
+                  <p className="text-text-secondary text-sm">Abertura</p>
+                  <p className="text-text-muted text-xs">Equipe de Danca Elyave</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">20:30h</p>
+                  <p className="text-text-primary font-medium">Pr. Heitor Alexandre</p>
+                  <p className="text-text-secondary text-sm italic">&quot;Incendiando a Seara do Inimigo&quot;</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">21:45h</p>
+                  <p className="text-text-muted text-sm">Encerramento</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sabado */}
+            <div className="card">
+              <div className="bg-gold/10 -mx-6 -mt-6 px-6 py-4 mb-6 rounded-t-xl border-b border-gold/20">
+                <h3 className="text-xl font-bold text-gold">SABADO</h3>
+                <p className="text-sm text-text-secondary">31/01/2026</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-gold font-semibold text-sm">18:30h</p>
+                  <p className="text-text-secondary text-sm">Louvor e Adoracao</p>
+                  <p className="text-text-muted text-xs">Edilene, Noemy e Ilca</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">19:30h</p>
+                  <p className="text-text-primary font-medium">Pr. Nelio Pereira</p>
+                  <p className="text-text-secondary text-sm italic">&quot;Continuar Queimando&quot;</p>
+                </div>
+
+                <div>
+                  <p className="text-text-secondary text-sm">Louvor</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">20:20h</p>
+                  <p className="text-text-primary font-medium">Pra. Silvania Mota</p>
+                  <p className="text-text-secondary text-sm italic">&quot;Uma Geracao que Traz Lenha pro Altar&quot;</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Domingo */}
+            <div className="card">
+              <div className="bg-gold/10 -mx-6 -mt-6 px-6 py-4 mb-6 rounded-t-xl border-b border-gold/20">
+                <h3 className="text-xl font-bold text-gold">DOMINGO</h3>
+                <p className="text-sm text-text-secondary">01/02/2026</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-gold font-semibold text-sm">08:00h</p>
+                  <p className="text-text-secondary text-sm">Louvor e Adoracao</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">09:15h</p>
+                  <p className="text-text-primary font-medium">Pr. Adinaldo Alves Dias</p>
+                  <p className="text-text-secondary text-sm italic">&quot;Um Coracao em Chamas&quot;</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">10:00h</p>
+                  <p className="text-text-primary font-medium">Santa Ceia da Comunhao</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-gold font-semibold text-sm">11:00h</p>
+                  <p className="text-text-muted text-sm">Encerramento</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="inscricao" className="py-16 bg-bg-secondary">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gold text-center mb-8">Faca sua Inscricao</h2>

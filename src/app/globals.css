@@ -364,6 +364,125 @@
     accent-color: var(--color-gold);
   }
 
+  /* Age Input Wrapper - aligned with gender selector */
+  .form-row-aligned {
+    align-items: start;
+  }
+
+  .age-input-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 5.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 215, 0, 0.15);
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .age-input-wrapper:hover,
+  .age-input-wrapper:focus-within {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.05);
+  }
+
+  .age-input-wrapper.has-error {
+    border-color: rgba(220, 53, 69, 0.5);
+  }
+
+  .age-input {
+    width: 100%;
+    height: 100%;
+    padding: 0 1rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 1.25rem;
+    text-align: center;
+    outline: none;
+  }
+
+  .age-input::placeholder {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+  }
+
+  .age-input::-webkit-outer-spin-button,
+  .age-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .age-input[type=number] {
+    -moz-appearance: textfield;
+  }
+
+  /* Gender Selector */
+  .gender-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .gender-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 5.25rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 215, 0, 0.15);
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .gender-option:hover:not(:disabled) {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.05);
+  }
+
+  .gender-option.selected {
+    border-color: var(--color-gold);
+    background: rgba(255, 215, 0, 0.1);
+  }
+
+  .gender-option.has-error:not(.selected) {
+    border-color: rgba(220, 53, 69, 0.5);
+  }
+
+  .gender-option:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .gender-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .gender-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .gender-option.selected .gender-label {
+    color: var(--color-gold);
+  }
+
+  .gender-check {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: var(--color-gold);
+    font-size: 0.875rem;
+    font-weight: bold;
+  }
+
   /* Payment Method Selector */
   .payment-method-selector {
     display: grid;
@@ -450,6 +569,96 @@
     font-size: 0.75rem;
     text-align: center;
     margin-top: 1rem;
+  }
+
+  /* Validation Summary */
+  .validation-summary {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .validation-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc3545;
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .validation-summary-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .validation-summary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .validation-summary-link {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .validation-summary-link:hover {
+    background: rgba(220, 53, 69, 0.25);
+    border-color: #dc3545;
+  }
+
+  /* Input error state */
+  .form-group input.input-error,
+  .form-group textarea.input-error,
+  .form-group select.input-error {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+  }
+
+  .form-group input.input-error:focus,
+  .form-group textarea.input-error:focus,
+  .form-group select.input-error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+  }
+
+  /* Date input styling for dark mode */
+  .form-group input[type="date"],
+  .input[type="date"],
+  input[type="date"] {
+    color-scheme: dark;
+  }
+
+  .form-group input[type="date"]::-webkit-calendar-picker-indicator,
+  .input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+
+  /* Input error state for .input class */
+  .input.input-error {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+  }
+
+  .input.input-error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
   }
 
   /* Category Selector */
