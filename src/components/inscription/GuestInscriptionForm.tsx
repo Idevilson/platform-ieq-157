@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { CategorySelector } from './CategorySelector'
+import { InscriptionLookup } from './InscriptionLookup'
 import { useCreateGuestInscription } from '@/hooks'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from '@/shared/constants'
@@ -54,6 +55,8 @@ export function GuestInscriptionForm({
   onSuccess,
 }: GuestInscriptionFormProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+  const [duplicateCpf, setDuplicateCpf] = useState<string>('')
 
   // Pré-seleciona a categoria individual se existir
   useEffect(() => {
@@ -129,10 +132,19 @@ export function GuestInscriptionForm({
       },
       {
         onSuccess: (inscription) => onSuccess?.(inscription.id),
-        onError: (err) => setError(err instanceof Error ? err.message : 'Erro ao criar inscricao'),
+        onError: (err) => {
+          const errorMessage = err instanceof Error ? err.message : 'Erro ao criar inscricao'
+          if (errorMessage.includes('já possui uma inscrição') || errorMessage.includes('Já existe uma inscrição')) {
+            setDuplicateCpf(data.cpf)
+            setShowDuplicateModal(true)
+          } else {
+            setError(errorMessage)
+          }
+        },
       }
     )
   }
+
 
   const isLoading = createGuestInscription.isPending
 
@@ -382,6 +394,49 @@ export function GuestInscriptionForm({
       </button>
 
       <p className="form-note">* Campos obrigatorios. Seus dados serao usados apenas para esta inscricao.</p>
+
+      {showDuplicateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowDuplicateModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-lg bg-bg-primary border border-gold/20 rounded-2xl p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-text-primary mb-2">Inscrição já existe!</h3>
+              <p className="text-text-secondary text-sm">
+                O CPF <strong className="text-gold">{duplicateCpf}</strong> já possui uma inscrição neste evento.
+              </p>
+            </div>
+
+            <InscriptionLookup
+              initialCpf={duplicateCpf}
+              autoSearch={true}
+              compact={true}
+            />
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDuplicateModal(false)
+                  setValue('cpf', '')
+                }}
+                className="btn btn-secondary w-full py-3"
+              >
+                Fazer inscrição com outro CPF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

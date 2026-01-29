@@ -306,12 +306,12 @@ function StartupConfirmadoContent() {
 
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="w-full btn-primary flex items-center justify-center gap-2 mt-auto"
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2 mt-auto"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
-                  Compartilhar Inscricao
+                  Compartilhar Inscrição
                 </button>
               </div>
             )}
@@ -368,12 +368,12 @@ function StartupConfirmadoContent() {
 
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="w-full btn-primary flex items-center justify-center gap-2 mt-auto"
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2 mt-auto"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
-                  Compartilhar Inscricao
+                  Compartilhar Inscrição
                 </button>
               </div>
             )}
@@ -431,18 +431,18 @@ function StartupConfirmadoContent() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <div className="flex flex-col gap-3 mt-6">
                   <button
-                    className="btn-secondary flex-1"
-                    onClick={() => router.push('/')}
-                  >
-                    Voltar ao Inicio
-                  </button>
-                  <button
-                    className="btn-primary flex-1"
+                    className="btn-primary w-full py-3"
                     onClick={() => router.push('/eventos/startup')}
                   >
                     Ver Detalhes do Evento
+                  </button>
+                  <button
+                    className="btn-secondary w-full py-3"
+                    onClick={() => router.push('/')}
+                  >
+                    Voltar ao Início
                   </button>
                 </div>
               </div>
