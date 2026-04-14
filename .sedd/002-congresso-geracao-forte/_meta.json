@@ -1,0 +1,124 @@
+{
+  "featureId": "002",
+  "featureName": "congresso-geracao-forte",
+  "branch": null,
+  "branchSkipped": true,
+  "branchSkippedReason": "Usuário pediu para não criar branch automaticamente — trabalhar na branch atual",
+  "createdAt": "2026-04-11T00:00:00Z",
+  "specCreatedAt": "2026-04-11T00:00:00Z",
+  "currentMigration": null,
+  "migrations": {},
+  "splits": [],
+  "commits": [],
+  "expectation": "Usuário (visitante ou logado) acessa /eventos/geracao-forte, vê página completa do Congresso Setorizado da Geração Forte (tema Follow Me, Marcos 8:34), escolhe entre Redenção (R$120/150) ou Outras Localidades (R$200/250 com almoço e janta) com early bird até 31/05 calculado pelo backend, vê o valor final com a taxa do Asaas já repassada antes de pagar, vê em tempo real quantas pulseiras restam dos 500 brindes, paga via PIX, e — se for um dos 500 primeiros pagantes — tem o brinde alocado atomicamente pelo webhook (sem race condition). Admin cria o evento via seed e acompanha brindes restantes no painel. Modelo extensível: EventCategory ganha early bird como propriedade, EventPerk vira entity reutilizável com limite de estoque, repasse de taxa Asaas vira recurso plataforma-wide. Suite de testes Vitest + Playwright cobre as regras críticas.",
+  "architectureContract": {
+    "confirmedAt": "2026-04-11T00:00:00Z",
+    "techStack": {
+      "stateManagement": { "tech": "TanStack Query", "location": "src/hooks/queries/" },
+      "forms": { "tech": "React Hook Form + Zod", "location": "src/components/inscription/" },
+      "validation": { "tech": "Zod", "location": "src/server/application/*/schemas.ts" },
+      "domain": { "tech": "DDD entities + Value Objects", "location": "src/server/domain/" },
+      "useCases": { "tech": "Application classes", "location": "src/server/application/" },
+      "persistence": { "tech": "Firebase Admin SDK (Firestore)", "location": "src/server/infrastructure/firebase/repositories/" },
+      "payment": { "tech": "AsaasService wrapper", "location": "src/server/infrastructure/asaas/" },
+      "api": { "tech": "Next.js Route Handlers", "location": "src/app/api/" },
+      "testingUnit": { "tech": "Vitest", "location": "tests/unit/" },
+      "testingE2E": { "tech": "Playwright", "location": "tests/e2e/" }
+    },
+    "patternBindings": [
+      { "pattern": "Entity factory create()/fromPersistence()", "usage": "Toda entity nova", "location": "src/server/domain/event/entities/" },
+      { "pattern": "Value Object imutável", "usage": "Valores monetários, CPF, datas com regra", "location": "src/server/domain/shared/value-objects/" },
+      { "pattern": "Repository interface no domain, impl na infra", "usage": "Persistência", "location": "domain/*/repositories + infrastructure/firebase/repositories" },
+      { "pattern": "Use case por arquivo", "usage": "Toda operação de aplicação", "location": "src/server/application/" },
+      { "pattern": "Zod schema por use case", "usage": "Validação de input", "location": "src/server/application/*/schemas.ts" },
+      { "pattern": "TanStack Query hooks", "usage": "Leitura de dados no front", "location": "src/hooks/queries/" },
+      { "pattern": "Firestore transaction", "usage": "Operações com invariante de estoque (alocação de perk)", "location": "src/server/infrastructure/firebase/repositories/" }
+    ],
+    "locationBindings": [
+      { "type": "Nova entity", "mustBeIn": "src/server/domain/event/entities/", "neverIn": "application/" },
+      { "type": "Novo VO", "mustBeIn": "src/server/domain/shared/value-objects/", "neverIn": "duplicar entre módulos" },
+      { "type": "Use case", "mustBeIn": "src/server/application/{módulo}/", "neverIn": "dentro de route.ts" },
+      { "type": "Schema Zod", "mustBeIn": "src/server/application/{módulo}/schemas.ts", "neverIn": "dentro da entity" },
+      { "type": "Repositório (impl)", "mustBeIn": "src/server/infrastructure/firebase/repositories/", "neverIn": "em domain/" },
+      { "type": "Página do evento", "mustBeIn": "src/app/(main)/eventos/geracao-forte/", "neverIn": "—" },
+      { "type": "Componentes específicos do evento", "mustBeIn": "src/components/eventos/geracao-forte/", "neverIn": "em app/" },
+      { "type": "Componentes reutilizáveis de evento", "mustBeIn": "src/components/eventos/", "neverIn": "duplicar por evento" },
+      { "type": "DTOs compartilhados", "mustBeIn": "src/shared/types/", "neverIn": "duplicar em FE/BE" }
+    ],
+    "sharedContracts": [
+      { "name": "EventCategoryDTO (estendido)", "location": "src/shared/types/event.ts", "usedBy": ["frontend", "backend"] },
+      { "name": "EventPerkDTO (novo)", "location": "src/shared/types/event.ts", "usedBy": ["frontend", "backend"] },
+      { "name": "PaymentDTO com breakdown de taxa", "location": "src/shared/types/payment.ts", "usedBy": ["frontend", "backend"] },
+      { "name": "InscriptionDTO com temBrinde/perkId", "location": "src/shared/types/inscription.ts", "usedBy": ["frontend", "backend"] }
+    ],
+    "keyDecisions": [
+      "Rota hardcoded /eventos/geracao-forte (segue padrão startup)",
+      "Taxa Asaas lida do netValue retornado pelo SDK — escopo plataforma-wide",
+      "EventPerk como entity nova em subcollection events/{id}/perks/{perkId}",
+      "Alocação atômica via Firestore transaction no ProcessAsaasWebhook",
+      "Early bird como propriedade da EventCategory (não entity nova)",
+      "Refator do startup/confirmado para EventConfirmationPage + usePaymentPolling reutilizáveis",
+      "Suite de testes Vitest + Playwright inaugurada nesta feature"
+    ]
+  },
+  "openQuestions": [],
+  "currentMigration": "001",
+  "migrations": {
+    "001": {
+      "id": "001",
+      "timestamp": "2026-04-11",
+      "folder": "001_2026-04-11_clarify",
+      "status": "in-progress",
+      "tasksTotal": 61,
+      "tasksCompleted": 0,
+      "createdAt": "2026-04-11T00:00:00Z",
+      "expectation": {
+        "summary": "Resolver 9 NEEDS_CLARIFICATION + 2 sub-pendências (parcelamento, tokenização) e gerar tasks.md prontas para implementação",
+        "must": [
+          "Página /eventos/geracao-forte com hero, categorias, contador de brinde, inscrição",
+          "Datas 03-05/07/2026, early bird até 31/05 23:59 BRT",
+          "PIX e Cartão (parcelado até 12x) com repasse integral de taxa, plataforma-wide",
+          "EventCategory estendido com early bird + benefícios",
+          "EventPerk como entity descritiva + limiteEstoque",
+          "Brinde alocado FIFO por pagamento confirmado (os 500 primeiros pagantes ganham), via Firestore transaction no webhook",
+          "Webhook é idempotente (guard via inscription.temBrinde !== undefined) e seguro sob concorrência",
+          "Refator de startup/confirmado para EventConfirmationPage + usePaymentPolling reutilizáveis",
+          "Painel admin com brindes restantes e lista exportável",
+          "Seed idempotente",
+          "Suite de testes Vitest + Playwright cobrindo regras críticas"
+        ],
+        "mustNot": [
+          "NÃO permitir que o front envie o valor da inscrição (backend calcula)",
+          "NÃO trafegar dados crus do cartão pelo backend (tokenização Asaas SDK)",
+          "NÃO alterar pagamentos existentes ao deploy (migração não-destrutiva)",
+          "NÃO permitir double-allocation de brinde (guard de idempotência obrigatório)",
+          "NÃO contar inscrições não pagas como consumidoras de brinde",
+          "NÃO escrever comentários inúteis (ver CONSTRAINTS.md C1)",
+          "NÃO violar SOLID por conveniência sem confirmação (ver CONSTRAINTS.md C2)",
+          "NÃO ignorar regras da skill vercel-react-best-practices (ver CONSTRAINTS.md C3)",
+          "NÃO criar barrel files (index.ts re-exportador)",
+          "NÃO carregar Asaas SDK no bundle inicial (usar next/dynamic)",
+          "NÃO incluir boleto nesta feature (fica para spec futura)",
+          "NÃO incluir cancelamento via PAYMENT_OVERDUE nesta feature"
+        ]
+      },
+      "decisions": [
+        "D001-001 Datas 03-05/07/2026",
+        "D001-002 Local configurável",
+        "D001-003 Programação placeholder",
+        "D001-004 Pulseira sem cor no domínio",
+        "D001-005 beneficiosInclusos como string[]",
+        "D001-006 PIX + Cartão com repasse integral plataforma-wide",
+        "D001-007 Early bird America/Sao_Paulo",
+        "D001-008 Refator startup faz parte da feature",
+        "D001-009 (revisada) FIFO por pagamento confirmado, alocação atômica no webhook",
+        "D001-010 Asset movido para src/assets/images/geracao-forte/follow-me-logo.png",
+        "D001-011 Cartão parcelado 12x com juros repassados",
+        "D001-012 Tokenização via Asaas SDK no front",
+        "D001-D1 EventPerk simplificado (deriva de D001-009)",
+        "D001-D2 Cartão exige tokenização SDK",
+        "D001-D3 Webhook não precisa transaction de perk"
+      ]
+    }
+  }
+}

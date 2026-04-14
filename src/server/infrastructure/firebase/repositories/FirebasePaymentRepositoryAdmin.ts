@@ -4,16 +4,27 @@ import { IPaymentRepository, ListPaymentsParams } from '@/server/domain/payment/
 import { PaymentStatus, PaymentMethod } from '@/server/domain/shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
 
+interface PaymentBreakdownDocument {
+  valorBase: number
+  valorTaxa: number
+  valorTotal: number
+  metodo: PaymentMethod
+  parcelas?: number
+  valorParcela?: number
+}
+
 interface PaymentDocument {
   id: string
   userId?: string
   asaasPaymentId: string
   valor: number
+  breakdown?: PaymentBreakdownDocument | null
   status: PaymentStatus
   metodoPagamento: PaymentMethod
   pixQrCode?: string
   pixCopiaECola?: string
   boletoUrl?: string
+  checkoutUrl?: string
   dataVencimento: Timestamp
   dataPagamento?: Timestamp
   criadoEm: Timestamp
@@ -148,11 +159,13 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
       userId: data.userId,
       asaasPaymentId: data.asaasPaymentId,
       valor: data.valor,
+      breakdown: data.breakdown ?? null,
       status: data.status,
       metodoPagamento: data.metodoPagamento,
       pixQrCode: data.pixQrCode,
       pixCopiaECola: data.pixCopiaECola,
       boletoUrl: data.boletoUrl,
+      checkoutUrl: data.checkoutUrl,
       dataVencimento: data.dataVencimento.toDate(),
       dataPagamento: data.dataPagamento?.toDate(),
       criadoEm: data.criadoEm.toDate(),
@@ -167,11 +180,22 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
       userId: json.userId,
       asaasPaymentId: json.asaasPaymentId,
       valor: json.valor,
+      breakdown: payment.breakdown
+        ? {
+            valorBase: payment.breakdown.valorBase.getCents(),
+            valorTaxa: payment.breakdown.valorTaxa.getCents(),
+            valorTotal: payment.breakdown.valorTotal.getCents(),
+            metodo: payment.breakdown.metodo,
+            parcelas: payment.breakdown.parcelas ?? null,
+            valorParcela: payment.breakdown.valorParcela?.getCents() ?? null,
+          }
+        : null,
       status: json.status,
       metodoPagamento: json.metodoPagamento,
-      pixQrCode: json.pixQrCode,
-      pixCopiaECola: json.pixCopiaECola,
-      boletoUrl: json.boletoUrl,
+      pixQrCode: json.pixQrCode ?? null,
+      pixCopiaECola: json.pixCopiaECola ?? null,
+      boletoUrl: json.boletoUrl ?? null,
+      checkoutUrl: json.checkoutUrl ?? null,
       dataVencimento: Timestamp.fromDate(json.dataVencimento as Date),
       dataPagamento: json.dataPagamento ? Timestamp.fromDate(json.dataPagamento as Date) : null,
       criadoEm: Timestamp.fromDate(json.criadoEm as Date),

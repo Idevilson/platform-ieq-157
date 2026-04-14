@@ -12,12 +12,20 @@ interface Category {
   valorFormatado: string
   descricao?: string
   ordem?: number
+  earlyBirdValor?: number
+  earlyBirdValorFormatado?: string
+  earlyBirdDeadline?: string
+  beneficiosInclusos?: string[]
+  valorAtual?: number
+  valorAtualFormatado?: string
+  earlyBirdAtivo?: boolean
 }
 
 interface SmartInscriptionFormProps {
   eventId: string
   eventTitle?: string
   categories: Category[]
+  paymentMethods?: string[]
   onSuccess?: (inscriptionId: string) => void
 }
 
@@ -25,6 +33,7 @@ export function SmartInscriptionForm({
   eventId,
   eventTitle,
   categories,
+  paymentMethods,
   onSuccess,
 }: SmartInscriptionFormProps) {
   const { user, isAuthenticated, loading: authLoading, profileLoading } = useAuth()
@@ -49,6 +58,7 @@ export function SmartInscriptionForm({
     return (
       <AlreadyInscribedCard
         inscription={existingInscription}
+        eventId={eventId}
         eventTitle={eventTitle}
         categoryName={categories.find(c => c.id === existingInscription.categoryId)?.nome}
       />
@@ -60,6 +70,7 @@ export function SmartInscriptionForm({
       <UserInscriptionForm
         eventId={eventId}
         categories={categories}
+        paymentMethods={paymentMethods}
         user={user.profile}
         onSuccess={onSuccess}
       />
@@ -70,6 +81,7 @@ export function SmartInscriptionForm({
     <GuestInscriptionForm
       eventId={eventId}
       categories={categories}
+      paymentMethods={paymentMethods}
       onSuccess={onSuccess}
     />
   )

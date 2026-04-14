@@ -1,0 +1,38 @@
+{
+  "specsDir": ".sedd",
+  "branchPattern": "{{id}}-{{name}}",
+  "scriptRunner": "auto",
+  "autoSplit": {
+    "enabled": true,
+    "maxLines": 400
+  },
+  "hooks": {
+    "assertive": true,
+    "skills": [
+      "vercel-react-best-practices"
+    ],
+    "checkOnlyCurrentMigration": true,
+    "showSyncWarnings": true,
+    "blockOnSyncError": false
+  },
+  "git": {
+    "autoCommit": false,
+    "autoPush": false,
+    "messagePattern": "{{type}}({{id}}): {{message}}"
+  },
+  "github": {
+    "engine": "local",
+    "columns": {
+      "fieldId": "",
+      "options": {}
+    },
+    "columnMapping": {
+      "pending": "Todo",
+      "in-progress": "In Progress",
+      "completed": "Done",
+      "blocked": "Blocked"
+    },
+    "autoSync": "ask",
+    "syncTasks": "off"
+  }
+}

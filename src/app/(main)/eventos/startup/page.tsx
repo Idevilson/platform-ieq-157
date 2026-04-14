@@ -308,6 +308,7 @@ export default function Startup() {
             eventId={STARTUP_EVENT_ID}
             eventTitle={evento?.titulo || 'STARTUP'}
             categories={eventCategorias}
+            paymentMethods={evento?.metodosPagamento}
             onSuccess={handleInscriptionSuccess}
           />
         </div>

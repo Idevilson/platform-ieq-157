@@ -7,13 +7,19 @@ export interface EventCategoryProps {
   valor: Money
   descricao?: string
   ordem?: number
+  earlyBirdValor?: Money
+  earlyBirdDeadline?: Date
+  beneficiosInclusos?: string[]
 }
 
 export interface CreateCategoryDTO {
   nome: string
-  valor: number // in cents
+  valor: number
   descricao?: string
   ordem?: number
+  earlyBirdValor?: number
+  earlyBirdDeadline?: Date
+  beneficiosInclusos?: string[]
 }
 
 export class EventCategory {
@@ -22,6 +28,9 @@ export class EventCategory {
   private _valor: Money
   private _descricao?: string
   private _ordem?: number
+  private _earlyBirdValor?: Money
+  private _earlyBirdDeadline?: Date
+  private _beneficiosInclusos: string[]
 
   private constructor(props: EventCategoryProps) {
     this.id = props.id
@@ -29,6 +38,9 @@ export class EventCategory {
     this._valor = props.valor
     this._descricao = props.descricao
     this._ordem = props.ordem
+    this._earlyBirdValor = props.earlyBirdValor
+    this._earlyBirdDeadline = props.earlyBirdDeadline
+    this._beneficiosInclusos = props.beneficiosInclusos ?? []
   }
 
   static create(id: string, dto: CreateCategoryDTO): EventCategory {
@@ -38,6 +50,9 @@ export class EventCategory {
       valor: Money.fromCents(dto.valor),
       descricao: dto.descricao,
       ordem: dto.ordem,
+      earlyBirdValor: dto.earlyBirdValor !== undefined ? Money.fromCents(dto.earlyBirdValor) : undefined,
+      earlyBirdDeadline: dto.earlyBirdDeadline,
+      beneficiosInclusos: dto.beneficiosInclusos,
     })
   }
 
@@ -47,6 +62,9 @@ export class EventCategory {
     valor: number
     descricao?: string
     ordem?: number
+    earlyBirdValor?: number
+    earlyBirdDeadline?: Date
+    beneficiosInclusos?: string[]
   }): EventCategory {
     return new EventCategory({
       id: data.id,
@@ -54,10 +72,12 @@ export class EventCategory {
       valor: Money.fromCents(data.valor),
       descricao: data.descricao,
       ordem: data.ordem,
+      earlyBirdValor: data.earlyBirdValor !== undefined ? Money.fromCents(data.earlyBirdValor) : undefined,
+      earlyBirdDeadline: data.earlyBirdDeadline,
+      beneficiosInclusos: data.beneficiosInclusos,
     })
   }
 
-  // Getters
   get nome(): string {
     return this._nome
   }
@@ -82,13 +102,39 @@ export class EventCategory {
     return this._ordem
   }
 
-  // Business logic
+  get earlyBirdValor(): Money | undefined {
+    return this._earlyBirdValor
+  }
+
+  get earlyBirdDeadline(): Date | undefined {
+    return this._earlyBirdDeadline
+  }
+
+  get beneficiosInclusos(): string[] {
+    return [...this._beneficiosInclusos]
+  }
+
+  hasEarlyBird(): boolean {
+    return this._earlyBirdValor !== undefined && this._earlyBirdDeadline !== undefined
+  }
+
+  isEarlyBirdActive(now: Date): boolean {
+    if (!this.hasEarlyBird()) return false
+    return now <= this._earlyBirdDeadline!
+  }
+
+  getCurrentPrice(now: Date): Money {
+    return this.isEarlyBirdActive(now) ? this._earlyBirdValor! : this._valor
+  }
+
   isFree(): boolean {
     return this._valor.isZero()
   }
 
-  // Serialization
   toJSON() {
+    const now = new Date()
+    const earlyBirdAtivo = this.isEarlyBirdActive(now)
+    const valorAtual = this.getCurrentPrice(now)
     return {
       id: this.id,
       nome: this._nome,
@@ -96,6 +142,13 @@ export class EventCategory {
       valorFormatado: this._valor.getFormatted(),
       descricao: this._descricao,
       ordem: this._ordem,
+      earlyBirdValor: this._earlyBirdValor?.getCents(),
+      earlyBirdValorFormatado: this._earlyBirdValor?.getFormatted(),
+      earlyBirdDeadline: this._earlyBirdDeadline?.toISOString(),
+      beneficiosInclusos: [...this._beneficiosInclusos],
+      valorAtual: valorAtual.getCents(),
+      valorAtualFormatado: valorAtual.getFormatted(),
+      earlyBirdAtivo,
     }
   }
 }

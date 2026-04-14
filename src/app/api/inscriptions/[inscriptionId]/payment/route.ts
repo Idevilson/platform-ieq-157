@@ -3,7 +3,9 @@ import { CreatePaymentForInscription } from '@/server/application/payment/Create
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
+import { asaasFeeCalculator } from '@/server/infrastructure/asaas/AsaasFeeCalculator'
 import { ValidationError } from '@/server/domain/shared/errors'
+import { createPaymentForInscriptionSchema } from '@/server/application/payment/schemas'
 
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
@@ -12,7 +14,8 @@ const userRepository = new FirebaseUserRepositoryAdmin()
 const createPayment = new CreatePaymentForInscription(
   paymentRepository,
   inscriptionRepository,
-  userRepository
+  userRepository,
+  asaasFeeCalculator,
 )
 
 interface RouteParams {
@@ -53,7 +56,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ payment: existingPayment.toJSON(), participantName, preferredPaymentMethod })
     }
 
-    // Payment pending - use createPayment to sync with Asaas
     const result = await createPayment.execute({
       eventId: inscriptionData.eventId,
       inscriptionId,
@@ -84,17 +86,15 @@ async function getParticipantName(inscriptionData: { userId?: string; guestData?
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { inscriptionId } = await params
-    const eventId = request.nextUrl.searchParams.get('eventId')
+    const eventIdQuery = request.nextUrl.searchParams.get('eventId')
 
-    // First find the inscription to get eventId if not provided
-    const inscription = await inscriptionRepository.findById(inscriptionId, eventId || undefined)
+    const inscription = await inscriptionRepository.findById(inscriptionId, eventIdQuery || undefined)
     if (!inscription) {
       return NextResponse.json({ error: 'Inscrição não encontrada' }, { status: 404 })
     }
 
     const inscriptionData = inscription.toJSON()
 
-    // For cash payments, don't create Asaas payment
     if (inscriptionData.preferredPaymentMethod === 'CASH') {
       return NextResponse.json({
         payment: null,
@@ -103,9 +103,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }, { status: 200 })
     }
 
-    const result = await createPayment.execute({
+    const body = await request.json().catch(() => ({}))
+    const parsed = createPaymentForInscriptionSchema.parse({
       eventId: inscriptionData.eventId,
       inscriptionId,
+      metodo: body.metodo,
+      parcelas: body.parcelas,
+      creditCardToken: body.creditCardToken,
+    })
+
+    const result = await createPayment.execute({
+      eventId: parsed.eventId,
+      inscriptionId: parsed.inscriptionId,
+      metodo: parsed.metodo,
+      parcelas: parsed.parcelas,
     })
 
     return NextResponse.json(result, { status: 201 })

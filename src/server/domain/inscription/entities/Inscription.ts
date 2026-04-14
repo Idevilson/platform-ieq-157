@@ -14,6 +14,9 @@ export interface InscriptionProps {
   status: InscriptionStatus
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
+  temBrinde?: boolean
+  perkId?: string
+  brindeAlocadoEm?: Date
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -21,7 +24,7 @@ export interface InscriptionProps {
 export interface CreateInscriptionDTO {
   eventId: string
   categoryId: string
-  valor: number // in cents
+  valor: number
   userId?: string
   guestData?: GuestDataInput
   preferredPaymentMethod?: InscriptionPaymentMethod
@@ -37,6 +40,9 @@ export class Inscription implements Timestamps {
   readonly preferredPaymentMethod: InscriptionPaymentMethod
   private _status: InscriptionStatus
   private _paymentId?: string
+  private _temBrinde?: boolean
+  private _perkId?: string
+  private _brindeAlocadoEm?: Date
   readonly criadoEm: Date
   private _atualizadoEm: Date
 
@@ -50,6 +56,9 @@ export class Inscription implements Timestamps {
     this.preferredPaymentMethod = props.preferredPaymentMethod
     this._status = props.status
     this._paymentId = props.paymentId
+    this._temBrinde = props.temBrinde
+    this._perkId = props.perkId
+    this._brindeAlocadoEm = props.brindeAlocadoEm
     this.criadoEm = props.criadoEm
     this._atualizadoEm = props.atualizadoEm
   }
@@ -95,6 +104,9 @@ export class Inscription implements Timestamps {
     status: InscriptionStatus
     paymentId?: string
     preferredPaymentMethod?: InscriptionPaymentMethod
+    temBrinde?: boolean
+    perkId?: string
+    brindeAlocadoEm?: Date
     criadoEm: Date
     atualizadoEm: Date
   }): Inscription {
@@ -108,6 +120,9 @@ export class Inscription implements Timestamps {
       preferredPaymentMethod: data.preferredPaymentMethod || 'PIX',
       status: data.status,
       paymentId: data.paymentId,
+      temBrinde: data.temBrinde,
+      perkId: data.perkId,
+      brindeAlocadoEm: data.brindeAlocadoEm,
       criadoEm: data.criadoEm,
       atualizadoEm: data.atualizadoEm,
     })
@@ -126,8 +141,36 @@ export class Inscription implements Timestamps {
     return this._paymentId
   }
 
+  get temBrinde(): boolean | undefined {
+    return this._temBrinde
+  }
+
+  get perkId(): string | undefined {
+    return this._perkId
+  }
+
+  get brindeAlocadoEm(): Date | undefined {
+    return this._brindeAlocadoEm
+  }
+
   get atualizadoEm(): Date {
     return this._atualizadoEm
+  }
+
+  isBrindeProcessed(): boolean {
+    return this._temBrinde === true || this._temBrinde === false
+  }
+
+  markBrindeAllocated(perkId: string, allocatedAt: Date): void {
+    this._temBrinde = true
+    this._perkId = perkId
+    this._brindeAlocadoEm = allocatedAt
+    this._atualizadoEm = new Date()
+  }
+
+  markBrindeUnavailable(): void {
+    this._temBrinde = false
+    this._atualizadoEm = new Date()
   }
 
   get valorCents(): number {
@@ -225,6 +268,9 @@ export class Inscription implements Timestamps {
       status: this._status,
       statusLabel: this.statusLabel,
       paymentId: this._paymentId,
+      temBrinde: this._temBrinde,
+      perkId: this._perkId,
+      brindeAlocadoEm: this._brindeAlocadoEm?.toISOString(),
       criadoEm: this.criadoEm,
       atualizadoEm: this._atualizadoEm,
     }

@@ -124,16 +124,17 @@ Este evento e baseado nos quatro pilares do Evangelho Quadrangular:
     status: 'em_breve',
     temInscricao: false
   },
-  {
-    id: 'conferencia-mulheres',
-    titulo: 'Conferencia de Mulheres',
-    subtitulo: 'Mulheres de Fe',
-    dataInicio: '2026-05-10',
-    local: 'IEQ 157',
-    endereco: 'Redencao - PA',
-    descricao: 'Uma conferencia especial para mulheres, com ministracao, louvor e momentos de edificacao.',
-    status: 'em_breve',
-    temInscricao: false
+{
+    id: 'geracao-forte',
+    titulo: 'Congresso Setorizado da Geração Forte',
+    subtitulo: 'Follow Me — Marcos 8:34',
+    dataInicio: '2026-07-03',
+    dataFim: '2026-07-05',
+    local: 'Igreja Assembleia de Deus de Análopis',
+    endereco: 'Avenida Araguaia',
+    descricao: 'Se alguém quer vir após mim, negue-se a si mesmo, tome a sua cruz e siga-me. — Marcos 8:34',
+    status: 'aberto',
+    temInscricao: true
   }
 ];
 

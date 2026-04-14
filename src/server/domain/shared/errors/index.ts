@@ -111,6 +111,14 @@ export class InvalidWebhookError extends DomainError {
   }
 }
 
+// News errors
+export class NewsNotFoundError extends DomainError {
+  constructor(newsId: string) {
+    super(`Notícia não encontrada: ${newsId}`, 'NEWS_NOT_FOUND')
+    this.name = 'NewsNotFoundError'
+  }
+}
+
 // Authorization errors
 export class UnauthorizedError extends DomainError {
   constructor(message = 'Não autorizado') {

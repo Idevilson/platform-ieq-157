@@ -62,6 +62,9 @@ export default function Header() {
           <Link href="/eventos" className={navLinkClass(isActive('/eventos'))} onClick={() => setMobileMenuOpen(false)}>
             Eventos
           </Link>
+          <Link href="/q4-news" className={navLinkClass(isActive('/q4-news'))} onClick={() => setMobileMenuOpen(false)}>
+            Q4-News
+          </Link>
           <Link href="/avisos" className={navLinkClass(isActive('/avisos'))} onClick={() => setMobileMenuOpen(false)}>
             Avisos
           </Link>

@@ -16,7 +16,6 @@ export interface IEventRepository {
   update(event: Event): Promise<void>
   delete(id: string): Promise<void>
 
-  // Categories
   findCategoryById(eventId: string, categoryId: string): Promise<EventCategory | null>
   findCategoriesByEventId(eventId: string): Promise<EventCategory[]>
   saveCategory(eventId: string, category: EventCategory): Promise<void>

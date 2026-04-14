@@ -25,10 +25,15 @@ export interface CreateCustomerDTO {
 export interface CreatePaymentDTO {
   customer: string
   billingType: 'PIX' | 'BOLETO' | 'CREDIT_CARD'
-  value: number
+  value?: number
+  totalValue?: number
   dueDate: string
   description?: string
   externalReference?: string
+  installmentCount?: number
+  installmentValue?: number
+  creditCardToken?: string
+  remoteIp?: string
 }
 
 export interface AsaasPayment {
@@ -53,13 +58,15 @@ export interface AsaasPixQrCode {
 
 class AsaasServiceClass {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const apiKey = process.env.ASAAS_API_KEY || ''
     const url = `${API_BASE_URL}${endpoint}`
+    console.log('[Asaas] request:', url, 'apiKey present:', !!apiKey, 'length:', apiKey.length)
 
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY,
+        'access_token': apiKey,
         ...options.headers,
       },
     })
@@ -117,6 +124,41 @@ class AsaasServiceClass {
       method: 'DELETE',
     })
   }
+
+  async createPaymentLink(dto: CreatePaymentLinkDTO): Promise<AsaasPaymentLink> {
+    return this.request<AsaasPaymentLink>('/paymentLinks', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    })
+  }
+}
+
+export interface CreatePaymentLinkDTO {
+  name: string
+  description?: string
+  endDate: string
+  value: number
+  billingType: 'UNDEFINED' | 'CREDIT_CARD' | 'PIX' | 'BOLETO'
+  chargeType: 'DETACHED' | 'INSTALLMENT' | 'RECURRENT'
+  dueDateLimitDays?: number
+  maxInstallmentCount?: number
+  subscriptionCycle?: string | null
+  notificationEnabled?: boolean
+  callback?: {
+    successUrl: string
+    autoRedirect?: boolean
+  }
+  externalReference?: string
+}
+
+export interface AsaasPaymentLink {
+  id: string
+  name: string
+  url: string
+  value: number
+  billingType: string
+  chargeType: string
+  status: string
 }
 
 export const asaasService = new AsaasServiceClass()

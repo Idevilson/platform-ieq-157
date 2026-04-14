@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { CategorySelector } from './CategorySelector'
 import { useCreateUserInscription } from '@/hooks/mutations/useInscriptionMutations'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { UserDTO } from '@/shared/types'
@@ -40,6 +41,7 @@ interface MissingFieldsForm {
 interface UserInscriptionFormProps {
   eventId: string
   categories: Category[]
+  paymentMethods?: string[]
   user: UserDTO
   onSuccess?: (inscriptionId: string) => void
 }
@@ -47,6 +49,7 @@ interface UserInscriptionFormProps {
 export function UserInscriptionForm({
   eventId,
   categories,
+  paymentMethods,
   user,
   onSuccess,
 }: UserInscriptionFormProps) {
@@ -63,7 +66,10 @@ export function UserInscriptionForm({
       }
     }
   }, [categories, selectedCategoryId])
-  const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>('PIX')
+  const availableMethods = (paymentMethods?.filter(
+    (m): m is InscriptionPaymentMethod => ['PIX', 'CREDIT_CARD', 'CASH'].includes(m)
+  ) ?? ['PIX', 'CASH']) as InscriptionPaymentMethod[]
+  const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>(availableMethods[0] || 'PIX')
   const [error, setError] = useState<string | null>(null)
   const createUserInscription = useCreateUserInscription()
 
@@ -299,84 +305,70 @@ export function UserInscriptionForm({
 
       {categories.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-base font-semibold text-text-primary mb-4">Escolha sua categoria:</h4>
+          <CategorySelector
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelect={setSelectedCategoryId}
+            disabled={isLoading}
+          />
+        </div>
+      )}
+
+      {selectedCategoryId && (
+        <div className="mb-6">
+          <h4 className="text-base font-semibold text-text-primary mb-4">Forma de Pagamento:</h4>
           <div className="grid sm:grid-cols-2 gap-3">
-            {categories.map(cat => (
+            {availableMethods.map((method) => (
               <button
-                key={cat.id}
+                key={method}
                 type="button"
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedCategoryId === cat.id
+                className={`p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 ${
+                  paymentMethod === method
                     ? 'bg-gold/10 border-gold'
                     : 'bg-bg-tertiary border-transparent hover:border-gold/30'
                 }`}
-                onClick={() => setSelectedCategoryId(cat.id)}
+                onClick={() => setPaymentMethod(method)}
                 disabled={isLoading}
               >
-                <h5 className="text-base font-semibold text-text-primary mb-1">{cat.nome}</h5>
-                <p className="text-xl font-bold text-gold mb-2">{cat.valorFormatado}</p>
-                {cat.descricao && (
-                  <p className="text-xs text-text-secondary">{cat.descricao}</p>
-                )}
-                {selectedCategoryId === cat.id && (
-                  <span className="inline-block mt-2 px-2 py-0.5 bg-gold text-bg-primary text-xs font-bold rounded-full">
-                    Selecionado
-                  </span>
+                <div className="w-10 h-10 text-gold flex-shrink-0 flex items-center justify-center">
+                  {method === 'PIX' && (
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zm1.5 0h1.5V16H16v-1.5zm-3 3H13V19h.5v-1.5zm1.5 0h1.5V19H16v-1.5zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM19 16h.5v.5H19V16zm0 1.5h.5v.5H19v-.5z"/>
+                    </svg>
+                  )}
+                  {method === 'CREDIT_CARD' && (
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                    </svg>
+                  )}
+                  {method === 'CASH' && (
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
+                    </svg>
+                  )}
+                  {method === 'BOLETO' && (
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M2 4h2v16H2V4zm4 0h1v16H6V4zm3 0h2v16H9V4zm4 0h1v16h-1V4zm3 0h2v16h-2V4zm4 0h1v16h-1V4z"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h5 className="text-base font-semibold text-text-primary">{INSCRIPTION_PAYMENT_METHOD_LABELS[method]}</h5>
+                  <p className="text-xs text-text-muted">
+                    {method === 'PIX' && 'Pagamento instantâneo via QR Code'}
+                    {method === 'CREDIT_CARD' && 'Pagamento com cartão de crédito'}
+                    {method === 'CASH' && 'Pague presencialmente na igreja'}
+                    {method === 'BOLETO' && 'Boleto bancário'}
+                  </p>
+                </div>
+                {paymentMethod === method && (
+                  <span className="text-gold text-xl">✓</span>
                 )}
               </button>
             ))}
           </div>
         </div>
       )}
-
-      <div className="mb-6">
-        <h4 className="text-base font-semibold text-text-primary mb-4">Forma de Pagamento:</h4>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <button
-            type="button"
-            className={`p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 ${
-              paymentMethod === 'PIX'
-                ? 'bg-gold/10 border-gold'
-                : 'bg-bg-tertiary border-transparent hover:border-gold/30'
-            }`}
-            onClick={() => setPaymentMethod('PIX')}
-            disabled={isLoading}
-          >
-            <svg className="w-10 h-10 text-gold flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zm1.5 0h1.5V16H16v-1.5zm-3 3H13V19h.5v-1.5zm1.5 0h1.5V19H16v-1.5zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM19 16h.5v.5H19V16zm0 1.5h.5v.5H19v-.5z"/>
-            </svg>
-            <div className="flex-1">
-              <h5 className="text-base font-semibold text-text-primary">{INSCRIPTION_PAYMENT_METHOD_LABELS.PIX}</h5>
-              <p className="text-xs text-text-muted">Pagamento instantaneo via QR Code</p>
-            </div>
-            {paymentMethod === 'PIX' && (
-              <span className="text-gold text-xl">✓</span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className={`p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 ${
-              paymentMethod === 'CASH'
-                ? 'bg-gold/10 border-gold'
-                : 'bg-bg-tertiary border-transparent hover:border-gold/30'
-            }`}
-            onClick={() => setPaymentMethod('CASH')}
-            disabled={isLoading}
-          >
-            <svg className="w-10 h-10 text-gold flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
-            </svg>
-            <div className="flex-1">
-              <h5 className="text-base font-semibold text-text-primary">{INSCRIPTION_PAYMENT_METHOD_LABELS.CASH}</h5>
-              <p className="text-xs text-text-muted">Pague presencialmente na igreja</p>
-            </div>
-            {paymentMethod === 'CASH' && (
-              <span className="text-gold text-xl">✓</span>
-            )}
-          </button>
-        </div>
-      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">

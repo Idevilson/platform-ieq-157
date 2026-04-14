@@ -97,7 +97,8 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
         atualizadoEm: doc.atualizadoEm.toDate(),
         asaasCustomerId: doc.asaasCustomerId,
       },
-      doc.cpf
+      doc.cpf,
+      (doc as Record<string, unknown>).permissions as string[] | undefined
     )
   }
 
@@ -117,6 +118,7 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
     if (json.dataNascimento) doc.dataNascimento = Timestamp.fromDate(json.dataNascimento as Date)
     if (json.sexo) doc.sexo = json.sexo
     if (json.asaasCustomerId) doc.asaasCustomerId = json.asaasCustomerId
+    if (json.permissions?.length) doc.permissions = json.permissions
 
     return doc
   }

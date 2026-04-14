@@ -25,8 +25,8 @@ export class CreateEvent {
 
     const data = parseResult.data
 
-    // Generate event ID from title (slug)
-    const eventId = this.generateSlug(data.titulo)
+    // Use custom slug or generate from title
+    const eventId = data.slug || this.generateSlug(data.titulo)
 
     // Check if event already exists
     const existingEvent = await this.eventRepository.findById(eventId)
@@ -73,6 +73,9 @@ export class CreateEvent {
           valor: catInput.valor,
           descricao: catInput.descricao?.trim(),
           ordem: i + 1,
+          earlyBirdValor: catInput.earlyBirdValor,
+          earlyBirdDeadline: catInput.earlyBirdDeadline,
+          beneficiosInclusos: catInput.beneficiosInclusos,
         }
 
         const category = EventCategory.create(categoryId, categoryDTO)

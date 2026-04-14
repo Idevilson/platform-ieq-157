@@ -94,6 +94,26 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
     await docRef.update(data)
   }
 
+  async changeId(oldId: string, newId: string): Promise<void> {
+    const oldDoc = await this.eventsRef.doc(oldId).get()
+    if (!oldDoc.exists) throw new Error('Evento nao encontrado')
+
+    const newDoc = await this.eventsRef.doc(newId).get()
+    if (newDoc.exists) throw new Error('Ja existe um evento com este slug')
+
+    await this.eventsRef.doc(newId).set(oldDoc.data()!)
+
+    const categoriesSnap = await this.eventsRef.doc(oldId).collection(CATEGORIES_SUBCOLLECTION).get()
+    for (const catDoc of categoriesSnap.docs) {
+      await this.eventsRef.doc(newId).collection(CATEGORIES_SUBCOLLECTION).doc(catDoc.id).set(catDoc.data())
+    }
+
+    for (const catDoc of categoriesSnap.docs) {
+      await catDoc.ref.delete()
+    }
+    await this.eventsRef.doc(oldId).delete()
+  }
+
   async delete(id: string): Promise<void> {
     // Delete categories first
     const categoriesSnapshot = await this.eventsRef.doc(id).collection(CATEGORIES_SUBCOLLECTION).get()
@@ -138,9 +158,14 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
 
     await categoryRef.set({
       nome: category.nome,
-      descricao: category.descricao,
+      descricao: category.descricao ?? null,
       valor: category.valorCents,
-      ordem: category.ordem,
+      ordem: category.ordem ?? null,
+      earlyBirdValor: category.earlyBirdValor?.getCents() ?? null,
+      earlyBirdDeadline: category.earlyBirdDeadline
+        ? Timestamp.fromDate(category.earlyBirdDeadline)
+        : null,
+      beneficiosInclusos: category.beneficiosInclusos,
     })
   }
 
@@ -199,8 +224,11 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
       id: docSnap.id,
       nome: data.nome,
       valor: data.valor || 0,
-      descricao: data.descricao,
-      ordem: data.ordem,
+      descricao: data.descricao ?? undefined,
+      ordem: data.ordem ?? undefined,
+      earlyBirdValor: data.earlyBirdValor ?? undefined,
+      earlyBirdDeadline: data.earlyBirdDeadline?.toDate?.() ?? undefined,
+      beneficiosInclusos: Array.isArray(data.beneficiosInclusos) ? data.beneficiosInclusos : undefined,
     })
   }
 

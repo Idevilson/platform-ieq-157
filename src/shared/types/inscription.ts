@@ -24,6 +24,9 @@ export interface InscriptionDTO {
   statusLabel: string
   paymentId?: string
   paymentStatus?: PaymentStatus
+  temBrinde?: boolean
+  perkId?: string
+  brindeAlocadoEm?: string | Date
   criadoEm: string | Date
   atualizadoEm: string | Date
 }

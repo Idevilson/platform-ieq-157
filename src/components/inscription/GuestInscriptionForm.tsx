@@ -46,12 +46,44 @@ interface GuestFormData {
 interface GuestInscriptionFormProps {
   eventId: string
   categories: Category[]
+  paymentMethods?: string[]
   onSuccess?: (inscriptionId: string) => void
+}
+
+const PAYMENT_ICONS: Record<string, JSX.Element> = {
+  PIX: (
+    <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zm1.5 0h1.5V16H16v-1.5zm-3 3H13V19h.5v-1.5zm1.5 0h1.5V19H16v-1.5zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM19 16h.5v.5H19V16zm0 1.5h.5v.5H19v-.5z"/>
+    </svg>
+  ),
+  CREDIT_CARD: (
+    <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+    </svg>
+  ),
+  CASH: (
+    <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
+    </svg>
+  ),
+  BOLETO: (
+    <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2 4h2v16H2V4zm4 0h1v16H6V4zm3 0h2v16H9V4zm4 0h1v16h-1V4zm3 0h2v16h-2V4zm4 0h1v16h-1V4z"/>
+    </svg>
+  ),
+}
+
+const PAYMENT_DESCRIPTIONS: Record<string, string> = {
+  PIX: 'Pagamento instantâneo via QR Code',
+  CREDIT_CARD: 'Pagamento com cartão de crédito',
+  CASH: 'Pague presencialmente na igreja',
+  BOLETO: 'Boleto bancário',
 }
 
 export function GuestInscriptionForm({
   eventId,
   categories,
+  paymentMethods,
   onSuccess,
 }: GuestInscriptionFormProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
@@ -69,7 +101,10 @@ export function GuestInscriptionForm({
       }
     }
   }, [categories, selectedCategoryId])
-  const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>('PIX')
+  const availableMethods = (paymentMethods?.filter(
+    (m): m is InscriptionPaymentMethod => ['PIX', 'CREDIT_CARD', 'CASH'].includes(m)
+  ) ?? ['PIX', 'CASH']) as InscriptionPaymentMethod[]
+  const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>(availableMethods[0] || 'PIX')
   const [error, setError] = useState<string | null>(null)
   const createGuestInscription = useCreateGuestInscription()
 
@@ -285,51 +320,34 @@ export function GuestInscriptionForm({
         />
       </div>
 
-      <div className="form-section">
-        <h4>Forma de Pagamento</h4>
-        <div className="payment-method-selector">
-          <label
-            className={`payment-method-option ${paymentMethod === 'PIX' ? 'selected' : ''}`}
-            onClick={() => !isLoading && setPaymentMethod('PIX')}
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="PIX"
-              checked={paymentMethod === 'PIX'}
-              onChange={() => setPaymentMethod('PIX')}
-              disabled={isLoading}
-            />
-            <div className="payment-method-content">
-              <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zm1.5 0h1.5V16H16v-1.5zm-3 3H13V19h.5v-1.5zm1.5 0h1.5V19H16v-1.5zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM19 16h.5v.5H19V16zm0 1.5h.5v.5H19v-.5z"/>
-              </svg>
-              <span>{INSCRIPTION_PAYMENT_METHOD_LABELS.PIX}</span>
-              <small>Pagamento instantaneo via QR Code</small>
-            </div>
-          </label>
-          <label
-            className={`payment-method-option ${paymentMethod === 'CASH' ? 'selected' : ''}`}
-            onClick={() => !isLoading && setPaymentMethod('CASH')}
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="CASH"
-              checked={paymentMethod === 'CASH'}
-              onChange={() => setPaymentMethod('CASH')}
-              disabled={isLoading}
-            />
-            <div className="payment-method-content">
-              <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/>
-              </svg>
-              <span>{INSCRIPTION_PAYMENT_METHOD_LABELS.CASH}</span>
-              <small>Pague presencialmente na igreja</small>
-            </div>
-          </label>
+      {selectedCategoryId && (
+        <div className="form-section">
+          <h4>Forma de Pagamento</h4>
+          <div className="payment-method-selector">
+            {availableMethods.map((method) => (
+              <label
+                key={method}
+                className={`payment-method-option ${paymentMethod === method ? 'selected' : ''}`}
+                onClick={() => !isLoading && setPaymentMethod(method)}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value={method}
+                  checked={paymentMethod === method}
+                  onChange={() => setPaymentMethod(method)}
+                  disabled={isLoading}
+                />
+                <div className="payment-method-content">
+                  {PAYMENT_ICONS[method]}
+                  <span>{INSCRIPTION_PAYMENT_METHOD_LABELS[method]}</span>
+                  <small>{PAYMENT_DESCRIPTIONS[method]}</small>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="form-group">
         <label htmlFor="observacoes">Observacoes (opcional)</label>

@@ -1,0 +1,69 @@
+# Q4-News — Listagem Pública
+
+## /q4-news
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  [Navbar]  Inicio  Eventos  Q4-News  Avisos  Sobre  [Login]   │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│              📰 Q4-News — Jornal da Igreja                     │
+│              Fique por dentro das novidades                    │
+│                                                                │
+│  ┌─────────────────────┐  ┌─────────────────────┐             │
+│  │ ┌─────────────────┐ │  │ ┌─────────────────┐ │             │
+│  │ │  YT Thumbnail   │ │  │ │  YT Thumbnail   │ │             │
+│  │ │   ▶ (play)      │ │  │ │   ▶ (play)      │ │             │
+│  │ └─────────────────┘ │  │ └─────────────────┘ │             │
+│  │                     │  │                     │             │
+│  │ Título da Postagem  │  │ Título da Postagem  │             │
+│  │ Resumo da desc...   │  │ Resumo da desc...   │             │
+│  │                     │  │                     │             │
+│  │ 📅 12/04/2026       │  │ 📅 05/04/2026       │             │
+│  │ 👤 Pastor João      │  │ 👤 Maria Silva      │             │
+│  └─────────────────────┘  └─────────────────────┘             │
+│                                                                │
+│  ┌─────────────────────┐  ┌─────────────────────┐             │
+│  │ ┌─────────────────┐ │  │ ┌─────────────────┐ │             │
+│  │ │  YT Thumbnail   │ │  │ │  YT Thumbnail   │ │             │
+│  │ │   ▶ (play)      │ │  │ │   ▶ (play)      │ │             │
+│  │ └─────────────────┘ │  │ └─────────────────┘ │             │
+│  │ Título da Postagem  │  │ Título da Postagem  │             │
+│  │ Resumo da desc...   │  │ Resumo da desc...   │             │
+│  │ 📅 01/04/2026       │  │ 📅 28/03/2026       │             │
+│  │ 👤 Pastor João      │  │ 👤 Pastor João      │             │
+│  └─────────────────────┘  └─────────────────────┘             │
+│                                                                │
+│              [ Carregar mais... ]                               │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+## /q4-news/[slug] — Detalhe
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  ← Voltar para Q4-News                                        │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                                                          │  │
+│  │              YouTube Video Embed (16:9)                  │  │
+│  │                    ▶ Play                                │  │
+│  │                                                          │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                │
+│  Título da Postagem Completo                                   │
+│                                                                │
+│  📅 12 de abril de 2026  ·  👤 Pastor João                    │
+│                                                                │
+│  ─────────────────────────────────────────                     │
+│                                                                │
+│  Texto completo da postagem com múltiplos                     │
+│  parágrafos e conteúdo detalhado sobre a                      │
+│  matéria do jornal da igreja.                                 │
+│                                                                │
+│  Segundo parágrafo com mais informações                       │
+│  relevantes para os membros da congregação.                   │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```

@@ -158,6 +158,9 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       status: data.status as InscriptionStatus,
       paymentId: data.paymentId,
       preferredPaymentMethod: (data.preferredPaymentMethod as InscriptionPaymentMethod) || 'PIX',
+      temBrinde: data.temBrinde,
+      perkId: data.perkId ?? undefined,
+      brindeAlocadoEm: data.brindeAlocadoEm?.toDate?.() ?? undefined,
       criadoEm: data.criadoEm?.toDate() || new Date(),
       atualizadoEm: data.atualizadoEm?.toDate() || new Date(),
     })
@@ -184,7 +187,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
   private mapToFirestore(inscription: Inscription) {
     const json = inscription.toJSON()
     return {
-      id: inscription.id, // Store id for collectionGroup queries
+      id: inscription.id,
       categoryId: json.categoryId,
       userId: json.userId || null,
       guestData: json.guestData ? this.mapGuestDataToFirestore(json.guestData) : null,
@@ -192,6 +195,9 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       preferredPaymentMethod: json.preferredPaymentMethod,
       status: json.status,
       paymentId: json.paymentId || null,
+      temBrinde: inscription.temBrinde ?? null,
+      perkId: inscription.perkId ?? null,
+      brindeAlocadoEm: inscription.brindeAlocadoEm ? Timestamp.fromDate(inscription.brindeAlocadoEm) : null,
       criadoEm: Timestamp.fromDate(json.criadoEm as Date),
       atualizadoEm: Timestamp.fromDate(json.atualizadoEm as Date),
     }

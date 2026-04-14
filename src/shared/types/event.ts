@@ -9,6 +9,35 @@ export interface EventCategoryDTO {
   valorFormatado: string
   descricao?: string
   ordem?: number
+  earlyBirdValor?: number
+  earlyBirdValorFormatado?: string
+  earlyBirdDeadline?: string
+  beneficiosInclusos?: string[]
+  valorAtual: number
+  valorAtualFormatado: string
+  earlyBirdAtivo: boolean
+}
+
+export interface EventPerkDTO {
+  id: string
+  eventId: string
+  nome: string
+  descricao: string
+  limiteEstoque: number
+  quantidadeAlocada: number
+  quantidadeRestante: number
+  disponivel: boolean
+  categoriaId?: string | null
+  criadoEm: string | Date
+  atualizadoEm: string | Date
+}
+
+export interface EventPerkSummaryDTO {
+  id: string
+  nome: string
+  limiteEstoque: number
+  quantidadeRestante: number
+  disponivel: boolean
 }
 
 export interface EventDTO {

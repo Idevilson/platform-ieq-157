@@ -1,5 +1,6 @@
 
 import { Money } from '@/server/domain/shared/value-objects/Money'
+import { PaymentBreakdown } from '@/server/domain/shared/value-objects/PaymentBreakdown'
 import { PaymentStatus, PaymentMethod, Timestamps, PAYMENT_STATUS_LABELS } from '@/server/domain/shared/types'
 
 export interface PaymentProps {
@@ -8,11 +9,13 @@ export interface PaymentProps {
   userId?: string
   asaasPaymentId: string
   valor: Money
+  breakdown: PaymentBreakdown | null
   status: PaymentStatus
   metodoPagamento: PaymentMethod
   pixQrCode?: string
   pixCopiaECola?: string
   boletoUrl?: string
+  checkoutUrl?: string
   dataVencimento: Date
   dataPagamento?: Date
   criadoEm: Date
@@ -23,12 +26,14 @@ export interface CreatePaymentDTO {
   inscriptionId: string
   userId?: string
   asaasPaymentId: string
-  valor: number // in cents
+  valor: number
+  breakdown?: PaymentBreakdown | null
   metodoPagamento: PaymentMethod
   dataVencimento: Date
   pixQrCode?: string
   pixCopiaECola?: string
   boletoUrl?: string
+  checkoutUrl?: string
 }
 
 export class Payment implements Timestamps {
@@ -37,11 +42,13 @@ export class Payment implements Timestamps {
   readonly userId?: string
   readonly asaasPaymentId: string
   readonly valor: Money
+  readonly breakdown: PaymentBreakdown | null
   private _status: PaymentStatus
   readonly metodoPagamento: PaymentMethod
   private _pixQrCode?: string
   private _pixCopiaECola?: string
   private _boletoUrl?: string
+  private _checkoutUrl?: string
   readonly dataVencimento: Date
   private _dataPagamento?: Date
   readonly criadoEm: Date
@@ -53,11 +60,13 @@ export class Payment implements Timestamps {
     this.userId = props.userId
     this.asaasPaymentId = props.asaasPaymentId
     this.valor = props.valor
+    this.breakdown = props.breakdown
     this._status = props.status
     this.metodoPagamento = props.metodoPagamento
     this._pixQrCode = props.pixQrCode
     this._pixCopiaECola = props.pixCopiaECola
     this._boletoUrl = props.boletoUrl
+    this._checkoutUrl = props.checkoutUrl
     this.dataVencimento = props.dataVencimento
     this._dataPagamento = props.dataPagamento
     this.criadoEm = props.criadoEm
@@ -72,11 +81,13 @@ export class Payment implements Timestamps {
       userId: dto.userId,
       asaasPaymentId: dto.asaasPaymentId,
       valor: Money.fromCents(dto.valor),
+      breakdown: dto.breakdown ?? null,
       status: 'PENDING',
       metodoPagamento: dto.metodoPagamento,
       pixQrCode: dto.pixQrCode,
       pixCopiaECola: dto.pixCopiaECola,
       boletoUrl: dto.boletoUrl,
+      checkoutUrl: dto.checkoutUrl,
       dataVencimento: dto.dataVencimento,
       criadoEm: now,
       atualizadoEm: now,
@@ -89,11 +100,20 @@ export class Payment implements Timestamps {
     userId?: string
     asaasPaymentId: string
     valor: number
+    breakdown?: {
+      valorBase: number
+      valorTaxa: number
+      valorTotal: number
+      metodo: PaymentMethod
+      parcelas?: number
+      valorParcela?: number
+    } | null
     status: PaymentStatus
     metodoPagamento: PaymentMethod
     pixQrCode?: string
     pixCopiaECola?: string
     boletoUrl?: string
+    checkoutUrl?: string
     dataVencimento: Date
     dataPagamento?: Date
     criadoEm: Date
@@ -105,11 +125,13 @@ export class Payment implements Timestamps {
       userId: data.userId,
       asaasPaymentId: data.asaasPaymentId,
       valor: Money.fromCents(data.valor),
+      breakdown: data.breakdown ? PaymentBreakdown.fromCents(data.breakdown) : null,
       status: data.status,
       metodoPagamento: data.metodoPagamento,
       pixQrCode: data.pixQrCode,
       pixCopiaECola: data.pixCopiaECola,
       boletoUrl: data.boletoUrl,
+      checkoutUrl: data.checkoutUrl,
       dataVencimento: data.dataVencimento,
       dataPagamento: data.dataPagamento,
       criadoEm: data.criadoEm,
@@ -136,6 +158,10 @@ export class Payment implements Timestamps {
 
   get boletoUrl(): string | undefined {
     return this._boletoUrl
+  }
+
+  get checkoutUrl(): string | undefined {
+    return this._checkoutUrl
   }
 
   get dataPagamento(): Date | undefined {
@@ -241,12 +267,14 @@ export class Payment implements Timestamps {
       asaasPaymentId: this.asaasPaymentId,
       valor: this.valor.getCents(),
       valorFormatado: this.valor.getFormatted(),
+      breakdown: this.breakdown?.toJSON() ?? null,
       status: this._status,
       statusLabel: this.statusLabel,
       metodoPagamento: this.metodoPagamento,
       pixQrCode: this._pixQrCode,
       pixCopiaECola: this._pixCopiaECola,
       boletoUrl: this._boletoUrl,
+      checkoutUrl: this._checkoutUrl,
       dataVencimento: this.dataVencimento,
       dataPagamento: this._dataPagamento,
       criadoEm: this.criadoEm,

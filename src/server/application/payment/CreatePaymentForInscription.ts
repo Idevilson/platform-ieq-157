@@ -1,35 +1,41 @@
 import { v4 as uuidv4 } from 'uuid'
 import { Payment } from '@/server/domain/payment/entities/Payment'
+import { Inscription } from '@/server/domain/inscription/entities/Inscription'
+import { Money } from '@/server/domain/shared/value-objects/Money'
 import { IPaymentRepository } from '@/server/domain/payment/repositories/IPaymentRepository'
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
 import { IUserRepository } from '@/server/domain/user/repositories/IUserRepository'
+import { IPaymentFeeCalculator } from '@/server/domain/payment/services/IPaymentFeeCalculator'
 import { asaasService } from '@/server/infrastructure/asaas/AsaasService'
 import { ValidationError } from '@/server/domain/shared/errors'
+import { PaymentMethod } from '@/shared/constants'
 
 export interface CreatePaymentInput {
   eventId: string
   inscriptionId: string
+  metodo?: 'PIX' | 'CREDIT_CARD'
+  parcelas?: number
 }
 
 export interface CreatePaymentOutput {
   payment: ReturnType<Payment['toJSON']>
 }
 
-interface InscriptionData {
-  userId?: string
-  guestData?: {
-    nome: string
-    email: string
-    cpf: string
-    telefone: string
-  }
+interface CustomerData {
+  name: string
+  email: string
+  cpfCnpj: string
+  phone?: string
 }
+
+const MAX_PARCELAS = 12
 
 export class CreatePaymentForInscription {
   constructor(
     private readonly paymentRepository: IPaymentRepository,
     private readonly inscriptionRepository: IInscriptionRepository,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly feeCalculator: IPaymentFeeCalculator,
   ) {}
 
   async execute(input: CreatePaymentInput): Promise<CreatePaymentOutput> {
@@ -38,43 +44,42 @@ export class CreatePaymentForInscription {
       throw new ValidationError('Inscrição não encontrada')
     }
 
-    const existingPayment = await this.paymentRepository.findByInscriptionId(input.inscriptionId, input.eventId)
-    if (existingPayment) {
-      return this.handleExistingPayment(existingPayment, inscription, input.eventId)
+    const existing = await this.paymentRepository.findByInscriptionId(input.inscriptionId, input.eventId)
+    if (existing) {
+      return this.handleExistingPayment(existing, inscription, input.eventId)
     }
 
-    return this.createNewPayment(inscription, input)
+    const metodo: PaymentMethod = input.metodo ?? 'PIX'
+    if (metodo === 'CREDIT_CARD') {
+      return this.createCardCheckoutPayment(inscription, input)
+    }
+    return this.createPixPayment(inscription, input)
   }
 
   private async handleExistingPayment(
     payment: Payment,
-    inscription: Awaited<ReturnType<IInscriptionRepository['findById']>> & object,
-    eventId: string
+    inscription: Inscription,
+    eventId: string,
   ): Promise<CreatePaymentOutput> {
     if (payment.isConfirmed()) {
       return { payment: payment.toJSON() }
     }
 
     const asaasPayment = await asaasService.getPayment(payment.asaasPaymentId)
-    const isPaidInAsaas = asaasPayment.status === 'RECEIVED' || asaasPayment.status === 'CONFIRMED'
+    const isPaid = asaasPayment.status === 'RECEIVED' || asaasPayment.status === 'CONFIRMED'
 
-    if (!isPaidInAsaas) {
+    if (!isPaid) {
       return { payment: payment.toJSON() }
     }
 
     this.syncPaymentFromAsaas(payment, asaasPayment)
     await this.paymentRepository.update(payment, eventId)
 
-    this.confirmInscriptionIfPending(inscription, payment.id)
-    await this.inscriptionRepository.update(inscription)
-
-    console.log(`[Payment] Synced from Asaas: ${payment.id} → ${asaasPayment.status}`)
     return { payment: payment.toJSON() }
   }
 
   private syncPaymentFromAsaas(payment: Payment, asaasPayment: { status: string; paymentDate?: string }): void {
     const paymentDate = asaasPayment.paymentDate ? new Date(asaasPayment.paymentDate) : new Date()
-
     if (asaasPayment.status === 'RECEIVED') {
       payment.markAsReceived(paymentDate)
       return
@@ -82,59 +87,111 @@ export class CreatePaymentForInscription {
     payment.markAsConfirmed(paymentDate)
   }
 
-  private confirmInscriptionIfPending(inscription: NonNullable<Awaited<ReturnType<IInscriptionRepository['findById']>>>, paymentId: string): void {
-    if (!inscription.isPending()) {
-      return
-    }
-    inscription.confirm(paymentId)
-  }
-
-  private async createNewPayment(
-    inscription: NonNullable<Awaited<ReturnType<IInscriptionRepository['findById']>>>,
-    input: CreatePaymentInput
+  private async createPixPayment(
+    inscription: Inscription,
+    input: CreatePaymentInput,
   ): Promise<CreatePaymentOutput> {
-    const inscriptionData = inscription.toJSON()
-    const customerData = await this.getCustomerData(inscriptionData)
-    const asaasCustomer = await asaasService.findOrCreateCustomer(customerData)
-
+    const valorBase = Money.fromCents(inscription.valorCents)
+    const breakdown = this.feeCalculator.calculateBreakdown(valorBase, 'PIX')
+    const customer = await this.findOrCreateAsaasCustomer(inscription)
     const dueDate = this.calculateDueDate()
-    const valorInReais = inscription.valorCents / 100
+    const dueDateStr = dueDate.toISOString().split('T')[0]
 
     const asaasPayment = await asaasService.createPayment({
-      customer: asaasCustomer.id,
+      customer: customer.id,
       billingType: 'PIX',
-      value: valorInReais,
-      dueDate: dueDate.toISOString().split('T')[0],
-      description: `Inscrição - Evento`,
+      value: breakdown.valorTotal.getReais(),
+      dueDate: dueDateStr,
+      description: `Inscrição - ${input.eventId}`.substring(0, 100),
       externalReference: `${input.eventId}:${input.inscriptionId}`,
     })
 
-    const pixQrCode = await asaasService.getPixQrCode(asaasPayment.id)
+    const pixData = await asaasService.getPixQrCode(asaasPayment.id)
 
     const payment = Payment.create(uuidv4(), {
       inscriptionId: input.inscriptionId,
       userId: inscription.userId,
       asaasPaymentId: asaasPayment.id,
-      valor: inscription.valorCents,
+      valor: breakdown.valorTotal.getCents(),
+      breakdown,
       metodoPagamento: 'PIX',
       dataVencimento: dueDate,
-      pixQrCode: pixQrCode.encodedImage,
-      pixCopiaECola: pixQrCode.payload,
+      pixQrCode: pixData.encodedImage,
+      pixCopiaECola: pixData.payload,
     })
 
     await this.paymentRepository.save(payment, input.eventId)
-
     return { payment: payment.toJSON() }
   }
 
-  private async getCustomerData(inscriptionData: InscriptionData) {
-    if (inscriptionData.userId) {
-      const user = await this.userRepository.findById(inscriptionData.userId)
-      if (!user) throw new ValidationError('Usuário não encontrado')
+  private async createCardCheckoutPayment(
+    inscription: Inscription,
+    input: CreatePaymentInput,
+  ): Promise<CreatePaymentOutput> {
+    const valorBase = Money.fromCents(inscription.valorCents)
+    const breakdown = this.feeCalculator.calculateBreakdown(valorBase, 'CREDIT_CARD', 1)
+    const customerData = await this.getCustomerData(inscription)
+    const asaasCustomer = await asaasService.findOrCreateCustomer(customerData)
+    const dueDate = this.calculateDueDate()
+    const dueDateStr = dueDate.toISOString().split('T')[0]
 
+    const externalReference = `${input.eventId}:${input.inscriptionId}`
+
+    const asaasPayment = await asaasService.createPayment({
+      customer: asaasCustomer.id,
+      billingType: 'CREDIT_CARD',
+      value: breakdown.valorTotal.getReais(),
+      dueDate: dueDateStr,
+      description: `Inscrição - ${input.eventId}`.substring(0, 100),
+      externalReference,
+    })
+
+    const payment = Payment.create(uuidv4(), {
+      inscriptionId: input.inscriptionId,
+      userId: inscription.userId,
+      asaasPaymentId: asaasPayment.id,
+      valor: breakdown.valorTotal.getCents(),
+      breakdown,
+      metodoPagamento: 'CREDIT_CARD',
+      dataVencimento: dueDate,
+      checkoutUrl: asaasPayment.invoiceUrl,
+    })
+
+    await this.paymentRepository.save(payment, input.eventId)
+    return { payment: payment.toJSON() }
+  }
+
+  private normalizeParcelas(parcelas?: number): number {
+    if (parcelas === undefined || parcelas === null) return 1
+    if (parcelas < 1) return 1
+    if (parcelas > MAX_PARCELAS) return MAX_PARCELAS
+    return Math.floor(parcelas)
+  }
+
+  private buildCallbackUrl(eventId: string, inscriptionId: string, kind: 'success' | 'cancel' | 'expired'): string {
+    const candidates = [
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    ]
+    const base = candidates.find((u) => u && u.startsWith('https://') && !u.includes('localhost'))
+    if (!base) {
+      throw new Error('NEXT_PUBLIC_APP_URL deve ser configurada com uma URL HTTPS válida para pagamentos com cartão. Ex: NEXT_PUBLIC_APP_URL=https://ieq157.vercel.app')
+    }
+    return `${base}/eventos/${eventId}/confirmado?inscriptionId=${inscriptionId}&checkout=${kind}`
+  }
+
+  private async findOrCreateAsaasCustomer(inscription: Inscription) {
+    const customerData = await this.getCustomerData(inscription)
+    return asaasService.findOrCreateCustomer(customerData)
+  }
+
+  private async getCustomerData(inscription: Inscription): Promise<CustomerData> {
+    if (inscription.userId) {
+      const user = await this.userRepository.findById(inscription.userId)
+      if (!user) throw new ValidationError('Usuário não encontrado')
       const userData = user.toJSON()
       if (!userData.cpf) throw new ValidationError('Usuário não possui CPF cadastrado')
-
       return {
         name: userData.nome,
         email: userData.email,
@@ -142,16 +199,15 @@ export class CreatePaymentForInscription {
         phone: userData.telefone,
       }
     }
-
-    if (inscriptionData.guestData) {
+    if (inscription.guestData) {
+      const guest = inscription.guestData.toJSON()
       return {
-        name: inscriptionData.guestData.nome,
-        email: inscriptionData.guestData.email,
-        cpfCnpj: inscriptionData.guestData.cpf,
-        phone: inscriptionData.guestData.telefone,
+        name: guest.nome,
+        email: guest.email,
+        cpfCnpj: guest.cpf,
+        phone: guest.telefone,
       }
     }
-
     throw new ValidationError('Inscrição sem dados de usuário ou visitante')
   }
 

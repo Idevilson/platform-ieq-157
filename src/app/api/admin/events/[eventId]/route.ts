@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { UpdateEventStatus } from '@/server/application/event/UpdateEventStatus'
+import { changeEventSlugSchema } from '@/server/application/event/schemas'
 import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
 import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
 import { adminAuth } from '@/server/infrastructure/firebase/admin'
@@ -44,6 +45,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { eventId } = await params
     const body = await request.json()
+
+    if (body.newSlug) {
+      const parseResult = changeEventSlugSchema.safeParse({ eventId, newSlug: body.newSlug })
+      if (!parseResult.success) {
+        return NextResponse.json({ error: parseResult.error.issues[0].message }, { status: 400 })
+      }
+      await eventRepository.changeId(eventId, parseResult.data.newSlug)
+      return NextResponse.json({ id: parseResult.data.newSlug, oldId: eventId })
+    }
 
     if (body.status) {
       const result = await updateEventStatus.execute({

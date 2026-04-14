@@ -1,0 +1,45 @@
+{
+  "featureId": "003",
+  "featureName": "q4-news",
+  "branch": null,
+  "createdAt": "2026-04-12T04:10:00Z",
+  "specCreatedAt": "2026-04-12T04:10:00Z",
+  "currentMigration": "001",
+  "migrations": {
+    "001": {
+      "id": "001",
+      "timestamp": "2026-04-12_04-30-00",
+      "folder": "001_2026-04-12_04-30-00",
+      "status": "in-progress",
+      "tasksTotal": 22,
+      "tasksCompleted": 0,
+      "createdAt": "2026-04-12T04:30:00Z",
+      "expectation": {
+        "summary": "Implementação completa do Q4-News: páginas públicas, painel admin, permissão granular, YouTube embed, padrão DDD, early return, zero comentários inúteis",
+        "must": [
+          "Criar domínio q4news completo (entidade, repository, use cases, schemas Zod)",
+          "Implementar permissão granular adm-q4-news com campo permissions[]",
+          "Criar 4 API routes (2 públicas + 2 admin)",
+          "Criar páginas públicas /q4-news e /q4-news/[id]",
+          "Criar painel admin /minha-conta/admin/q4-news com modal CRUD",
+          "Adicionar Q4-News na navbar e menu admin",
+          "Extrair thumbnail/videoId automaticamente do YouTube",
+          "Todos os campos obrigatórios no formulário",
+          "Early return em todas as funções",
+          "Design system existente",
+          "Zero comentários inúteis"
+        ],
+        "mustNot": [
+          "Rich text editor",
+          "Sistema de tags/categorias",
+          "Contador de visualizações",
+          "Campo destaque",
+          "Biblioteca externa pra YouTube"
+        ]
+      }
+    }
+  },
+  "splits": [],
+  "commits": [],
+  "expectation": "O Q4-News é o jornal digital da igreja, acessível por qualquer visitante do site através de um novo item 'Q4-News' na barra de navegação superior."
+}

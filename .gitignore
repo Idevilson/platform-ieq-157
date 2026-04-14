@@ -68,3 +68,18 @@ Thumbs.db
 # Firebase Admin SDK credentials
 portal-ieq-sede-firebase-adminsdk-*.json
 .env.vercel
+
+# SEDD
+.sedd/cache/
+.sedd/scripts/
+.sedd/templates/
+
+# SEDD config (uncomment to ignore)
+# sedd.config.json
+
+# Uncomment to ignore entire SEDD directory
+# .sedd/
+
+# Claude Code hooks output
+.claude/hooks/*.log
+.claude/hooks/*.tmp

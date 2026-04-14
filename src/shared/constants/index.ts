@@ -99,14 +99,29 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 }
 
 // Payment methods available for event inscription
-export type InscriptionPaymentMethod = 'PIX' | 'CASH'
+export type InscriptionPaymentMethod = 'PIX' | 'CREDIT_CARD' | 'CASH'
 
 export const INSCRIPTION_PAYMENT_METHODS: readonly InscriptionPaymentMethod[] = [
   'PIX',
+  'CREDIT_CARD',
   'CASH',
 ] as const
 
 export const INSCRIPTION_PAYMENT_METHOD_LABELS: Record<InscriptionPaymentMethod, string> = {
   PIX: 'PIX',
+  CREDIT_CARD: 'Cartão de Crédito',
   CASH: 'Dinheiro em espécie',
 }
+
+// News post status
+export type NewsStatus = 'rascunho' | 'publicado'
+
+export const NEWS_STATUSES: readonly NewsStatus[] = ['rascunho', 'publicado'] as const
+
+export const NEWS_STATUS_LABELS: Record<NewsStatus, string> = {
+  rascunho: 'Rascunho',
+  publicado: 'Publicado',
+}
+
+// Q4-News permission
+export const Q4_NEWS_PERMISSION = 'adm-q4-news'

@@ -1,10 +1,9 @@
 import { IPaymentRepository } from '@/server/domain/payment/repositories/IPaymentRepository'
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
+import { IEventPerkRepository } from '@/server/domain/event/repositories/IEventPerkRepository'
 import { Payment } from '@/server/domain/payment/entities/Payment'
 import { Inscription } from '@/server/domain/inscription/entities/Inscription'
 
-// Asaas webhook event types
-// https://docs.asaas.com/reference/webhooks
 export type AsaasPaymentEvent =
   | 'PAYMENT_CREATED'
   | 'PAYMENT_AWAITING_RISK_ANALYSIS'
@@ -32,7 +31,7 @@ export type AsaasPaymentEvent =
   | 'PAYMENT_CHECKOUT_VIEWED'
 
 export interface AsaasWebhookPayload {
-  id: string // Unique event identifier for idempotency
+  id: string
   event: AsaasPaymentEvent
   payment: {
     object: string
@@ -49,7 +48,7 @@ export interface AsaasWebhookPayload {
     creditDate?: string
     dueDate: string
     description?: string
-    externalReference?: string // This is the inscriptionId
+    externalReference?: string
     invoiceUrl?: string
     bankSlipUrl?: string
     invoiceNumber?: string
@@ -57,7 +56,7 @@ export interface AsaasWebhookPayload {
 }
 
 export interface ProcessAsaasWebhookInput {
-  eventId?: string // For idempotency tracking
+  eventId?: string
   event: AsaasPaymentEvent
   payment: AsaasWebhookPayload['payment']
 }
@@ -67,21 +66,20 @@ export interface ProcessAsaasWebhookOutput {
   message: string
   paymentId?: string
   inscriptionId?: string
+  brindeAlocado?: boolean
 }
 
 export class ProcessAsaasWebhook {
   constructor(
     private readonly paymentRepository: IPaymentRepository,
-    private readonly inscriptionRepository: IInscriptionRepository
+    private readonly inscriptionRepository: IInscriptionRepository,
+    private readonly eventPerkRepository: IEventPerkRepository,
   ) {}
 
   async execute(input: ProcessAsaasWebhookInput): Promise<ProcessAsaasWebhookOutput> {
-    console.log(`[Webhook] Event: ${input.event} | Asaas ID: ${input.payment.id}`)
-
     if (!this.isPaymentConfirmationEvent(input.event)) {
-      return this.ignored(input.event)
+      return { success: true, message: `Event ${input.event} ignored` }
     }
-
     return this.confirmPayment(input)
   }
 
@@ -92,30 +90,70 @@ export class ProcessAsaasWebhook {
   private async confirmPayment(input: ProcessAsaasWebhookInput): Promise<ProcessAsaasWebhookOutput> {
     const reference = this.parseExternalReference(input.payment.externalReference)
     if (!reference) {
-      return this.invalidReference(input.payment.externalReference)
+      return { success: false, message: `Invalid external reference: ${input.payment.externalReference}` }
     }
 
     const { eventId, inscriptionId } = reference
 
-    const inscription = await this.inscriptionRepository.findById(inscriptionId, eventId)
+    const [inscription, payment] = await Promise.all([
+      this.inscriptionRepository.findById(inscriptionId, eventId),
+      this.paymentRepository.findByInscriptionId(inscriptionId, eventId),
+    ])
+
     if (!inscription) {
-      return this.inscriptionNotFound(inscriptionId)
+      return { success: false, message: `Inscription not found: ${inscriptionId}` }
+    }
+    if (!payment) {
+      return { success: false, message: `Payment not found: ${input.payment.id}` }
     }
 
-    const payment = await this.paymentRepository.findByInscriptionId(inscriptionId, eventId)
-    if (!payment) {
-      return this.paymentNotFound(input.payment.id)
+    if (inscription.isBrindeProcessed()) {
+      return {
+        success: true,
+        message: 'Already processed (idempotent)',
+        paymentId: payment.id,
+        inscriptionId: inscription.id,
+        brindeAlocado: inscription.temBrinde,
+      }
     }
 
     const dataPagamento = this.extractPaymentDate(input.payment)
     this.markPaymentByEvent(payment, input.event, dataPagamento)
     await this.paymentRepository.update(payment, eventId)
 
-    this.confirmInscriptionIfPending(inscription, payment.id)
+    if (inscription.isPending()) {
+      inscription.confirm(payment.id)
+    }
+
+    const brindeAlocado = await this.tryAllocatePerk(eventId, inscription)
     await this.inscriptionRepository.update(inscription)
 
-    console.log(`[Webhook] ✓ Payment confirmed | Inscription: ${inscription.id}`)
-    return this.success(payment.id, inscription.id)
+    return {
+      success: true,
+      message: 'Payment confirmed and inscription updated',
+      paymentId: payment.id,
+      inscriptionId: inscription.id,
+      brindeAlocado,
+    }
+  }
+
+  private async tryAllocatePerk(eventId: string, inscription: Inscription): Promise<boolean> {
+    const perk = await this.eventPerkRepository.findPrimaryByEventId(eventId)
+    if (!perk) {
+      inscription.markBrindeUnavailable()
+      return false
+    }
+
+    const result = await this.eventPerkRepository.allocateToInscription(eventId, perk.id, inscription.id)
+    if (result.alreadyProcessed) {
+      return inscription.temBrinde === true
+    }
+    if (result.allocated && result.perkId) {
+      inscription.markBrindeAllocated(result.perkId, new Date())
+      return true
+    }
+    inscription.markBrindeUnavailable()
+    return false
   }
 
   private parseExternalReference(externalReference?: string): { eventId: string; inscriptionId: string } | null {
@@ -127,53 +165,15 @@ export class ProcessAsaasWebhook {
 
   private extractPaymentDate(asaasPayment: ProcessAsaasWebhookInput['payment']): Date {
     const dateString = asaasPayment.paymentDate || asaasPayment.clientPaymentDate
-    if (!dateString) {
-      return new Date()
-    }
+    if (!dateString) return new Date()
     return new Date(dateString)
   }
 
   private markPaymentByEvent(payment: Payment, event: AsaasPaymentEvent, date: Date): void {
-    const markMethods: Record<string, () => void> = {
-      'PAYMENT_RECEIVED': () => payment.markAsReceived(date),
-      'PAYMENT_CONFIRMED': () => payment.markAsConfirmed(date),
-    }
-    markMethods[event]()
-  }
-
-  private confirmInscriptionIfPending(inscription: Inscription, paymentId: string): void {
-    if (!inscription.isPending()) {
+    if (event === 'PAYMENT_RECEIVED') {
+      payment.markAsReceived(date)
       return
     }
-    inscription.confirm(paymentId)
-  }
-
-  private ignored(event: AsaasPaymentEvent): ProcessAsaasWebhookOutput {
-    console.log(`[Webhook] Ignoring event: ${event}`)
-    return { success: true, message: `Event ${event} ignored` }
-  }
-
-  private paymentNotFound(asaasPaymentId: string): ProcessAsaasWebhookOutput {
-    console.log(`[Webhook] Payment not found: ${asaasPaymentId}`)
-    return { success: false, message: `Payment not found: ${asaasPaymentId}` }
-  }
-
-  private invalidReference(externalReference?: string): ProcessAsaasWebhookOutput {
-    console.log(`[Webhook] Invalid external reference: ${externalReference}`)
-    return { success: false, message: `Invalid external reference format: ${externalReference}` }
-  }
-
-  private inscriptionNotFound(inscriptionId: string): ProcessAsaasWebhookOutput {
-    console.log(`[Webhook] Inscription not found: ${inscriptionId}`)
-    return { success: false, message: `Inscription not found: ${inscriptionId}` }
-  }
-
-  private success(paymentId: string, inscriptionId: string): ProcessAsaasWebhookOutput {
-    return {
-      success: true,
-      message: 'Payment confirmed and inscription updated',
-      paymentId,
-      inscriptionId,
-    }
+    payment.markAsConfirmed(date)
   }
 }

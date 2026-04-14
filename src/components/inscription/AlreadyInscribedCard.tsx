@@ -6,12 +6,14 @@ import { INSCRIPTION_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '@/shared/const
 
 interface AlreadyInscribedCardProps {
   inscription: InscriptionDTO
+  eventId: string
   eventTitle?: string
   categoryName?: string
 }
 
 export function AlreadyInscribedCard({
   inscription,
+  eventId,
   eventTitle,
   categoryName,
 }: AlreadyInscribedCardProps) {
@@ -63,7 +65,7 @@ export function AlreadyInscribedCard({
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Link
-          href={`/eventos/startup/confirmado?inscriptionId=${inscription.id}`}
+          href={`/eventos/${eventId}/confirmado?inscriptionId=${inscription.id}&eventId=${eventId}`}
           className="px-6 py-3 bg-gold text-bg-primary font-bold rounded-xl hover:bg-gold-light transition-colors"
         >
           Ver Detalhes da Inscricao

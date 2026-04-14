@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ProcessAsaasWebhook, AsaasWebhookPayload } from '@/server/application/payment/ProcessAsaasWebhook'
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
+import { FirebaseEventPerkRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventPerkRepositoryAdmin'
 
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN || ''
 
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
+const eventPerkRepository = new FirebaseEventPerkRepositoryAdmin()
 
 const processWebhook = new ProcessAsaasWebhook(
   paymentRepository,
-  inscriptionRepository
+  inscriptionRepository,
+  eventPerkRepository,
 )
 
 export async function POST(request: NextRequest) {
@@ -20,8 +23,10 @@ export async function POST(request: NextRequest) {
     // Verify webhook token if configured
     if (ASAAS_WEBHOOK_TOKEN) {
       const authHeader = request.headers.get('asaas-access-token')
-      if (authHeader !== ASAAS_WEBHOOK_TOKEN) {
-        console.log('[Webhook] Invalid or missing access token')
+      const expectedTrimmed = ASAAS_WEBHOOK_TOKEN.trim()
+      const receivedTrimmed = (authHeader ?? '').trim()
+      if (receivedTrimmed !== expectedTrimmed) {
+        console.log('[Webhook] Token mismatch | expected:', JSON.stringify(expectedTrimmed), '| received:', JSON.stringify(receivedTrimmed))
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }

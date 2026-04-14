@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getProximoEvento, eventos } from '@/data/eventos'
 import { getUltimosAvisos, formatarData } from '@/data/avisos'
+import { LatestQ4NewsSection } from '@/components/home/LatestQ4NewsSection'
 import logoIEQ from '@/assets/images/only-logo.png'
 import pastoresImg from '@/assets/images/pr-heitor-e-pra-val.png'
 
@@ -188,6 +189,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <LatestQ4NewsSection />
 
       {/* Ultimos Avisos */}
       <section className="py-16 bg-bg-secondary">

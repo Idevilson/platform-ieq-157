@@ -28,6 +28,9 @@ export interface InscriptionWithDetails {
   valorFormatado: string
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
+  temBrinde?: boolean
+  perkId?: string
+  brindeAlocadoEm?: Date
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -101,6 +104,9 @@ export class ListEventInscriptions {
         valorFormatado: inscription.valorFormatado,
         paymentId: inscription.paymentId,
         preferredPaymentMethod: inscription.preferredPaymentMethod,
+        temBrinde: inscription.temBrinde,
+        perkId: inscription.perkId,
+        brindeAlocadoEm: inscription.brindeAlocadoEm,
         criadoEm: inscription.criadoEm,
         atualizadoEm: inscription.atualizadoEm,
       })

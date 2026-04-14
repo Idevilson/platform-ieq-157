@@ -7,13 +7,11 @@ export class Money {
   }
 
   static fromCents(cents: number): Money {
-    if (!Number.isInteger(cents)) {
-      throw new Error('Valor deve ser um número inteiro em centavos')
-    }
-    if (cents < 0) {
+    const rounded = Math.round(cents)
+    if (rounded < 0) {
       throw new Error('Valor não pode ser negativo')
     }
-    return new Money(cents)
+    return new Money(rounded)
   }
 
   static fromReais(reais: number): Money {

@@ -33,14 +33,17 @@ export class CreateInscription {
   ) {}
 
   async execute(input: CreateInscriptionInput): Promise<CreateInscriptionOutput> {
-    const user = await this.findUser(input.userId)
-    await this.findOpenEvent(input.eventId)
-    const category = await this.findCategory(input.eventId, input.categoryId)
+    const [user, , category] = await Promise.all([
+      this.findUser(input.userId),
+      this.findOpenEvent(input.eventId),
+      this.findCategory(input.eventId, input.categoryId),
+    ])
 
     await this.ensureNoDuplicateByUserId(input.eventId, input.userId)
     await this.ensureNoDuplicateByCPF(input.eventId, user)
 
-    const inscription = this.createInscription(input, category.valorCents)
+    const valorCents = category.getCurrentPrice(new Date()).getCents()
+    const inscription = this.createInscription(input, valorCents)
     await this.inscriptionRepository.save(inscription)
 
     return { inscription: inscription.toJSON() }

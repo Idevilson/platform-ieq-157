@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useEventById } from '@/hooks/queries/useEvents'
 import { useAdminEventInscriptions } from '@/hooks/queries/useAdminEvents'
-import { useUpdateEventStatus, useConfirmInscription } from '@/hooks/mutations/useAdminEventMutations'
+import { useUpdateEventStatus, useConfirmInscription, useDeleteInscription, useChangeEventSlug } from '@/hooks/mutations/useAdminEventMutations'
+import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
@@ -91,21 +92,25 @@ function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
 
 interface ConfirmModalProps {
   inscription: InscriptionWithDetails
+  eventId: string
   onClose: () => void
   onConfirm: () => void
+  onDelete: () => void
   isLoading: boolean
+  isDeleting: boolean
 }
 
-function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmModalProps) {
+function ConfirmModal({ inscription, eventId, onClose, onConfirm, onDelete, isLoading, isDeleting }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
   const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg bg-bg-secondary border border-gold/20 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-text-primary">Detalhes da Inscricao</h2>
+          <h2 className="text-xl font-bold text-text-primary">Detalhes da Inscrição</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -149,7 +154,7 @@ function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmMod
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-text-muted">Metodo de Pagamento</label>
+              <label className="text-xs text-text-muted">Método de Pagamento</label>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${inscription.preferredPaymentMethod === 'CASH' ? 'bg-orange-500/20 text-orange-400' : 'bg-sky-500/20 text-sky-400'}`}>
                 {INSCRIPTION_PAYMENT_METHOD_LABELS[inscription.preferredPaymentMethod] || 'PIX'}
               </span>
@@ -162,9 +167,27 @@ function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmMod
             </div>
           </div>
 
-          <div>
-            <label className="text-xs text-text-muted">Data da Inscricao</label>
-            <p className="text-text-primary text-sm">{formatDateTime(inscription.criadoEm)}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Data da Inscrição</label>
+              <p className="text-text-primary text-sm">{formatDateTime(inscription.criadoEm)}</p>
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">Brinde</label>
+              {inscription.temBrinde === true ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gold/20 text-gold">
+                  🎁 Pulseira garantida
+                </span>
+              ) : inscription.temBrinde === false ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">
+                  Não contemplado
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                  Aguardando pagamento
+                </span>
+              )}
+            </div>
           </div>
 
           {isPending && (
@@ -173,14 +196,14 @@ function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmMod
                 <p className="text-sm text-yellow-400 font-medium mb-1">Confirmar Manualmente</p>
                 <p className="text-xs text-text-secondary">
                   {hasPixPayment
-                    ? 'A cobranca PIX pendente no Asaas sera cancelada automaticamente.'
-                    : 'Esta inscricao sera marcada como confirmada.'}
+                    ? 'A cobrança PIX pendente no Asaas será cancelada automaticamente.'
+                    : 'Esta inscrição será marcada como confirmada.'}
                 </p>
               </div>
 
               <button
                 onClick={onConfirm}
-                disabled={isLoading}
+                disabled={isLoading || isDeleting}
                 className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isLoading ? (
@@ -193,12 +216,58 @@ function ConfirmModal({ inscription, onClose, onConfirm, isLoading }: ConfirmMod
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Confirmar Inscricao
+                    Confirmar Inscrição
                   </>
                 )}
               </button>
             </div>
           )}
+
+          <div className="pt-4 border-t border-gold/10">
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                disabled={isLoading || isDeleting}
+                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 border border-red-500/30"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Excluir Inscrição
+              </button>
+            ) : (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 space-y-3">
+                <p className="text-sm text-red-400 font-medium">Tem certeza?</p>
+                <p className="text-xs text-text-secondary">
+                  A inscrição será excluída permanentemente.
+                  {hasPixPayment && ' A cobrança pendente no Asaas também será cancelada.'}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={onDelete}
+                    disabled={isDeleting}
+                    className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Excluindo...
+                      </>
+                    ) : (
+                      'Sim, excluir'
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={isDeleting}
+                    className="flex-1 py-2 bg-bg-tertiary text-text-secondary font-medium rounded-lg hover:text-text-primary transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -221,6 +290,10 @@ export default function AdminEventDetailPage() {
   )
   const updateStatus = useUpdateEventStatus()
   const confirmInscription = useConfirmInscription()
+  const deleteInscription = useDeleteInscription()
+  const changeSlug = useChangeEventSlug()
+  const [editingSlug, setEditingSlug] = useState(false)
+  const [newSlug, setNewSlug] = useState('')
 
   const inscriptions = useMemo(() => inscriptionsData?.inscriptions ?? [], [inscriptionsData?.inscriptions])
 
@@ -302,6 +375,51 @@ export default function AdminEventDetailPage() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-text-primary">{event.titulo}</h1>
             {event.subtitulo && <p className="text-text-secondary mt-1">{event.subtitulo}</p>}
+
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-text-muted">Slug:</span>
+              {editingSlug ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newSlug}
+                    onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    className="input text-xs px-2 py-1 w-48"
+                    placeholder="novo-slug"
+                    autoFocus
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newSlug || newSlug === eventId) { setEditingSlug(false); return }
+                      try {
+                        await changeSlug.mutateAsync({ eventId, newSlug })
+                        window.location.href = `/minha-conta/admin/eventos/${newSlug}`
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : 'Erro ao alterar slug')
+                      }
+                    }}
+                    disabled={changeSlug.isPending || !newSlug || newSlug === eventId}
+                    className="text-xs text-green-400 hover:text-green-300 disabled:opacity-50"
+                  >
+                    {changeSlug.isPending ? '...' : 'Salvar'}
+                  </button>
+                  <button onClick={() => setEditingSlug(false)} className="text-xs text-text-muted hover:text-text-secondary">
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <code className="text-xs text-gold bg-gold/10 px-2 py-0.5 rounded">{eventId}</code>
+                  <button
+                    onClick={() => { setNewSlug(eventId); setEditingSlug(true) }}
+                    className="text-xs text-text-muted hover:text-gold transition-colors"
+                  >
+                    Editar
+                  </button>
+                </>
+              )}
+            </div>
+
             <p className="text-sm text-text-muted mt-3">{event.descricao}</p>
 
             <div className="flex flex-wrap gap-6 mt-4 text-sm">
@@ -368,6 +486,8 @@ export default function AdminEventDetailPage() {
           </div>
         </div>
       </div>
+
+      <AdminPerkCard eventId={eventId} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -561,9 +681,14 @@ export default function AdminEventDetailPage() {
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getInscriptionStatusClassName(inscription.status)}`}>
-                        {inscription.statusLabel}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getInscriptionStatusClassName(inscription.status)}`}>
+                          {inscription.statusLabel}
+                        </span>
+                        {inscription.temBrinde === true && (
+                          <span className="text-[10px] text-gold">🎁</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <span className="text-xs text-text-secondary">{formatDateTime(inscription.criadoEm)}</span>
@@ -582,13 +707,23 @@ export default function AdminEventDetailPage() {
         )}
       </div>
 
-      {/* Confirm Modal */}
       {selectedInscription && (
         <ConfirmModal
           inscription={selectedInscription}
+          eventId={eventId}
           onClose={() => setSelectedInscription(null)}
           onConfirm={handleConfirmInscription}
+          onDelete={async () => {
+            try {
+              await deleteInscription.mutateAsync({ eventId, inscriptionId: selectedInscription.id })
+              setSelectedInscription(null)
+              refetchInscriptions()
+            } catch (error) {
+              console.error('Erro ao excluir inscrição:', error)
+            }
+          }}
           isLoading={confirmInscription.isPending}
+          isDeleting={deleteInscription.isPending}
         />
       )}
     </div>
