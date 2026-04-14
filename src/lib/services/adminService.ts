@@ -234,13 +234,13 @@ export const adminService = {
     throw new Error(response.error || 'Erro ao confirmar inscrição')
   },
 
-  async listNewsPosts(params?: { status?: string; limit?: number; offset?: number }): Promise<{ items: any[]; total: number }> {
+  async listNewsPosts(params?: { status?: string; limit?: number; offset?: number }): Promise<{ items: unknown[]; total: number }> {
     const searchParams = new URLSearchParams()
     if (params?.status) searchParams.set('status', params.status)
     if (params?.limit) searchParams.set('limit', params.limit.toString())
     if (params?.offset) searchParams.set('offset', params.offset.toString())
     const query = searchParams.toString()
-    const response = await authFetch<Record<string, any>>(`/q4news${query ? `?${query}` : ''}`)
+    const response = await authFetch<{ items?: unknown[]; posts?: unknown[]; total?: number }>(`/q4news${query ? `?${query}` : ''}`)
     if (response.success && response.data) {
       const items = response.data.items ?? response.data.posts ?? []
       return { items, total: response.data.total ?? items.length }

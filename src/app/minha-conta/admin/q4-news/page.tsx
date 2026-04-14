@@ -1,11 +1,23 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import Image from 'next/image'
 import { useAdminQ4NewsList } from '@/hooks/queries/useAdminQ4News'
 import { useCreateNewsPost, useUpdateNewsPost, useDeleteNewsPost } from '@/hooks/mutations/useAdminQ4NewsMutations'
 import { NewsStatus, NEWS_STATUSES, NEWS_STATUS_LABELS } from '@/shared/constants'
 
-function formatDate(date: string | Date | null) {
+interface NewsPost {
+  id: string
+  titulo: string
+  descricao: string
+  conteudo?: string
+  youtubeUrl?: string
+  status: string
+  criadoEm?: string | Date
+  publicadoEm?: string | Date | null
+}
+
+function formatDate(date: string | Date | null | undefined) {
   if (!date) return '-'
   return new Date(date).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -136,11 +148,12 @@ function NewsModal({ isOpen, onClose, onSubmit, isLoading, initialData, title }:
               className="w-full bg-bg-tertiary border border-gold/20 rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold"
             />
             {videoId && (
-              <div className="mt-2 rounded-lg overflow-hidden border border-gold/10">
-                <img
+              <div className="mt-2 relative aspect-video rounded-lg overflow-hidden border border-gold/10">
+                <Image
                   src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
                   alt="Thumbnail"
-                  className="w-full h-auto"
+                  fill
+                  className="object-cover"
                 />
               </div>
             )}
@@ -198,7 +211,7 @@ function NewsModal({ isOpen, onClose, onSubmit, isLoading, initialData, title }:
 }
 
 interface NewsDetailModalProps {
-  post: any
+  post: NewsPost
   onClose: () => void
   onEdit: () => void
   onDelete: () => void
@@ -213,10 +226,11 @@ function NewsDetailModal({ post, onClose, onEdit, onDelete }: NewsDetailModalPro
       <div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg-secondary border border-gold/20 rounded-2xl">
         {videoId && (
           <div className="relative aspect-video w-full bg-bg-tertiary rounded-t-2xl overflow-hidden">
-            <img
+            <Image
               src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
               alt={post.titulo}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
             <a
               href={post.youtubeUrl}
@@ -350,9 +364,9 @@ export default function AdminQ4NewsPage() {
   const [statusFilter, setStatusFilter] = useState<NewsStatus | ''>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [editingPost, setEditingPost] = useState<any | null>(null)
-  const [deletingPost, setDeletingPost] = useState<any | null>(null)
-  const [viewingPost, setViewingPost] = useState<any | null>(null)
+  const [editingPost, setEditingPost] = useState<NewsPost | null>(null)
+  const [deletingPost, setDeletingPost] = useState<NewsPost | null>(null)
+  const [viewingPost, setViewingPost] = useState<NewsPost | null>(null)
 
   const { data, isLoading, error } = useAdminQ4NewsList({
     status: statusFilter || undefined,
@@ -362,11 +376,11 @@ export default function AdminQ4NewsPage() {
   const updateMutation = useUpdateNewsPost()
   const deleteMutation = useDeleteNewsPost()
 
-  const items = useMemo(() => {
-    const list = data?.items || []
+  const items = useMemo<NewsPost[]>(() => {
+    const list = (data?.items ?? []) as NewsPost[]
     if (!searchTerm) return list
     const search = searchTerm.toLowerCase()
-    return list.filter((p: any) => p.titulo?.toLowerCase().includes(search))
+    return list.filter((p) => p.titulo?.toLowerCase().includes(search))
   }, [data?.items, searchTerm])
 
   if (isLoading) {
@@ -486,7 +500,7 @@ export default function AdminQ4NewsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((post: any) => (
+              {items.map((post) => (
                 <tr
                   key={post.id}
                   onClick={() => setViewingPost(post)}

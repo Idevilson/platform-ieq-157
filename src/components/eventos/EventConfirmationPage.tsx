@@ -51,10 +51,6 @@ function EventConfirmationContent({
     isPaid,
     isCashPayment,
     isInscriptionConfirmed,
-    needsInstallmentSelection,
-    installmentOptions,
-    selectInstallments,
-    creatingPayment,
   } = usePaymentPolling({
     inscriptionId,
     eventId,
@@ -316,92 +312,6 @@ function StatusIcon({ confirmed, cancelled, expired, processing }: {
           <polyline points="12 6 12 12 16 14" />
         </svg>
       )}
-    </div>
-  )
-}
-
-function InstallmentSelectorCard({
-  options,
-  onSelect,
-  loading,
-}: {
-  options: Array<{
-    parcelas: number
-    valorParcelaFormatado: string
-    valorTotalFormatado: string
-    valorTaxaFormatado: string
-  }>
-  onSelect: (parcelas: number) => void
-  loading: boolean
-}) {
-  const [selected, setSelected] = useState<number | null>(null)
-
-  const selectedOption = options.find((o) => o.parcelas === selected)
-  const buttonLabel = selected === null
-    ? 'Selecione uma opção'
-    : selected === 1
-      ? `Pagar à vista — ${selectedOption?.valorTotalFormatado}`
-      : `Pagar em ${selected}x de ${selectedOption?.valorParcelaFormatado}`
-
-  return (
-    <div className="card text-left flex-1 flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-text-primary">Pagamento com Cartão</h3>
-        <span className="px-3 py-1 text-xs font-medium rounded-full bg-gold/20 text-gold">
-          Selecione as parcelas
-        </span>
-      </div>
-
-      <div className="space-y-2 mb-6 max-h-[320px] overflow-y-auto pr-1">
-        {options.map((opt) => (
-          <button
-            key={opt.parcelas}
-            type="button"
-            onClick={() => setSelected(opt.parcelas)}
-            disabled={loading}
-            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-              selected === opt.parcelas
-                ? 'border-gold bg-gold/10'
-                : 'border-gold/10 bg-bg-secondary hover:border-gold/30'
-            } ${loading ? 'opacity-50' : ''}`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-text-primary font-semibold">
-                  {opt.parcelas}x de {opt.valorParcelaFormatado}
-                </span>
-                {opt.parcelas > 1 && (
-                  <span className="text-xs text-text-muted ml-2">
-                    (total {opt.valorTotalFormatado})
-                  </span>
-                )}
-              </div>
-              {opt.parcelas === 1 ? (
-                <span className="text-xs text-green-400 font-medium">à vista</span>
-              ) : (
-                <span className="text-xs text-text-muted">
-                  +{opt.valorTaxaFormatado} taxa
-                </span>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <button
-        onClick={() => selected !== null && onSelect(selected)}
-        disabled={loading || selected === null}
-        className="w-full py-3 bg-gold text-bg-primary font-bold rounded-lg hover:bg-gold-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-auto"
-      >
-        {loading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-bg-primary border-t-transparent rounded-full animate-spin" />
-            Gerando pagamento...
-          </>
-        ) : (
-          buttonLabel
-        )}
-      </button>
     </div>
   )
 }
@@ -720,42 +630,6 @@ function CashPendingCard({ valorFormatado }: { valorFormatado: string }) {
   )
 }
 
-function CashConfirmedCard({
-  valorFormatado,
-  onShare,
-}: {
-  valorFormatado: string
-  onShare: () => void
-}) {
-  return (
-    <div className="card text-left flex-1 flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-text-primary">Pagamento Confirmado</h3>
-        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-400">
-          Pago
-        </span>
-      </div>
-      <div className="flex-1 flex flex-col items-center justify-center py-4">
-        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="text-3xl font-bold text-gold mb-2">{valorFormatado}</p>
-        <p className="text-sm text-text-muted">Pagamento em dinheiro confirmado</p>
-      </div>
-      <button
-        onClick={onShare}
-        className="w-full btn-primary py-3 flex items-center justify-center gap-2 mt-auto"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-        </svg>
-        Compartilhar Inscrição
-      </button>
-    </div>
-  )
-}
 
 function ProcessingCard() {
   return (

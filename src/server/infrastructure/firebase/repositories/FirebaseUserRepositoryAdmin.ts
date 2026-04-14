@@ -98,7 +98,7 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
         asaasCustomerId: doc.asaasCustomerId,
       },
       doc.cpf,
-      (doc as Record<string, unknown>).permissions as string[] | undefined
+      (doc as unknown as { permissions?: string[] }).permissions
     )
   }
 

@@ -1,6 +1,5 @@
 // Asaas Payment Gateway Integration
 
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || ''
 const ASAAS_ENVIRONMENT = process.env.ASAAS_ENVIRONMENT || 'sandbox'
 
 const API_BASE_URL = ASAAS_ENVIRONMENT === 'production'

@@ -80,8 +80,8 @@ export function usePaymentPolling({
     useState<InscriptionPaymentMethod>('PIX')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [installmentOptions, setInstallmentOptions] = useState<InstallmentOption[]>([])
-  const [needsInstallmentSelection, setNeedsInstallmentSelection] = useState(false)
+  const [installmentOptions] = useState<InstallmentOption[]>([])
+  const [needsInstallmentSelection] = useState(false)
   const [creatingPayment, setCreatingPayment] = useState(false)
   const fetchedRef = useRef(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -192,7 +192,6 @@ export function usePaymentPolling({
       const createData = await createResponse.json()
       if (createData.payment) {
         setPayment(createData.payment)
-        setNeedsInstallmentSelection(false)
       } else if (createData.error) {
         setError(createData.error)
       }

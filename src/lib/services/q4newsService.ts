@@ -8,8 +8,8 @@ export const q4newsService = {
     const query = params.toString()
     const response = await apiClient.get<NewsPostListResponse>(`/q4news${query ? `?${query}` : ''}`)
     if (response.success && response.data) {
-      const data = response.data as Record<string, unknown>
-      const items = (data.items ?? data.posts ?? []) as NewsPostSummaryDTO[]
+      const data = response.data as unknown as { items?: NewsPostSummaryDTO[]; posts?: NewsPostSummaryDTO[] }
+      const items = data.items ?? data.posts ?? []
       return items
     }
     throw new Error(response.error || 'Erro ao carregar noticias')

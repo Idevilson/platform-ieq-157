@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactElement } from 'react'
 import { useForm } from 'react-hook-form'
 import { CategorySelector } from './CategorySelector'
 import { InscriptionLookup } from './InscriptionLookup'
@@ -50,7 +50,7 @@ interface GuestInscriptionFormProps {
   onSuccess?: (inscriptionId: string) => void
 }
 
-const PAYMENT_ICONS: Record<string, JSX.Element> = {
+const PAYMENT_ICONS: Record<string, ReactElement> = {
   PIX: (
     <svg className="payment-icon" viewBox="0 0 24 24" fill="currentColor">
       <path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zm1.5 0h1.5V16H16v-1.5zm-3 3H13V19h.5v-1.5zm1.5 0h1.5V19H16v-1.5zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5zM19 16h.5v.5H19V16zm0 1.5h.5v.5H19v-.5z"/>

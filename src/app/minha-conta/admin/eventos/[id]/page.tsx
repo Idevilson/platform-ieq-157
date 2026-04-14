@@ -92,7 +92,6 @@ function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
 
 interface ConfirmModalProps {
   inscription: InscriptionWithDetails
-  eventId: string
   onClose: () => void
   onConfirm: () => void
   onDelete: () => void
@@ -100,7 +99,7 @@ interface ConfirmModalProps {
   isDeleting: boolean
 }
 
-function ConfirmModal({ inscription, eventId, onClose, onConfirm, onDelete, isLoading, isDeleting }: ConfirmModalProps) {
+function ConfirmModal({ inscription, onClose, onConfirm, onDelete, isLoading, isDeleting }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
   const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -710,7 +709,6 @@ export default function AdminEventDetailPage() {
       {selectedInscription && (
         <ConfirmModal
           inscription={selectedInscription}
-          eventId={eventId}
           onClose={() => setSelectedInscription(null)}
           onConfirm={handleConfirmInscription}
           onDelete={async () => {
