@@ -28,6 +28,7 @@
   --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
   --animate-dropdown: dropdown-fade 0.2s ease-out forwards;
   --animate-simbolo-pulse: simbolo-pulse 3s ease-in-out infinite;
+  --animate-marquee: marquee 24s linear infinite;
 
   @keyframes fade-in {
     0% { opacity: 0; }
@@ -58,6 +59,11 @@
     0%, 100% { transform: scale(1); filter: brightness(1); }
     50% { transform: scale(1.05); filter: brightness(1.2); }
   }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* Base styles */
@@ -752,6 +758,14 @@
 
 /* Utility classes */
 @layer utilities {
+  .card-hover {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    cursor: pointer;
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px var(--glow-color, rgba(255,255,255,0.1));
+  }
   .text-glow {
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   }

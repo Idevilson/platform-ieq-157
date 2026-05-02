@@ -13,6 +13,7 @@ const FIELD_LABELS: Record<string, string> = {
   email: 'Email',
   cpf: 'CPF',
   telefone: 'Telefone',
+  cidade: 'Cidade',
   idade: 'Idade',
   sexo: 'Sexo',
 }
@@ -38,6 +39,7 @@ interface GuestFormData {
   email: string
   cpf: string
   telefone: string
+  cidade: string
   idade: number
   sexo: Gender
   observacoes?: string
@@ -163,6 +165,7 @@ export function GuestInscriptionForm({
           telefone: data.telefone.replace(/\D/g, ''),
           dataNascimento: idadeParaDataNascimento(data.idade),
           sexo: data.sexo,
+          cidade: data.cidade,
         },
       },
       {
@@ -256,6 +259,22 @@ export function GuestInscriptionForm({
             />
             {errors.telefone && <span className="error">{errors.telefone.message}</span>}
           </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="cidade">Cidade *</label>
+          <input
+            id="cidade"
+            type="text"
+            className={errors.cidade ? 'input-error' : ''}
+            {...register('cidade', {
+              required: 'Cidade e obrigatoria',
+              minLength: { value: 2, message: 'Cidade deve ter pelo menos 2 caracteres' },
+            })}
+            placeholder="Sua cidade"
+            disabled={isLoading}
+          />
+          {errors.cidade && <span className="error">{errors.cidade.message}</span>}
         </div>
 
         <div className="form-row form-row-aligned">

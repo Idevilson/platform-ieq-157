@@ -173,6 +173,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
     telefone: string
     dataNascimento?: Timestamp
     sexo?: Gender
+    cidade?: string
   }) {
     return {
       nome: guestData.nome,
@@ -181,6 +182,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       telefone: guestData.telefone,
       dataNascimento: guestData.dataNascimento?.toDate() || new Date(),
       sexo: guestData.sexo || 'masculino' as Gender,
+      cidade: guestData.cidade,
     }
   }
 
@@ -210,6 +212,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
     telefone: string
     dataNascimento: Date
     sexo: Gender
+    cidade?: string
   }) {
     return {
       nome: guestData.nome,
@@ -218,6 +221,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       telefone: guestData.telefone,
       dataNascimento: Timestamp.fromDate(guestData.dataNascimento),
       sexo: guestData.sexo,
+      ...(guestData.cidade ? { cidade: guestData.cidade } : {}),
     }
   }
 }

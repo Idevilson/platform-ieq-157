@@ -24,6 +24,7 @@ export interface CreateGuestInscriptionInput {
     telefone: string
     dataNascimento: Date | string
     sexo: Gender
+    cidade?: string
   }
 }
 
@@ -114,6 +115,7 @@ export class CreateGuestInscription {
         telefone: Phone.clean(input.guestData.telefone),
         dataNascimento: input.guestData.dataNascimento,
         sexo: input.guestData.sexo,
+        cidade: input.guestData.cidade,
       },
     })
   }

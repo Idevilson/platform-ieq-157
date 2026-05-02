@@ -12,6 +12,7 @@ export interface GuestDataInput {
   cpf: string
   dataNascimento: Date | string
   sexo: Gender
+  cidade?: string
 }
 
 export class GuestData {
@@ -21,6 +22,7 @@ export class GuestData {
   readonly cpf: CPF
   readonly dataNascimento: DataNascimento
   readonly sexo: Sexo
+  readonly cidade?: string
 
   private constructor(
     nome: string,
@@ -28,7 +30,8 @@ export class GuestData {
     telefone: Phone,
     cpf: CPF,
     dataNascimento: DataNascimento,
-    sexo: Sexo
+    sexo: Sexo,
+    cidade?: string
   ) {
     this.nome = nome
     this.email = email
@@ -36,6 +39,7 @@ export class GuestData {
     this.cpf = cpf
     this.dataNascimento = dataNascimento
     this.sexo = sexo
+    this.cidade = cidade
   }
 
   static create(input: GuestDataInput): GuestData {
@@ -47,7 +51,8 @@ export class GuestData {
       Phone.create(input.telefone),
       CPF.create(input.cpf),
       DataNascimento.create(input.dataNascimento),
-      Sexo.create(input.sexo)
+      Sexo.create(input.sexo),
+      input.cidade?.trim() || undefined
     )
   }
 
@@ -64,6 +69,7 @@ export class GuestData {
     cpf: string
     dataNascimento: Date
     sexo: Gender
+    cidade?: string
   }): GuestData {
     return new GuestData(
       data.nome,
@@ -71,7 +77,8 @@ export class GuestData {
       Phone.create(data.telefone),
       CPF.create(data.cpf),
       DataNascimento.create(data.dataNascimento),
-      Sexo.create(data.sexo)
+      Sexo.create(data.sexo),
+      data.cidade
     )
   }
 
@@ -84,6 +91,7 @@ export class GuestData {
       dataNascimento: this.dataNascimento.toJSON(),
       dataNascimentoFormatado: this.dataNascimento.formatBrazilian(),
       sexo: this.sexo.toJSON(),
+      cidade: this.cidade,
     }
   }
 }

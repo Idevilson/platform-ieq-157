@@ -9,6 +9,7 @@ export interface GuestDataDTO {
   cpf: string
   dataNascimento: string | Date
   sexo: Gender
+  cidade?: string
 }
 
 export interface InscriptionDTO {
