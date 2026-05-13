@@ -23,4 +23,16 @@ export interface IEventPerkRepository {
     perkId: string,
     inscriptionId: string,
   ): Promise<AllocationResult>
+
+  /**
+   * Aloca atomicamente N unidades do perk para participantes de um lote.
+   * Aloca o mínimo entre `count` e o estoque disponível.
+   * Retorna quantas unidades foram efetivamente alocadas.
+   */
+  allocateToBatchParticipants(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    count: number,
+  ): Promise<{ allocated: number; perkId: string | null }>
 }

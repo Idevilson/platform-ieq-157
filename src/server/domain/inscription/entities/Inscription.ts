@@ -2,7 +2,7 @@
 import { Money } from '@/server/domain/shared/value-objects/Money'
 import { InscriptionStatus, Timestamps, INSCRIPTION_STATUS_LABELS } from '@/server/domain/shared/types'
 import { GuestData, GuestDataInput } from '../value-objects/GuestData'
-import { Gender, InscriptionPaymentMethod } from '@/shared/constants'
+import { Gender, InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 
 export interface InscriptionProps {
   id: string
@@ -14,6 +14,7 @@ export interface InscriptionProps {
   status: InscriptionStatus
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
+  tamanho?: ShirtSize
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: Date
@@ -28,6 +29,7 @@ export interface CreateInscriptionDTO {
   userId?: string
   guestData?: GuestDataInput
   preferredPaymentMethod?: InscriptionPaymentMethod
+  tamanho?: ShirtSize
 }
 
 export class Inscription implements Timestamps {
@@ -38,6 +40,7 @@ export class Inscription implements Timestamps {
   readonly guestData?: GuestData
   readonly valor: Money
   readonly preferredPaymentMethod: InscriptionPaymentMethod
+  readonly tamanho?: ShirtSize
   private _status: InscriptionStatus
   private _paymentId?: string
   private _temBrinde?: boolean
@@ -54,6 +57,7 @@ export class Inscription implements Timestamps {
     this.guestData = props.guestData
     this.valor = props.valor
     this.preferredPaymentMethod = props.preferredPaymentMethod
+    this.tamanho = props.tamanho
     this._status = props.status
     this._paymentId = props.paymentId
     this._temBrinde = props.temBrinde
@@ -81,6 +85,7 @@ export class Inscription implements Timestamps {
       guestData: dto.guestData ? GuestData.create(dto.guestData) : undefined,
       valor: Money.fromCents(dto.valor),
       preferredPaymentMethod: dto.preferredPaymentMethod || 'PIX',
+      tamanho: dto.tamanho,
       status: 'pendente',
       criadoEm: now,
       atualizadoEm: now,
@@ -104,6 +109,7 @@ export class Inscription implements Timestamps {
     status: InscriptionStatus
     paymentId?: string
     preferredPaymentMethod?: InscriptionPaymentMethod
+    tamanho?: ShirtSize
     temBrinde?: boolean
     perkId?: string
     brindeAlocadoEm?: Date
@@ -118,6 +124,7 @@ export class Inscription implements Timestamps {
       guestData: data.guestData ? GuestData.fromPersistence(data.guestData) : undefined,
       valor: Money.fromCents(data.valor),
       preferredPaymentMethod: data.preferredPaymentMethod || 'PIX',
+      tamanho: data.tamanho,
       status: data.status,
       paymentId: data.paymentId,
       temBrinde: data.temBrinde,
@@ -265,6 +272,7 @@ export class Inscription implements Timestamps {
       valor: this.valor.getCents(),
       valorFormatado: this.valor.getFormatted(),
       preferredPaymentMethod: this.preferredPaymentMethod,
+      tamanho: this.tamanho,
       status: this._status,
       statusLabel: this.statusLabel,
       paymentId: this._paymentId,

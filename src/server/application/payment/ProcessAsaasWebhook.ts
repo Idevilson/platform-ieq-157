@@ -1,8 +1,10 @@
 import { IPaymentRepository } from '@/server/domain/payment/repositories/IPaymentRepository'
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
+import { IBatchInscriptionRepository } from '@/server/domain/inscription/repositories/IBatchInscriptionRepository'
 import { IEventPerkRepository } from '@/server/domain/event/repositories/IEventPerkRepository'
 import { Payment } from '@/server/domain/payment/entities/Payment'
 import { Inscription } from '@/server/domain/inscription/entities/Inscription'
+import { BatchInscription } from '@/server/domain/inscription/entities/BatchInscription'
 
 export type AsaasPaymentEvent =
   | 'PAYMENT_CREATED'
@@ -66,6 +68,7 @@ export interface ProcessAsaasWebhookOutput {
   message: string
   paymentId?: string
   inscriptionId?: string
+  batchId?: string
   brindeAlocado?: boolean
 }
 
@@ -74,12 +77,19 @@ export class ProcessAsaasWebhook {
     private readonly paymentRepository: IPaymentRepository,
     private readonly inscriptionRepository: IInscriptionRepository,
     private readonly eventPerkRepository: IEventPerkRepository,
+    private readonly batchRepository?: IBatchInscriptionRepository,
   ) {}
 
   async execute(input: ProcessAsaasWebhookInput): Promise<ProcessAsaasWebhookOutput> {
     if (!this.isPaymentConfirmationEvent(input.event)) {
       return { success: true, message: `Event ${input.event} ignored` }
     }
+
+    const batchRef = this.parseBatchReference(input.payment.externalReference)
+    if (batchRef) {
+      return this.confirmBatchPayment(input, batchRef)
+    }
+
     return this.confirmPayment(input)
   }
 
@@ -156,11 +166,83 @@ export class ProcessAsaasWebhook {
     return false
   }
 
+  private parseBatchReference(externalReference?: string): { eventId: string; batchId: string } | null {
+    if (!externalReference) return null
+    const parts = externalReference.split(':')
+    if (parts.length !== 3 || parts[1] !== 'batch') return null
+    return { eventId: parts[0], batchId: parts[2] }
+  }
+
   private parseExternalReference(externalReference?: string): { eventId: string; inscriptionId: string } | null {
     if (!externalReference) return null
     const parts = externalReference.split(':')
     if (parts.length !== 2) return null
     return { eventId: parts[0], inscriptionId: parts[1] }
+  }
+
+  private async confirmBatchPayment(
+    input: ProcessAsaasWebhookInput,
+    ref: { eventId: string; batchId: string },
+  ): Promise<ProcessAsaasWebhookOutput> {
+    if (!this.batchRepository) {
+      return { success: false, message: 'BatchRepository not configured' }
+    }
+
+    const batch = await this.batchRepository.findById(ref.batchId)
+    if (!batch) {
+      return { success: false, message: `Batch not found: ${ref.batchId}` }
+    }
+
+    if (batch.isConfirmed()) {
+      return { success: true, message: 'Batch already confirmed (idempotent)', batchId: batch.id }
+    }
+
+    const asaasPaymentId = input.payment.id
+    batch.confirm(asaasPaymentId)
+    batch.updatePaymentStatus('CONFIRMED')
+    await this.batchRepository.update(batch)
+
+    let brindeAlocado = false
+    try {
+      brindeAlocado = await this.tryAllocatePerkForBatch(ref.eventId, batch)
+      await this.batchRepository.update(batch)
+    } catch (err) {
+      console.error('[ProcessAsaasWebhook] Falha na alocação de brinde para lote', batch.id, err)
+    }
+
+    return {
+      success: true,
+      message: 'Batch payment confirmed',
+      batchId: batch.id,
+      brindeAlocado,
+    }
+  }
+
+  private async tryAllocatePerkForBatch(eventId: string, batch: BatchInscription): Promise<boolean> {
+    const perk = await this.eventPerkRepository.findPrimaryByEventId(eventId)
+    if (!perk) {
+      for (let i = 0; i < batch.totalParticipantes; i++) {
+        batch.markParticipantBrindeUnavailable(i)
+      }
+      return false
+    }
+
+    const result = await this.eventPerkRepository.allocateToBatchParticipants(
+      eventId,
+      perk.id,
+      batch.id,
+      batch.totalParticipantes,
+    )
+
+    for (let i = 0; i < batch.totalParticipantes; i++) {
+      if (i < result.allocated && result.perkId) {
+        batch.allocateParticipantBrinde(i, result.perkId)
+      } else {
+        batch.markParticipantBrindeUnavailable(i)
+      }
+    }
+
+    return result.allocated > 0
   }
 
   private extractPaymentDate(asaasPayment: ProcessAsaasWebhookInput['payment']): Date {

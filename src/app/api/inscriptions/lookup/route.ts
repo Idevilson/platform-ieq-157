@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { LookupInscriptionByCPF } from '@/server/application/inscription/LookupInscriptionByCPF'
+import { LookupBatchByCPF } from '@/server/application/inscription/LookupBatchByCPF'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
+import { FirebaseBatchInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseBatchInscriptionRepositoryAdmin'
 import { EventNotFoundError, ValidationError } from '@/server/domain/shared/errors'
 
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 const eventRepository = new FirebaseEventRepositoryAdmin()
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const userRepository = new FirebaseUserRepositoryAdmin()
+const batchRepository = new FirebaseBatchInscriptionRepositoryAdmin()
 
 const lookupInscriptionByCPF = new LookupInscriptionByCPF(
   inscriptionRepository,
@@ -17,6 +20,7 @@ const lookupInscriptionByCPF = new LookupInscriptionByCPF(
   paymentRepository,
   userRepository
 )
+const lookupBatchByCPF = new LookupBatchByCPF(batchRepository, eventRepository)
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,12 +35,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const result = await lookupInscriptionByCPF.execute({
-      cpf,
-      eventId: eventId || undefined,
-    })
+    const [inscriptionResult, batchResult] = await Promise.all([
+      lookupInscriptionByCPF.execute({ cpf, eventId: eventId || undefined }),
+      lookupBatchByCPF.execute({ cpf }),
+    ])
 
-    return NextResponse.json(result)
+    return NextResponse.json({
+      inscriptions: inscriptionResult.inscriptions,
+      batches: batchResult.batches,
+    })
   } catch (error) {
     console.error('Lookup inscription error:', error)
 

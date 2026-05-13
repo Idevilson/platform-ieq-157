@@ -9,7 +9,6 @@ import { PerkCounter } from '@/components/eventos/PerkCounter'
 import Aurora from '@/components/ui/Aurora'
 import Particles from '@/components/ui/Particles'
 import followMeLogo from '@/assets/images/geracao-forte/follow-me-logo.png'
-import imgRamalho from '@/assets/images/geracao-forte/palestrantes/J Ramalho.jpg'
 import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengtson ESTILOSO.jpg'
 import imgCarmona from '@/assets/images/geracao-forte/palestrantes/Martinho Carmona.jpg'
 import imgJunior from '@/assets/images/geracao-forte/palestrantes/Pr Junhao.jpg'
@@ -18,11 +17,14 @@ import imgVal from '@/assets/images/geracao-forte/palestrantes/Evando Filho.jpg'
 import imgOrganizadores from '@/assets/images/geracao-forte/pr-heitor-e-pra-val.jpg'
 import imgMyllaPortrait from '@/assets/images/geracao-forte/mylla-carvalho-portrait.jpg'
 import imgMyllaBanda from '@/assets/images/geracao-forte/mylla-carvalho-banda.jpg'
+import imgRamalho from '@/assets/images/geracao-forte/j-ramalho.jpg'
 import imgPlanetaMusic from '@/assets/images/geracao-forte/patrocinadores/planeta-music.png'
 import imgCentroContabil from '@/assets/images/geracao-forte/patrocinadores/centro-contabil.png'
 import imgAcquaPark from '@/assets/images/geracao-forte/patrocinadores/acqua-park.png'
 import imgClubeDescoladao from '@/assets/images/geracao-forte/patrocinadores/clube-descoladao.png'
 import imgArenaOcBurguer from '@/assets/images/geracao-forte/patrocinadores/arena-oc-burguer.png'
+import imgNorteSulCosmeticos from '@/assets/images/geracao-forte/patrocinadores/norte-e-sul-cosmeticos.png'
+import imgAcaiteriaMilgraus from '@/assets/images/geracao-forte/patrocinadores/acaiteria-milgraus.png'
 import imgCamisetaFrente from '@/assets/images/geracao-forte/kit/camiseta-frente.jpeg'
 import imgCamisetaCostas from '@/assets/images/geracao-forte/kit/camiseta-costas.jpeg'
 import imgPulseiraDourada from '@/assets/images/geracao-forte/kit/pulseira-dourada.jpeg'
@@ -32,7 +34,6 @@ import imgPulseirasLed from '@/assets/images/geracao-forte/kit/pulseiras-led.png
 const EVENT_ID = 'geracao-forte'
 
 const SPEAKERS = [
-  { name: 'J. RAMALHO',           photo: imgRamalho  },
   { name: 'PR. PAULO BENGTSON',   photo: imgBengtson },
   { name: 'PR. MARTINHO CARMONA', photo: imgCarmona  },
   { name: 'PR. JUNIOR FERNANDES', photo: imgJunior   },
@@ -294,11 +295,11 @@ export default function GeracaoForte() {
             Galeria dos Palestrantes
           </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             {SPEAKERS.map((speaker) => (
               <div
                 key={speaker.name}
-                className="card-hover rounded-2xl overflow-hidden bg-[#141414] flex flex-col"
+                className="card-hover rounded-2xl overflow-hidden bg-[#141414] flex flex-col w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] max-w-[280px]"
                 style={{
                   border: '1px solid rgba(212,160,23,0.25)',
                   '--glow-color': 'rgba(212,160,23,0.35)',
@@ -480,24 +481,24 @@ export default function GeracaoForte() {
         </div>
       </section>
 
-      {/* Show Mylla Carvalho */}
+      {/* Atrações Musicais */}
       <section className="relative z-10 py-20 bg-bg-primary overflow-hidden">
         <div className="max-w-5xl mx-auto px-6">
 
           {/* Header */}
           <div className="flex justify-center mb-6">
             <span className="text-xs text-text-muted border border-white/10 rounded-full px-4 py-1.5 uppercase tracking-widest">
-              Atração Musical
+              Atrações Musicais
             </span>
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-white text-center uppercase tracking-tight mb-2">
-            Show Confirmado
+            Shows Confirmados
           </h2>
           <p
             className="text-3xl md:text-4xl font-black text-center uppercase tracking-tight mb-14"
             style={{ background: 'linear-gradient(90deg, #D4A017, #F5B800)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
           >
-            Mylla Carvalho &amp; Banda
+            Mylla Carvalho &amp; J. Ramalho
           </p>
 
           {/* Layout: portrait esquerda + landscape direita */}
@@ -565,6 +566,89 @@ export default function GeracaoForte() {
               </div>
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="my-14 border-t border-white/5" />
+
+          {/* J. Ramalho */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+
+            {/* Foto */}
+            <div
+              className="card-hover rounded-2xl overflow-hidden bg-[#141414]"
+              style={{ border: '1px solid rgba(212,160,23,0.2)', '--glow-color': 'rgba(212,160,23,0.35)' } as React.CSSProperties}
+            >
+              <div className="relative w-full aspect-[3/4] overflow-hidden">
+                <Image
+                  src={imgRamalho}
+                  alt="J. Ramalho"
+                  fill
+                  className="object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 px-6 pb-6 z-10">
+                  <p className="font-black text-white text-xl uppercase tracking-wide">J. Ramalho</p>
+                  <p className="text-gold text-sm font-medium mt-0.5">Louvor, Adoração e Palavra</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Texto */}
+            <div className="flex flex-col gap-5 h-full">
+              <div
+                className="rounded-2xl px-6 py-8 bg-bg-secondary flex-1 flex flex-col justify-between"
+                style={{ border: '1px solid rgba(212,160,23,0.12)' }}
+              >
+                <div>
+                  <p className="text-gold font-black text-lg uppercase tracking-wide mb-3">Momento Especial</p>
+                  <p className="text-text-secondary text-sm leading-relaxed">
+                    Um momento único de louvor, adoração e palavra com J. Ramalho. Uma experiência que vai além do palco — uma entrega genuína à presença de Deus na Geração Forte Quadrangular.
+                  </p>
+
+                  {/* Versículo */}
+                  <div className="mt-6 border-l-2 border-gold/40 pl-4">
+                    <p className="text-text-primary text-sm italic leading-relaxed">
+                      &ldquo;Cantai ao Senhor um cântico novo; cantai ao Senhor, todas as terras.&rdquo;
+                    </p>
+                    <p className="text-gold/60 text-xs mt-1 font-medium">Salmos 96:1</p>
+                  </div>
+
+                  {/* O que esperar */}
+                  <div className="mt-6 space-y-3">
+                    <p className="text-text-muted text-xs uppercase tracking-widest font-bold">O que esperar</p>
+                    {[
+                      { icon: '🙌', title: 'Louvor e Adoração', desc: 'Ministração intensa que conduz ao encontro com Deus' },
+                      { icon: '📖', title: 'Palavra', desc: 'Uma mensagem que toca e transforma vidas' },
+                      { icon: '🔥', title: 'Presença de Deus', desc: 'Um ambiente preparado para o mover do Espírito Santo' },
+                    ].map(item => (
+                      <div key={item.title} className="flex items-start gap-3">
+                        <span className="text-base mt-0.5">{item.icon}</span>
+                        <div>
+                          <p className="text-text-primary text-xs font-bold uppercase tracking-wide">{item.title}</p>
+                          <p className="text-text-muted text-xs leading-relaxed mt-0.5">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-6">
+                  <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+                    style={{ background: 'rgba(212,160,23,0.12)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.3)' }}>
+                    🙌 Louvor &amp; Adoração
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+                    style={{ background: 'rgba(212,160,23,0.12)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.3)' }}>
+                    📖 Palavra
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full"
+                    style={{ background: 'rgba(212,160,23,0.12)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.3)' }}>
+                    ✨ Momento Especial
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -675,7 +759,7 @@ export default function GeracaoForte() {
           </div>
 
           {/* Linha 2 — 2 logos centralizados */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:max-w-2xl md:mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:max-w-2xl md:mx-auto mb-5">
             {/* Centro Contábil */}
             <div className="card-hover rounded-2xl overflow-hidden bg-white flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(255,255,255,0.1)', '--glow-color': 'rgba(255,255,255,0.15)' } as React.CSSProperties}>
@@ -689,6 +773,25 @@ export default function GeracaoForte() {
               style={{ border: '1px solid rgba(255,255,255,0.1)', '--glow-color': 'rgba(255,255,255,0.15)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
                 <Image src={imgAcquaPark} alt="Acqua Park Redenção" fill className="object-contain" />
+              </div>
+            </div>
+          </div>
+
+          {/* Linha 3 — 2 novos patrocinadores */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:max-w-2xl md:mx-auto">
+            {/* Norte & Sul Cosméticos */}
+            <div className="card-hover rounded-2xl overflow-hidden bg-[#0D0D0D] flex items-center justify-center p-6 aspect-video"
+              style={{ border: '1px solid rgba(212,160,23,0.2)', '--glow-color': 'rgba(212,160,23,0.3)' } as React.CSSProperties}>
+              <div className="relative w-full h-full">
+                <Image src={imgNorteSulCosmeticos} alt="Norte & Sul Cosméticos" fill className="object-contain" />
+              </div>
+            </div>
+
+            {/* Açaíteria MilGraus */}
+            <div className="card-hover rounded-2xl overflow-hidden bg-[#0d0520] flex items-center justify-center p-6 aspect-video"
+              style={{ border: '1px solid rgba(160,40,220,0.25)', '--glow-color': 'rgba(160,40,220,0.3)' } as React.CSSProperties}>
+              <div className="relative w-full h-full">
+                <Image src={imgAcaiteriaMilgraus} alt="Açaíteria MilGraus" fill className="object-contain" />
               </div>
             </div>
           </div>
@@ -727,6 +830,19 @@ export default function GeracaoForte() {
             paymentMethods={evento?.metodosPagamento}
             onSuccess={handleInscriptionSuccess}
           />
+
+          <div className="mt-8 pt-8 border-t border-gold/10 text-center">
+            <p className="text-text-secondary text-sm mb-3">Vindo com um grupo? Use a inscrição coletiva.</p>
+            <a
+              href={`/eventos/${EVENT_ID}/inscricao-coletiva`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 text-gold border border-gold/30 rounded-xl font-medium hover:bg-gold/20 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Inscrição Coletiva (2–50 pessoas)
+            </a>
+          </div>
         </div>
       </section>
     </>

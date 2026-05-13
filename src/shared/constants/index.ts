@@ -123,5 +123,10 @@ export const NEWS_STATUS_LABELS: Record<NewsStatus, string> = {
   publicado: 'Publicado',
 }
 
+// Shirt sizes
+export type ShirtSize = 'PP' | 'P' | 'M' | 'G' | 'GG' | 'XGG'
+
+export const SHIRT_SIZES: readonly ShirtSize[] = ['PP', 'P', 'M', 'G', 'GG', 'XGG'] as const
+
 // Q4-News permission
 export const Q4_NEWS_PERMISSION = 'adm-q4-news'

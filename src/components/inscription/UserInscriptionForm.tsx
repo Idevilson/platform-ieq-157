@@ -6,13 +6,14 @@ import { CategorySelector } from './CategorySelector'
 import { useCreateUserInscription } from '@/hooks/mutations/useInscriptionMutations'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { UserDTO } from '@/shared/types'
-import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from '@/shared/constants'
+import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
 
 const FIELD_LABELS: Record<string, string> = {
   cpf: 'CPF',
   telefone: 'Telefone',
   idade: 'Idade',
   sexo: 'Sexo',
+  tamanho: 'Tamanho da camiseta',
 }
 
 // Converte idade para data de nascimento (1 de janeiro do ano calculado)
@@ -54,6 +55,8 @@ export function UserInscriptionForm({
   onSuccess,
 }: UserInscriptionFormProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
+  const [selectedTamanho, setSelectedTamanho] = useState<ShirtSize | ''>('')
+  const [tamanhoError, setTamanhoError] = useState(false)
 
   // Pré-seleciona a categoria individual se existir
   useEffect(() => {
@@ -92,7 +95,7 @@ export function UserInscriptionForm({
 
   const selectedSexo = watch('sexo')
 
-  const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId)
+  const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId) || tamanhoError
 
   // Scroll para o primeiro campo com erro quando tentar submeter
   useEffect(() => {
@@ -119,8 +122,13 @@ export function UserInscriptionForm({
       setError('Selecione uma categoria')
       return
     }
+    if (!selectedTamanho) {
+      setTamanhoError(true)
+      return
+    }
 
     setError(null)
+    setTamanhoError(false)
 
     const profileUpdate: Record<string, string | undefined> = {}
     if (missingCpf && data.cpf) profileUpdate.cpf = data.cpf.replace(/\D/g, '')
@@ -133,6 +141,7 @@ export function UserInscriptionForm({
         eventId,
         categoryId: selectedCategoryId,
         preferredPaymentMethod: paymentMethod,
+        tamanho: selectedTamanho as ShirtSize,
         profileUpdate: Object.keys(profileUpdate).length > 0 ? profileUpdate : undefined,
       },
       {
@@ -302,6 +311,32 @@ export function UserInscriptionForm({
           </div>
         </div>
       )}
+
+      <div className="mb-6">
+        <h4 className="text-base font-semibold text-text-primary mb-3">Tamanho da camiseta *</h4>
+        <div className="flex flex-wrap gap-2">
+          {SHIRT_SIZES.map((size) => (
+            <button
+              key={size}
+              type="button"
+              className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
+                selectedTamanho === size
+                  ? 'bg-gold/10 border-gold text-gold'
+                  : tamanhoError && !selectedTamanho
+                  ? 'border-red-500/50 bg-bg-tertiary text-text-secondary'
+                  : 'border-transparent bg-bg-tertiary text-text-secondary hover:border-gold/30'
+              }`}
+              onClick={() => { setSelectedTamanho(size); setTamanhoError(false) }}
+              disabled={isLoading}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+        {tamanhoError && !selectedTamanho && (
+          <p className="text-red-400 text-sm mt-2">Selecione o tamanho da camiseta</p>
+        )}
+      </div>
 
       {categories.length > 0 && (
         <div className="mb-6">

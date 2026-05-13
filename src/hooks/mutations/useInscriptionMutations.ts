@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { inscriptionService } from '@/lib/services/inscriptionService'
 import { CreateInscriptionRequest, GuestDataDTO } from '@/shared/types'
-import { InscriptionPaymentMethod } from '@/shared/constants'
+import { InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 import { inscriptionKeys } from '../queries/useInscriptions'
 import { userInscriptionKeys } from '../queries/useUserInscriptions'
 
@@ -10,12 +10,14 @@ interface CreateGuestInscriptionParams {
   categoryId: string
   guestData: GuestDataDTO
   preferredPaymentMethod?: InscriptionPaymentMethod
+  tamanho?: ShirtSize
 }
 
 interface CreateUserInscriptionParams {
   eventId: string
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
+  tamanho?: ShirtSize
   profileUpdate?: {
     cpf?: string
     telefone?: string
@@ -39,8 +41,8 @@ export function useCreateGuestInscription() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ eventId, categoryId, guestData, preferredPaymentMethod }: CreateGuestInscriptionParams) =>
-      inscriptionService.createGuestInscription(eventId, categoryId, guestData, preferredPaymentMethod),
+    mutationFn: ({ eventId, categoryId, guestData, preferredPaymentMethod, tamanho }: CreateGuestInscriptionParams) =>
+      inscriptionService.createGuestInscription(eventId, categoryId, guestData, preferredPaymentMethod, tamanho),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inscriptionKeys.all })
     },

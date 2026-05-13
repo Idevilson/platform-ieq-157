@@ -6,6 +6,8 @@ export const inscriptionKeys = {
   detail: (inscriptionId: string) => [...inscriptionKeys.all, inscriptionId] as const,
   lookup: (cpf: string) => [...inscriptionKeys.all, 'lookup', cpf] as const,
   lookupWithEvent: (cpf: string, eventId: string) => [...inscriptionKeys.all, 'lookup', cpf, eventId] as const,
+  batchLookup: (cpf: string) => ['batches', 'lookup', cpf] as const,
+  myBatches: (eventId?: string) => ['batches', 'my', eventId ?? ''] as const,
 }
 
 export function useInscriptionById(inscriptionId?: string) {
@@ -22,6 +24,27 @@ export function useInscriptionLookup(cpf?: string, enabled = true) {
     queryKey: inscriptionKeys.lookup(cpf!),
     queryFn: () => inscriptionService.lookupByCPF(cpf!),
     enabled: !!cpf && enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export function useBatchLookup(cpf?: string, eventId?: string) {
+  return useQuery({
+    queryKey: inscriptionKeys.batchLookup(cpf!),
+    queryFn: async () => {
+      const all = await inscriptionService.lookupBatchByCPF(cpf!)
+      return eventId ? all.filter(b => b.eventId === eventId) : all
+    },
+    enabled: !!cpf,
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+export function useMyBatches(eventId?: string, enabled = true) {
+  return useQuery({
+    queryKey: inscriptionKeys.myBatches(eventId),
+    queryFn: () => inscriptionService.getMyBatches(eventId),
+    enabled,
+    staleTime: 2 * 60 * 1000,
   })
 }

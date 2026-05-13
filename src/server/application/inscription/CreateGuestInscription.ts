@@ -11,12 +11,13 @@ import {
   CategoryNotFoundError,
   DuplicateInscriptionError,
 } from '@/server/domain/shared/errors'
-import { Gender, InscriptionPaymentMethod } from '@/shared/constants'
+import { Gender, InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 
 export interface CreateGuestInscriptionInput {
   eventId: string
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
+  tamanho?: ShirtSize
   guestData: {
     nome: string
     email: string
@@ -108,6 +109,7 @@ export class CreateGuestInscription {
       categoryId: input.categoryId,
       valor: valorCents,
       preferredPaymentMethod: input.preferredPaymentMethod,
+      tamanho: input.tamanho,
       guestData: {
         nome: input.guestData.nome.trim(),
         email: input.guestData.email,

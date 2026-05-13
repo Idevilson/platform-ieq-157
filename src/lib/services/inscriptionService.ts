@@ -3,7 +3,8 @@
 import { apiClient } from './api'
 import { firebaseAuthService } from '@/lib/firebase'
 import { InscriptionDTO, CreateInscriptionRequest, GuestDataDTO } from '@/shared/types'
-import { InscriptionPaymentMethod } from '@/shared/constants'
+import { InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
+import { BatchLookupResult } from '@/shared/types/inscription'
 
 export interface CreateInscriptionResponse {
   inscription: InscriptionDTO
@@ -11,6 +12,7 @@ export interface CreateInscriptionResponse {
 
 export interface InscriptionLookupResponse {
   inscriptions: InscriptionDTO[]
+  batches?: BatchLookupResult[]
 }
 
 async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string }> {
@@ -54,13 +56,15 @@ export const inscriptionService = {
     eventId: string,
     categoryId: string,
     guestData: GuestDataDTO,
-    preferredPaymentMethod?: InscriptionPaymentMethod
+    preferredPaymentMethod?: InscriptionPaymentMethod,
+    tamanho?: ShirtSize
   ): Promise<InscriptionDTO> {
     const response = await apiClient.post<CreateInscriptionResponse>('/inscriptions', {
       eventId,
       categoryId,
       guestData,
       preferredPaymentMethod,
+      tamanho,
     })
     if (response.success && response.data) {
       return response.data.inscription
@@ -84,11 +88,28 @@ export const inscriptionService = {
   },
 
   async lookupByCPF(cpf: string): Promise<InscriptionDTO[]> {
-    const response = await apiClient.post<InscriptionLookupResponse>('/inscriptions/lookup', { cpf })
+    const response = await apiClient.get<InscriptionLookupResponse>(`/inscriptions/lookup?cpf=${encodeURIComponent(cpf)}`)
     if (response.success && response.data) {
       return response.data.inscriptions
     }
     throw new Error(response.error || 'Erro ao buscar inscrições')
+  },
+
+  async lookupBatchByCPF(cpf: string): Promise<BatchLookupResult[]> {
+    const response = await apiClient.get<{ batches: BatchLookupResult[] }>(`/batch-inscriptions/lookup?cpf=${encodeURIComponent(cpf)}`)
+    if (response.success && response.data) {
+      return response.data.batches
+    }
+    throw new Error(response.error || 'Erro ao buscar lotes')
+  },
+
+  async getMyBatches(eventId?: string): Promise<BatchLookupResult[]> {
+    const qs = eventId ? `?eventId=${encodeURIComponent(eventId)}` : ''
+    const response = await authFetch<{ batches: BatchLookupResult[] }>(`/batch-inscriptions/my${qs}`)
+    if (response.success && response.data) {
+      return response.data.batches
+    }
+    throw new Error(response.error || 'Erro ao buscar lotes')
   },
 
   async getUserInscriptionByEvent(eventId: string): Promise<InscriptionDTO | null> {
@@ -108,6 +129,7 @@ export const inscriptionService = {
     eventId: string
     categoryId: string
     preferredPaymentMethod?: InscriptionPaymentMethod
+    tamanho?: ShirtSize
     profileUpdate?: {
       cpf?: string
       telefone?: string

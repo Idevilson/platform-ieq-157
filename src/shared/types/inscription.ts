@@ -25,6 +25,7 @@ export interface InscriptionDTO {
   statusLabel: string
   paymentId?: string
   paymentStatus?: PaymentStatus
+  tamanho?: string
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: string | Date
@@ -49,4 +50,100 @@ export interface InscriptionLookupRequest {
 
 export interface InscriptionLookupResponse {
   inscriptions: InscriptionDTO[]
+  batches?: BatchLookupResult[]
+}
+
+// ─── Batch Inscription Types ──────────────────────────────────────────────────
+
+export interface BatchParticipantDTO {
+  nome: string
+  sexo: Gender
+  tamanho?: string
+}
+
+export interface BatchResponsavelDTO {
+  nome: string
+  cpf: string
+  email: string
+  telefone: string
+  dataNascimento: string
+  sexo: Gender
+  cidade: string
+}
+
+export interface BatchInscriptionDTO {
+  id: string
+  eventId: string
+  categoryId: string
+  categoryName?: string
+  status: 'pendente' | 'confirmado' | 'cancelado'
+  paymentId?: string
+  preferredPaymentMethod: InscriptionPaymentMethod
+  valorTotal: number
+  valorTotalFormatado: string
+  responsavel: BatchResponsavelDTO
+  cidade: string
+  participantes: BatchParticipantDTO[]
+  totalParticipantes: number
+  inscriptionIds: string[]
+  pixCopiaECola?: string
+  pixQrCode?: string
+  checkoutUrl?: string
+  dataVencimentoPagamento?: string
+  paymentStatus?: string
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export interface CreateBatchInscriptionRequest {
+  eventId: string
+  categoryId: string
+  preferredPaymentMethod?: InscriptionPaymentMethod
+  responsavel: {
+    nome: string
+    cpf: string
+    email: string
+    telefone: string
+    dataNascimento: string
+    sexo: Gender
+    cidade: string
+  }
+  cidade: string
+  participantes: BatchParticipantDTO[]
+}
+
+export interface BatchLookupResult {
+  batchId: string
+  eventId: string
+  eventTitle: string
+  status: 'pendente' | 'confirmado' | 'cancelado'
+  totalParticipantes: number
+  cidade: string
+  valorTotal: number
+  valorTotalFormatado: string
+  preferredPaymentMethod: InscriptionPaymentMethod
+  participantes: BatchParticipantDTO[]
+  payment?: {
+    status: string
+    pixCopiaECola?: string
+    pixQrCode?: string
+    checkoutUrl?: string
+    dataVencimento?: string
+  }
+}
+
+export interface AdminBatchListItem {
+  id: string
+  eventId: string
+  responsavelNome: string
+  responsavelCpf: string
+  cidade: string
+  totalParticipantes: number
+  valorTotal: number
+  valorTotalFormatado: string
+  status: 'pendente' | 'confirmado' | 'cancelado'
+  preferredPaymentMethod: InscriptionPaymentMethod
+  paymentStatus?: string
+  criadoEm: string
+  participantes: BatchParticipantDTO[]
 }

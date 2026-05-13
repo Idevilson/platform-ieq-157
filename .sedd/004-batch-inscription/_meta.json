@@ -1,0 +1,62 @@
+{
+  "featureId": "004",
+  "featureName": "batch-inscription",
+  "branch": "main",
+  "createdAt": "2026-05-09T00:00:00Z",
+  "specCreatedAt": "2026-05-09T00:00:00Z",
+  "currentMigration": "001",
+  "migrations": {
+    "001": {
+      "id": "001",
+      "timestamp": "2026-05-09_clarify",
+      "folder": "001_2026-05-09_clarify",
+      "status": "completed",
+      "tasksTotal": 30,
+      "tasksCompleted": 30,
+      "createdAt": "2026-05-09T00:00:00Z",
+      "expectation": {
+        "summary": "Usuário logado inscreve até 50 participantes com um único PIX. Admin aprova CASH e exclui lotes. CPF lookup mostra lote agrupado.",
+        "must": [
+          "Criar stack completa: entity, VO, repositório, use cases, API, hooks, componentes, página",
+          "Gender usar 'masculino' | 'feminino' (tipo existente no codebase)",
+          "Perk allocation sequencial no webhook do lote",
+          "Endpoint batch exige Bearer token obrigatório",
+          "Webhook idempotente no nível do lote (checar batch.status antes de reprocessar)",
+          "Payment do lote em subcoleção batchInscriptions/{id}/payments/",
+          "Página dedicada /eventos/[id]/inscricao-coletiva com proteção de auth"
+        ],
+        "mustNot": [
+          "Quebrar fluxo de inscrição individual",
+          "Aceitar batch sem Bearer token (sem fallback guest)",
+          "Alocar brindes em paralelo para o lote",
+          "Criar endpoint batch dentro de /api/inscriptions/"
+        ]
+      }
+    }
+  },
+  "splits": [],
+  "commits": [],
+  "expectation": "Um usuário logado consegue inscrever até 50 participantes de uma vez em um evento, preenchendo apenas nome e sexo por pessoa e uma cidade única para o grupo. Um único PIX é gerado cobrindo o total. Após o pagamento, todas as inscrições são confirmadas automaticamente. Na consulta por CPF na página /eventos, o responsável vê o lote completo vinculado ao seu CPF. O admin pode aprovar pagamento em dinheiro físico e excluir o lote inteiro.",
+  "architectureContract": {
+    "confirmedAt": "2026-05-09T00:00:00Z",
+    "techStack": {
+      "stateManagement": { "tech": "TanStack Query", "location": "src/hooks/queries/" },
+      "mutations": { "tech": "TanStack Query useMutation", "location": "src/hooks/mutations/" },
+      "validation": { "tech": "Zod", "location": "junto ao use case" },
+      "entities": { "tech": "private ctor + static create/fromPersistence/toJSON", "location": "src/server/domain/inscription/entities/" },
+      "di": { "tech": "Manual (instanciação na rota)", "location": "route.ts" }
+    },
+    "locationBindings": [
+      { "type": "entity", "mustBeIn": "src/server/domain/inscription/entities/", "neverIn": "fora do domínio" },
+      { "type": "valueObject", "mustBeIn": "src/server/domain/inscription/value-objects/", "neverIn": "inline no use case" },
+      { "type": "useCase", "mustBeIn": "src/server/application/inscription/", "neverIn": "na rota API" },
+      { "type": "repositoryImpl", "mustBeIn": "src/server/infrastructure/firebase/repositories/", "neverIn": "no use case" },
+      { "type": "hook", "mustBeIn": "src/hooks/mutations/", "neverIn": "dentro do componente" },
+      { "type": "component", "mustBeIn": "src/components/inscription/", "neverIn": "src/app/" }
+    ],
+    "externalReferenceFormat": {
+      "individual": "eventId:inscriptionId",
+      "batch": "eventId:batch:batchId"
+    }
+  }
+}

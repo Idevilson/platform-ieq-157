@@ -37,8 +37,30 @@ interface InscriptionResult {
   payment?: PaymentInfo;
 }
 
+interface BatchPaymentInfo {
+  status: string;
+  pixCopiaECola?: string;
+  pixQrCode?: string;
+  dataVencimento?: string;
+}
+
+interface BatchResult {
+  batchId: string;
+  eventId: string;
+  eventTitle: string;
+  status: "pendente" | "confirmado" | "cancelado";
+  totalParticipantes: number;
+  cidade: string;
+  valorTotal: number;
+  valorTotalFormatado: string;
+  preferredPaymentMethod: string;
+  participantes: { nome: string; sexo: string }[];
+  payment?: BatchPaymentInfo;
+}
+
 interface LookupResponse {
   inscriptions: InscriptionResult[];
+  batches?: BatchResult[];
 }
 
 interface InscriptionLookupProps {
@@ -52,7 +74,7 @@ interface InscriptionLookupProps {
 async function lookupInscriptions(
   cpf: string,
   eventId?: string,
-): Promise<InscriptionResult[]> {
+): Promise<LookupResponse> {
   const params = new URLSearchParams({ cpf });
   if (eventId) {
     params.append("eventId", eventId);
@@ -62,7 +84,7 @@ async function lookupInscriptions(
     `/inscriptions/lookup?${params}`,
   );
   if (response.success && response.data) {
-    return response.data.inscriptions;
+    return response.data;
   }
   throw new Error(response.error || "Erro ao consultar inscrição");
 }
@@ -94,6 +116,7 @@ export function InscriptionLookup({
   const [cpf, setCpf] = useState(initialCpf);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
+  const [batchResults, setBatchResults] = useState<BatchResult[] | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<string | null>(null);
   const [copiedPix, setCopiedPix] = useState(false);
   const [hasAutoSearched, setHasAutoSearched] = useState(false);
@@ -108,10 +131,11 @@ export function InscriptionLookup({
 
   const lookupMutation = useMutation({
     mutationFn: (cleanCpf: string) => lookupInscriptions(cleanCpf, eventId),
-    onSuccess: (inscriptions) => {
-      setResults(inscriptions);
-      if (inscriptions.length === 1 && onInscriptionFound) {
-        onInscriptionFound(inscriptions[0]);
+    onSuccess: (data) => {
+      setResults(data.inscriptions);
+      setBatchResults(data.batches ?? []);
+      if (data.inscriptions.length === 1 && onInscriptionFound) {
+        onInscriptionFound(data.inscriptions[0]);
       }
     },
     onError: (err) => {
@@ -145,6 +169,7 @@ export function InscriptionLookup({
     setCpf(formatted);
     setError(null);
     setResults(null);
+    setBatchResults(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -242,7 +267,7 @@ export function InscriptionLookup({
 
       {!isLoading && !isWaitingForResults && results !== null && (
         <div className="mt-6">
-          {results.length === 0 ? (
+          {results.length === 0 && (!batchResults || batchResults.length === 0) ? (
             <div className="text-center py-8 text-text-secondary">
               <p>
                 Nenhuma inscrição encontrada para este CPF
@@ -251,9 +276,11 @@ export function InscriptionLookup({
             </div>
           ) : (
             <div className="space-y-4">
-              <h4 className="font-semibold text-text-primary">
-                {results.length} inscrição(ões) encontrada(s)
-              </h4>
+              {results.length > 0 && (
+                <h4 className="font-semibold text-text-primary">
+                  {results.length} inscrição(ões) individual(is) encontrada(s)
+                </h4>
+              )}
 
               <div className="space-y-3">
                 {results.map((result) => (
@@ -460,6 +487,82 @@ export function InscriptionLookup({
                   </div>
                 ))}
               </div>
+
+              {batchResults && batchResults.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <h4 className="font-semibold text-text-primary">
+                    {batchResults.length} inscrição(ões) coletiva(s) como responsável
+                  </h4>
+                  {batchResults.map((batch) => (
+                    <div
+                      key={batch.batchId}
+                      className="bg-bg-primary rounded-xl p-4 border border-gold/10"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                        <div>
+                          <h5 className="font-medium text-text-primary">{batch.eventTitle}</h5>
+                          <p className="text-xs text-text-secondary mt-0.5">
+                            Inscrição Coletiva · {batch.totalParticipantes} participantes · {batch.cidade}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded-full border ${
+                            batch.status === "confirmado"
+                              ? "bg-green-500/20 text-green-400 border-green-500/30"
+                              : batch.status === "cancelado"
+                              ? "bg-red-500/20 text-red-400 border-red-500/30"
+                              : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                          }`}
+                        >
+                          {batch.status === "confirmado" ? "Confirmado" : batch.status === "cancelado" ? "Cancelado" : "Pendente"}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-text-secondary font-medium">
+                        Total: <span className="text-gold">{batch.valorTotalFormatado}</span>
+                      </p>
+
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {batch.participantes.slice(0, 5).map((p, i) => (
+                          <span key={i} className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">
+                            {p.nome}
+                          </span>
+                        ))}
+                        {batch.participantes.length > 5 && (
+                          <span className="text-xs text-text-muted px-2 py-0.5">
+                            +{batch.participantes.length - 5} mais
+                          </span>
+                        )}
+                      </div>
+
+                      {batch.payment?.pixCopiaECola && batch.status === "pendente" && (
+                        <div className="mt-4 pt-4 border-t border-gold/10">
+                          <button
+                            onClick={() => handleTogglePayment(batch.batchId)}
+                            className="w-full sm:w-auto px-4 py-2 bg-gold/20 text-gold font-medium rounded-lg hover:bg-gold/30 transition-colors text-sm"
+                          >
+                            {expandedPayment === batch.batchId ? "Ocultar PIX" : "Ver PIX do Lote"}
+                          </button>
+                          {expandedPayment === batch.batchId && (
+                            <div className="mt-4 p-4 bg-bg-secondary rounded-lg border border-gold/20 space-y-2">
+                              <p className="text-sm text-text-secondary">PIX Copia e Cola:</p>
+                              <code className="text-xs text-text-primary break-all block">
+                                {batch.payment.pixCopiaECola.substring(0, 100)}...
+                              </code>
+                              <button
+                                onClick={() => handleCopyPix(batch.payment!.pixCopiaECola!)}
+                                className="w-full py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors text-sm"
+                              >
+                                {copiedPix ? "Copiado!" : "Copiar Código PIX"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

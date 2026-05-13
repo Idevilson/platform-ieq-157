@@ -3,17 +3,20 @@ import { ProcessAsaasWebhook, AsaasWebhookPayload } from '@/server/application/p
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseEventPerkRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventPerkRepositoryAdmin'
+import { FirebaseBatchInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseBatchInscriptionRepositoryAdmin'
 
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN || ''
 
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 const eventPerkRepository = new FirebaseEventPerkRepositoryAdmin()
+const batchRepository = new FirebaseBatchInscriptionRepositoryAdmin()
 
 const processWebhook = new ProcessAsaasWebhook(
   paymentRepository,
   inscriptionRepository,
   eventPerkRepository,
+  batchRepository,
 )
 
 export async function POST(request: NextRequest) {

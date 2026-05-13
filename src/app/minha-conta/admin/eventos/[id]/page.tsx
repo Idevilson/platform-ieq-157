@@ -5,8 +5,11 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useEventById } from '@/hooks/queries/useEvents'
 import { useAdminEventInscriptions } from '@/hooks/queries/useAdminEvents'
+import { useAdminBatches } from '@/hooks/queries/useAdminBatches'
 import { useUpdateEventStatus, useConfirmInscription, useDeleteInscription, useChangeEventSlug } from '@/hooks/mutations/useAdminEventMutations'
+import { useAdminConfirmBatchCash, useAdminDeleteBatch } from '@/hooks/mutations/useAdminBatchMutations'
 import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
+import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
@@ -166,6 +169,17 @@ function ConfirmModal({ inscription, onClose, onConfirm, onDelete, isLoading, is
             </div>
           </div>
 
+          {inscription.tamanho && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-text-muted">Tamanho Camiseta</label>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gold/15 text-gold border border-gold/30">
+                  {inscription.tamanho}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-text-muted">Data da Inscrição</label>
@@ -291,6 +305,10 @@ export default function AdminEventDetailPage() {
   const confirmInscription = useConfirmInscription()
   const deleteInscription = useDeleteInscription()
   const changeSlug = useChangeEventSlug()
+  const { data: batchesData, isLoading: batchesLoading } = useAdminBatches(eventId)
+  const confirmBatchCash = useAdminConfirmBatchCash(eventId)
+  const deleteBatch = useAdminDeleteBatch(eventId)
+  const batches = batchesData ?? []
   const [editingSlug, setEditingSlug] = useState(false)
   const [newSlug, setNewSlug] = useState('')
 
@@ -724,6 +742,42 @@ export default function AdminEventDetailPage() {
           isDeleting={deleteInscription.isPending}
         />
       )}
+
+      <div className="mt-8 bg-bg-secondary rounded-2xl border border-gold/10 overflow-hidden">
+        <div className="p-6 border-b border-gold/10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Inscrições Coletivas</h2>
+              <p className="text-sm text-text-secondary mt-1">
+                {batchesLoading ? 'Carregando...' : `${batches.length} lote(s)`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {batchesLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="spinner" />
+          </div>
+        ) : batches.length === 0 ? (
+          <div className="text-center py-12 text-text-secondary">
+            Nenhuma inscrição coletiva para este evento.
+          </div>
+        ) : (
+          <div className="p-6 space-y-4">
+            {batches.map((batch) => (
+              <AdminBatchCard
+                key={batch.id}
+                batch={batch}
+                onConfirmCash={(batchId) => confirmBatchCash.mutate(batchId)}
+                onDelete={(batchId) => deleteBatch.mutate(batchId)}
+                isConfirming={confirmBatchCash.isPending}
+                isDeleting={deleteBatch.isPending}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

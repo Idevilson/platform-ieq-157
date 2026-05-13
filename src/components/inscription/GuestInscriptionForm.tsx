@@ -6,7 +6,7 @@ import { CategorySelector } from './CategorySelector'
 import { InscriptionLookup } from './InscriptionLookup'
 import { useCreateGuestInscription } from '@/hooks'
 import { formatCPF, formatPhone } from '@/lib/formatters'
-import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from '@/shared/constants'
+import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
 
 const FIELD_LABELS: Record<string, string> = {
   nome: 'Nome completo',
@@ -16,6 +16,7 @@ const FIELD_LABELS: Record<string, string> = {
   cidade: 'Cidade',
   idade: 'Idade',
   sexo: 'Sexo',
+  tamanho: 'Tamanho da camiseta',
 }
 
 // Converte idade para data de nascimento (1 de janeiro do ano calculado)
@@ -42,6 +43,7 @@ interface GuestFormData {
   cidade: string
   idade: number
   sexo: Gender
+  tamanho: ShirtSize
   observacoes?: string
 }
 
@@ -122,6 +124,7 @@ export function GuestInscriptionForm({
   })
 
   const selectedSexo = watch('sexo')
+  const selectedTamanho = watch('tamanho')
 
   const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId)
 
@@ -158,6 +161,7 @@ export function GuestInscriptionForm({
         eventId,
         categoryId: selectedCategoryId,
         preferredPaymentMethod: paymentMethod,
+        tamanho: data.tamanho,
         guestData: {
           nome: data.nome,
           email: data.email,
@@ -327,6 +331,31 @@ export function GuestInscriptionForm({
             </div>
             {errors.sexo && !selectedSexo && <span className="error">{errors.sexo.message}</span>}
           </div>
+        </div>
+
+        <div className="form-group">
+          <label>Tamanho da camiseta *</label>
+          <input type="hidden" {...register('tamanho', { required: 'Tamanho da camiseta é obrigatório' })} />
+          <div className="flex flex-wrap gap-2">
+            {SHIRT_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={`px-4 py-2 rounded-lg border text-sm font-bold transition-colors ${
+                  selectedTamanho === size
+                    ? 'bg-gold/20 border-gold text-gold'
+                    : errors.tamanho && !selectedTamanho
+                    ? 'border-red-400/50 bg-bg-primary text-text-secondary'
+                    : 'border-gold/20 bg-bg-primary text-text-secondary hover:border-gold/40'
+                }`}
+                onClick={() => !isLoading && setValue('tamanho', size, { shouldValidate: true })}
+                disabled={isLoading}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          {errors.tamanho && !selectedTamanho && <span className="error">{errors.tamanho.message}</span>}
         </div>
       </div>
 

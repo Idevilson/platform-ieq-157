@@ -2,7 +2,7 @@ import { getAdminFirestore } from '../admin'
 import { Inscription } from '@/server/domain/inscription/entities/Inscription'
 import { IInscriptionRepository, ListInscriptionsParams } from '@/server/domain/inscription/repositories/IInscriptionRepository'
 import { InscriptionStatus, PaginatedResult } from '@/server/domain/shared/types'
-import { Gender, InscriptionPaymentMethod } from '@/shared/constants'
+import { Gender, InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 import { Timestamp } from 'firebase-admin/firestore'
 
 export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepository {
@@ -158,6 +158,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       status: data.status as InscriptionStatus,
       paymentId: data.paymentId,
       preferredPaymentMethod: (data.preferredPaymentMethod as InscriptionPaymentMethod) || 'PIX',
+      tamanho: data.tamanho as ShirtSize | undefined,
       temBrinde: data.temBrinde,
       perkId: data.perkId ?? undefined,
       brindeAlocadoEm: data.brindeAlocadoEm?.toDate?.() ?? undefined,
@@ -197,6 +198,7 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       preferredPaymentMethod: json.preferredPaymentMethod,
       status: json.status,
       paymentId: json.paymentId || null,
+      tamanho: inscription.tamanho ?? null,
       temBrinde: inscription.temBrinde ?? null,
       perkId: inscription.perkId ?? null,
       brindeAlocadoEm: inscription.brindeAlocadoEm ? Timestamp.fromDate(inscription.brindeAlocadoEm) : null,

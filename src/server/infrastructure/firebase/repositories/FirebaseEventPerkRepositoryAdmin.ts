@@ -159,6 +159,43 @@ export class FirebaseEventPerkRepositoryAdmin implements IEventPerkRepository {
     })
   }
 
+  async allocateToBatchParticipants(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    count: number,
+  ): Promise<{ allocated: number; perkId: string | null }> {
+    const perkDocRef = this.perksRef(eventId).doc(perkId)
+
+    return this.db.runTransaction(async (tx) => {
+      const perkSnap = await tx.get(perkDocRef)
+      if (!perkSnap.exists) return { allocated: 0, perkId: null }
+
+      const perkData = perkSnap.data() as PerkDocument
+      const available = Math.max(0, perkData.limiteEstoque - perkData.quantidadeAlocada)
+      const toAllocate = Math.min(count, available)
+
+      if (toAllocate === 0) return { allocated: 0, perkId: null }
+
+      const now = Timestamp.now()
+      tx.update(perkDocRef, {
+        quantidadeAlocada: perkData.quantidadeAlocada + toAllocate,
+        atualizadoEm: now,
+      })
+
+      const allocationDocRef = this.allocationsRef(eventId, perkId).doc(batchId)
+      tx.set(allocationDocRef, {
+        batchId,
+        eventId,
+        perkId,
+        quantidadeAlocada: toAllocate,
+        alocadoEm: now,
+      })
+
+      return { allocated: toAllocate, perkId }
+    })
+  }
+
   private mapToEntity(snap: FirebaseFirestore.DocumentSnapshot): EventPerk {
     const data = snap.data() as PerkDocument
     return EventPerk.fromPersistence({

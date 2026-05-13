@@ -12,13 +12,14 @@ import {
   DuplicateInscriptionError,
   UserNotFoundError,
 } from '@/server/domain/shared/errors'
-import { InscriptionPaymentMethod } from '@/shared/constants'
+import { InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 
 export interface CreateInscriptionInput {
   userId: string
   eventId: string
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
+  tamanho?: ShirtSize
 }
 
 export interface CreateInscriptionOutput {
@@ -103,6 +104,7 @@ export class CreateInscription {
       userId: input.userId,
       valor: valorCents,
       preferredPaymentMethod: input.preferredPaymentMethod,
+      tamanho: input.tamanho,
     })
   }
 }
