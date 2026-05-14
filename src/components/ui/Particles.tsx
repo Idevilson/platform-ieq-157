@@ -128,6 +128,9 @@ export default function Particles({
     const hasWebGL = !!(probe.getContext('webgl2') || probe.getContext('webgl'))
     if (!hasWebGL) return
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) return
+
     let renderer: Renderer
     try {
       renderer = new Renderer({ dpr: pixelRatio, depth: false, alpha: true })
@@ -205,7 +208,7 @@ export default function Particles({
 
     const particles = new Mesh(gl, { mode: gl.POINTS, geometry, program })
 
-    let animationFrameId: number
+    let animationFrameId = 0
     let lastTime = performance.now()
     let elapsed = 0
 
@@ -234,14 +237,32 @@ export default function Particles({
       renderer.render({ scene: particles, camera })
     }
 
-    animationFrameId = requestAnimationFrame(update)
+    function start() {
+      if (!animationFrameId) {
+        lastTime = performance.now()
+        animationFrameId = requestAnimationFrame(update)
+      }
+    }
+    function stop() {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = 0
+      }
+    }
+    function handleVisibility() {
+      if (document.hidden) stop()
+      else start()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    start()
 
     return () => {
+      stop()
+      document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('resize', resize)
       if (moveParticlesOnHover) {
         container.removeEventListener('mousemove', handleMouseMove)
       }
-      cancelAnimationFrame(animationFrameId)
       if (container.contains(gl.canvas)) {
         container.removeChild(gl.canvas)
       }

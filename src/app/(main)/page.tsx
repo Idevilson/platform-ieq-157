@@ -70,6 +70,9 @@ export default function Home() {
               className="mx-auto"
               width={380}
               height={280}
+              priority
+              placeholder="blur"
+              sizes="(max-width: 768px) 90vw, 380px"
               style={{
                 maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
                 WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',

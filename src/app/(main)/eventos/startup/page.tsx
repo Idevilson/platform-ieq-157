@@ -31,7 +31,7 @@ export default function Startup() {
     <>
       <header className="relative min-h-screen flex items-center justify-center overflow-hidden -mt-[70px] pt-[70px]">
         <div className="absolute inset-0">
-          <Image src={temaImg} alt="A Uncao dos Quatro Seres" fill style={{ objectFit: 'cover' }} priority />
+          <Image src={temaImg} alt="A Uncao dos Quatro Seres" fill sizes="100vw" placeholder="blur" style={{ objectFit: 'cover' }} priority />
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-bg-primary" />
         </div>
         <div className="relative z-10 text-center px-4 py-16 max-w-4xl mx-auto animate-fade-in">

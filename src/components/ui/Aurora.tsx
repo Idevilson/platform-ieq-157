@@ -140,6 +140,9 @@ export default function Aurora({
     const hasWebGL2 = !!probe.getContext('webgl2')
     if (!hasWebGL2) return
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) return
+
     let renderer: Renderer
     try {
       renderer = new Renderer({
@@ -210,12 +213,28 @@ export default function Aurora({
       })
       renderer.render({ scene: mesh })
     }
-    animateId = requestAnimationFrame(update)
+
+    function start() {
+      if (!animateId) animateId = requestAnimationFrame(update)
+    }
+    function stop() {
+      if (animateId) {
+        cancelAnimationFrame(animateId)
+        animateId = 0
+      }
+    }
+    function handleVisibility() {
+      if (document.hidden) stop()
+      else start()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    start()
 
     resize()
 
     return () => {
-      cancelAnimationFrame(animateId)
+      stop()
+      document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('resize', resize)
       if (ctn && gl.canvas.parentNode === ctn) {
         ctn.removeChild(gl.canvas)

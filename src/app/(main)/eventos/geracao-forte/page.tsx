@@ -95,7 +95,6 @@ export default function GeracaoForte() {
       return json.summary
     },
     staleTime: 30_000,
-    refetchInterval: 30_000,
   })
 
   const handleInscricao = () => {
@@ -169,7 +168,7 @@ export default function GeracaoForte() {
       <div className="relative z-10 overflow-hidden py-3 bg-[#D4A017]">
         <div
           className="text-[#0D0D0D] font-black text-xs uppercase tracking-widest"
-          style={{ display: 'flex', flexWrap: 'nowrap', whiteSpace: 'nowrap', animation: 'marquee 24s linear infinite', willChange: 'transform' }}
+          style={{ display: 'flex', flexWrap: 'nowrap', whiteSpace: 'nowrap', animation: 'marquee 24s linear infinite' }}
         >
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={i} className="flex-shrink-0 px-8">
@@ -311,6 +310,7 @@ export default function GeracaoForte() {
                     src={speaker.photo}
                     alt={speaker.name}
                     fill
+                    sizes="(max-width: 768px) 50vw, 280px"
                     className="object-cover object-top"
                   />
                   {/* Gradient fade bottom */}
@@ -358,7 +358,7 @@ export default function GeracaoForte() {
               style={{ border: '1px solid rgba(212,160,23,0.2)', '--glow-color': 'rgba(212,160,23,0.3)' } as React.CSSProperties}
             >
               <div className="relative w-full aspect-square overflow-hidden">
-                <Image src={imgCamisetaFrente} alt="Camiseta Follow Me — frente" fill className="object-cover object-center" />
+                <Image src={imgCamisetaFrente} alt="Camiseta Follow Me — frente" fill sizes="(max-width: 768px) 50vw, 256px" className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
               </div>
               <div className="px-4 py-4 flex flex-col items-center gap-1.5 -mt-4 relative z-10">
@@ -376,7 +376,7 @@ export default function GeracaoForte() {
               style={{ border: '1px solid rgba(212,160,23,0.2)', '--glow-color': 'rgba(212,160,23,0.3)' } as React.CSSProperties}
             >
               <div className="relative w-full aspect-square overflow-hidden">
-                <Image src={imgCamisetaCostas} alt="Camiseta Follow Me — costas" fill className="object-cover object-center" />
+                <Image src={imgCamisetaCostas} alt="Camiseta Follow Me — costas" fill sizes="(max-width: 768px) 50vw, 256px" className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
               </div>
               <div className="px-4 py-4 flex flex-col items-center gap-1.5 -mt-4 relative z-10">
@@ -394,7 +394,7 @@ export default function GeracaoForte() {
               style={{ border: '1px solid rgba(245,184,0,0.2)', '--glow-color': 'rgba(245,184,0,0.3)' } as React.CSSProperties}
             >
               <div className="relative w-full aspect-square overflow-hidden">
-                <Image src={imgPulseiraDourada} alt="Pulseira dourada do evento" fill className="object-cover object-center" />
+                <Image src={imgPulseiraDourada} alt="Pulseira dourada do evento" fill sizes="(max-width: 768px) 50vw, 256px" className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
               </div>
               <div className="px-4 py-4 flex flex-col items-center gap-1.5 -mt-4 relative z-10">
@@ -412,7 +412,7 @@ export default function GeracaoForte() {
               style={{ border: '1px solid rgba(0,170,221,0.2)', '--glow-color': 'rgba(0,170,221,0.3)' } as React.CSSProperties}
             >
               <div className="relative w-full aspect-square overflow-hidden">
-                <Image src={imgPulseiraAzul} alt="Pulseira azul do evento" fill className="object-cover object-center" />
+                <Image src={imgPulseiraAzul} alt="Pulseira azul do evento" fill sizes="(max-width: 768px) 50vw, 256px" className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
               </div>
               <div className="px-4 py-4 flex flex-col items-center gap-1.5 -mt-4 relative z-10">
@@ -430,7 +430,7 @@ export default function GeracaoForte() {
             style={{ border: '1px solid rgba(123,63,181,0.3)', '--glow-color': 'rgba(123,63,181,0.4)' } as React.CSSProperties}
           >
             <div className="relative w-full md:w-72 aspect-video md:aspect-auto overflow-hidden flex-shrink-0">
-              <Image src={imgPulseirasLed} alt="Pulseiras LED coloridas" fill className="object-cover object-center" />
+              <Image src={imgPulseirasLed} alt="Pulseiras LED coloridas" fill sizes="(max-width: 768px) 100vw, 288px" className="object-cover object-center" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#0D0D0D] hidden md:block" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] to-transparent md:hidden" />
             </div>
@@ -514,6 +514,7 @@ export default function GeracaoForte() {
                   src={imgMyllaPortrait}
                   alt="Mylla Carvalho"
                   fill
+                  sizes="(max-width: 768px) 100vw, 512px"
                   className="object-cover object-top"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
@@ -535,6 +536,7 @@ export default function GeracaoForte() {
                     src={imgMyllaBanda}
                     alt="Mylla Carvalho e Banda"
                     fill
+                    sizes="(max-width: 768px) 100vw, 512px"
                     className="object-cover object-center"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#141414]/80 via-transparent to-transparent" />
@@ -583,6 +585,7 @@ export default function GeracaoForte() {
                   src={imgRamalho}
                   alt="J. Ramalho"
                   fill
+                  sizes="(max-width: 768px) 100vw, 512px"
                   className="object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
@@ -671,6 +674,7 @@ export default function GeracaoForte() {
                   src={imgOrganizadores}
                   alt="Pr. Heitor Alexandre e Pra. Val Nery"
                   fill
+                  sizes="(max-width: 768px) 100vw, 420px"
                   className="object-cover object-top relative z-10"
                 />
                 <div className="absolute inset-0 z-20 bg-gradient-to-r from-transparent via-transparent to-[#0D0D0D] hidden md:block" />
@@ -737,7 +741,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-[#0D0D0D] flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(212,160,23,0.15)', '--glow-color': 'rgba(212,160,23,0.25)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgArenaOcBurguer} alt="Arena DC Burguer" fill className="object-contain" />
+                <Image src={imgArenaOcBurguer} alt="Arena DC Burguer" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
 
@@ -745,7 +749,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-[#1a0d2e] flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(123,63,181,0.2)', '--glow-color': 'rgba(123,63,181,0.25)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgClubeDescoladao} alt="Clube Descoladão" fill className="object-contain" />
+                <Image src={imgClubeDescoladao} alt="Clube Descoladão" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
 
@@ -753,7 +757,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-[#1a1a1a] flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(212,160,23,0.15)', '--glow-color': 'rgba(212,160,23,0.25)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgPlanetaMusic} alt="Planeta Music" fill className="object-contain" />
+                <Image src={imgPlanetaMusic} alt="Planeta Music" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
           </div>
@@ -764,7 +768,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-white flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(255,255,255,0.1)', '--glow-color': 'rgba(255,255,255,0.15)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgCentroContabil} alt="Centro Contábil" fill className="object-contain" />
+                <Image src={imgCentroContabil} alt="Centro Contábil" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
 
@@ -772,7 +776,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-white flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(255,255,255,0.1)', '--glow-color': 'rgba(255,255,255,0.15)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgAcquaPark} alt="Acqua Park Redenção" fill className="object-contain" />
+                <Image src={imgAcquaPark} alt="Acqua Park Redenção" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
           </div>
@@ -783,7 +787,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-[#0D0D0D] flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(212,160,23,0.2)', '--glow-color': 'rgba(212,160,23,0.3)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgNorteSulCosmeticos} alt="Norte & Sul Cosméticos" fill className="object-contain" />
+                <Image src={imgNorteSulCosmeticos} alt="Norte & Sul Cosméticos" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
 
@@ -791,7 +795,7 @@ export default function GeracaoForte() {
             <div className="card-hover rounded-2xl overflow-hidden bg-[#0d0520] flex items-center justify-center p-6 aspect-video"
               style={{ border: '1px solid rgba(160,40,220,0.25)', '--glow-color': 'rgba(160,40,220,0.3)' } as React.CSSProperties}>
               <div className="relative w-full h-full">
-                <Image src={imgAcaiteriaMilgraus} alt="Açaíteria MilGraus" fill className="object-contain" />
+                <Image src={imgAcaiteriaMilgraus} alt="Açaíteria MilGraus" fill sizes="(max-width: 768px) 100vw, 340px" className="object-contain" />
               </div>
             </div>
           </div>

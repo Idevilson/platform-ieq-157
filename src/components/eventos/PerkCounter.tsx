@@ -36,7 +36,6 @@ export function PerkCounter({
     queryKey: ['perk-summary', eventId],
     queryFn: () => fetchPerkSummary(eventId),
     staleTime: 30_000,
-    refetchInterval: 30_000,
   })
 
   if (isLoading) {
