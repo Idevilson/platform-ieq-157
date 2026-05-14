@@ -121,8 +121,21 @@ export default function Particles({
     const container = containerRef.current
     if (!container) return
 
-    const renderer = new Renderer({ dpr: pixelRatio, depth: false, alpha: true })
+    // Probe WebGL support first. ogl's Renderer writes to `gl.renderer`
+    // even when context creation fails, which throws on browsers without
+    // WebGL and crashes the whole page.
+    const probe = document.createElement('canvas')
+    const hasWebGL = !!(probe.getContext('webgl2') || probe.getContext('webgl'))
+    if (!hasWebGL) return
+
+    let renderer: Renderer
+    try {
+      renderer = new Renderer({ dpr: pixelRatio, depth: false, alpha: true })
+    } catch {
+      return
+    }
     const gl = renderer.gl
+    if (!gl) return
     container.appendChild(gl.canvas)
     gl.clearColor(0, 0, 0, 0)
 

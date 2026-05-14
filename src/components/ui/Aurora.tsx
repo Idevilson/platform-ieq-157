@@ -133,12 +133,25 @@ export default function Aurora({
     const ctn = ctnDom.current
     if (!ctn) return
 
-    const renderer = new Renderer({
-      alpha: true,
-      premultipliedAlpha: true,
-      antialias: true,
-    })
+    // Probe WebGL2 support before constructing ogl's Renderer.
+    // ogl writes to `gl.renderer` even when context creation fails, which
+    // throws on devices/browsers without WebGL and crashes the whole page.
+    const probe = document.createElement('canvas')
+    const hasWebGL2 = !!probe.getContext('webgl2')
+    if (!hasWebGL2) return
+
+    let renderer: Renderer
+    try {
+      renderer = new Renderer({
+        alpha: true,
+        premultipliedAlpha: true,
+        antialias: true,
+      })
+    } catch {
+      return
+    }
     const gl = renderer.gl
+    if (!gl) return
     gl.clearColor(0, 0, 0, 0)
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
