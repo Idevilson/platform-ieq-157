@@ -9,6 +9,7 @@ import { useMyBatches, useBatchLookup } from '@/hooks/queries/useInscriptions'
 import { BatchInscriptionForm } from '@/components/inscription/BatchInscriptionForm'
 import { BatchInscriptionCard } from '@/components/inscription/BatchInscriptionCard'
 import { BatchInscriptionDTO } from '@/shared/types/inscription'
+import { AuthModal } from '@/components/auth'
 
 const EVENT_ID = 'geracao-forte'
 const DETAIL_BASE = '/eventos/geracao-forte/inscricao-coletiva/confirmado'
@@ -54,6 +55,7 @@ export default function GeracaoForteBatchInscricao() {
   const { data: categorias, isLoading: categoriasLoading, error: categoriasError, refetch: refetchCategorias } = useEventCategories(EVENT_ID)
   const [cpfInput, setCpfInput] = useState<string>()
   const [showForm, setShowForm] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const { data: myBatches, isLoading: myBatchesLoading } = useMyBatches(EVENT_ID, !!authUser)
   const { data: lookedUpBatches, isLoading: lookupLoading } = useBatchLookup(cpfInput, EVENT_ID)
@@ -112,9 +114,22 @@ export default function GeracaoForteBatchInscricao() {
           ))}
           <p className="text-center text-sm text-text-muted mt-6">
             Para criar uma nova inscrição coletiva,{' '}
-            <Link href="/entrar" className="text-gold hover:underline">faça login</Link>.
+            <button
+              type="button"
+              onClick={() => setAuthOpen(true)}
+              className="text-gold hover:underline cursor-pointer"
+            >
+              faça login
+            </button>
+            .
           </p>
         </div>
+        <AuthModal
+          isOpen={authOpen}
+          onClose={() => setAuthOpen(false)}
+          title="Entrar para continuar"
+          description="Faça login para criar uma nova inscrição coletiva."
+        />
       </section>
     )
   }

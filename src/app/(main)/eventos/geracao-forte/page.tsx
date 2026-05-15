@@ -6,8 +6,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useEventById, useEventCategories } from '@/hooks/queries/useEvents'
 import { SmartInscriptionForm } from '@/components/inscription'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
-import Aurora from '@/components/ui/Aurora'
-import Particles from '@/components/ui/Particles'
 import followMeLogo from '@/assets/images/geracao-forte/follow-me-logo.png'
 import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengtson ESTILOSO.jpg'
 import imgCarmona from '@/assets/images/geracao-forte/palestrantes/Martinho Carmona.jpg'
@@ -108,42 +106,40 @@ export default function GeracaoForte() {
   const eventCategorias = categorias || evento?.categorias || []
 
   return (
-    <>
-      {/* Particles layer — fixed, above content, non-interactive */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 50 }}>
-        <Particles
-          particleColors={['#D4A017', '#D4A017', '#D4A017']}
-          particleCount={150}
-          particleSpread={12}
-          speed={0.08}
-          particleBaseSize={60}
-          alphaParticles
-          disableRotation={false}
-          pixelRatio={1}
-        />
-      </div>
-
+    <div className="relative">
+      <div aria-hidden className="fixed inset-0 -z-10 pointer-events-none bg-event-ambient" />
       <header className="relative min-h-screen flex items-center justify-center overflow-hidden -mt-[70px] pt-[70px]">
         <div className="absolute inset-0 bg-bg-primary" />
-        <div className="absolute inset-0">
-          <Aurora
-            colorStops={['#1a0533', '#5227FF', '#D4A017']}
-            amplitude={1.1}
-            blend={0.55}
-            speed={0.7}
-          />
-        </div>
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 55% at 50% 18%, rgba(82,39,255,0.28) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 80% 60% at 50% 95%, rgba(212,160,23,0.22) 0%, transparent 65%),' +
+              'radial-gradient(circle at 85% 12%, rgba(255,215,0,0.10) 0%, transparent 40%),' +
+              'radial-gradient(circle at 12% 78%, rgba(123,63,181,0.16) 0%, transparent 42%)',
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-primary" />
         <div className="relative z-10 text-center px-4 py-16 max-w-4xl mx-auto animate-fade-in">
           <h2 className="text-sm md:text-base uppercase tracking-[0.3em] text-gold/80 mb-4">
             Geração Forte · IEQ Sede Campo 157
           </h2>
 
-          <div className="mx-auto mb-8 max-w-2xl">
+          <div className="relative mx-auto mb-8 max-w-2xl">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -m-10"
+              style={{
+                background:
+                  'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.06) 40%, transparent 72%)',
+              }}
+            />
             <Image
               src={followMeLogo}
               alt="Follow Me - Marcos 8:34"
-              className="w-full h-auto"
+              className="relative w-full h-auto"
               priority
             />
           </div>
@@ -152,11 +148,22 @@ export default function GeracaoForte() {
             Congresso Setorizado da Geração Forte
           </p>
           <p className="text-lg text-text-secondary mb-6">03 a 05 de Julho de 2026</p>
-          <p className="text-sm md:text-base text-text-secondary/80 italic max-w-2xl mx-auto mb-8">
-            &quot;Se alguém quer vir após mim, negue-se a si mesmo, tome a sua cruz e siga-me.&quot; — Marcos 8:34
-          </p>
+
+          <div className="max-w-2xl mx-auto mb-8 flex items-center gap-4">
+            <span aria-hidden className="hidden md:block h-px flex-1 bg-gradient-to-r from-transparent to-gold/40" />
+            <div className="text-center px-2 max-w-[440px] mx-auto">
+              <p className="text-sm md:text-base text-text-secondary italic leading-relaxed">
+                &ldquo;Se alguém quer vir após mim, negue-se a si mesmo, tome a sua cruz e siga-me.&rdquo;
+              </p>
+              <p className="mt-2 text-[10px] tracking-[0.3em] uppercase text-gold/70 font-semibold">
+                Marcos 8:34
+              </p>
+            </div>
+            <span aria-hidden className="hidden md:block h-px flex-1 bg-gradient-to-l from-transparent to-gold/40" />
+          </div>
+
           <button
-            className="px-10 py-4 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-bold text-lg rounded-full hover:shadow-gold hover:-translate-y-1 transition-all"
+            className="px-10 py-4 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-black text-lg rounded-full shadow-gold ring-1 ring-gold/40 hover:shadow-gold-lg hover:ring-gold/70 hover:-translate-y-1 transition-all"
             onClick={handleInscricao}
           >
             INSCREVA-SE AGORA
@@ -164,22 +171,14 @@ export default function GeracaoForte() {
         </div>
       </header>
 
-      {/* Marquee tape */}
-      <div className="relative z-10 overflow-hidden py-3 bg-[#D4A017]">
-        <div
-          className="text-[#0D0D0D] font-black text-xs uppercase tracking-widest"
-          style={{ display: 'flex', flexWrap: 'nowrap', whiteSpace: 'nowrap', animation: 'marquee 24s linear infinite' }}
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <span key={i} className="flex-shrink-0 px-8">
-              GERAÇÃO FORTE&nbsp;·&nbsp;03 A 05 DE JULHO&nbsp;·&nbsp;IEQ SEDE CAMPO 157&nbsp;·&nbsp;FOLLOW ME&nbsp;·
-            </span>
-          ))}
-        </div>
+      <div className="relative z-10 py-3 bg-[#D4A017]">
+        <p className="text-[#0D0D0D] font-black text-xs uppercase tracking-widest text-center px-4">
+          GERAÇÃO FORTE · 03 A 05 DE JULHO · IEQ SEDE CAMPO 157 · FOLLOW ME
+        </p>
       </div>
 
       {/* Sobre o Evento */}
-      <section className="relative z-10 bg-bg-primary py-20">
+      <section className="relative z-10 py-20">
         <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center gap-10">
 
           {/* Coluna esquerda */}
@@ -192,6 +191,11 @@ export default function GeracaoForte() {
               3
             </span>
             <div className="relative z-10">
+              <div className="mb-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold text-gold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full bg-gold/10 border border-gold/25">
+                  ✝ Follow Me · Marcos 8:34
+                </span>
+              </div>
               <p className="text-[48px] md:text-[52px] font-black text-white leading-[1.05] uppercase">3 DIAS.</p>
               <p className="text-[48px] md:text-[52px] font-black text-white leading-[1.05] uppercase">1 CHAMADO.</p>
               <p
@@ -242,7 +246,7 @@ export default function GeracaoForte() {
         </div>
       </section>
 
-      <section className="relative z-10 py-16 bg-bg-primary">
+      <section className="relative z-10 py-16">
         <div className="max-w-5xl mx-auto px-4">
 
           {/* Badge */}
@@ -288,7 +292,7 @@ export default function GeracaoForte() {
       </section>
 
       {/* Galeria dos Palestrantes */}
-      <section className="relative z-10 py-20 bg-bg-primary">
+      <section className="relative z-10 py-20">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-4xl md:text-5xl font-black text-white text-center uppercase tracking-tight mb-14">
             Galeria dos Palestrantes
@@ -336,7 +340,7 @@ export default function GeracaoForte() {
       </section>
 
       {/* Kit do Participante */}
-      <section className="relative z-10 py-20 bg-bg-primary">
+      <section className="relative z-10 py-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex justify-center mb-6">
             <span className="text-xs text-text-muted border border-white/10 rounded-full px-4 py-1.5 uppercase tracking-widest">
@@ -482,7 +486,7 @@ export default function GeracaoForte() {
       </section>
 
       {/* Atrações Musicais */}
-      <section className="relative z-10 py-20 bg-bg-primary overflow-hidden">
+      <section className="relative z-10 py-20 overflow-hidden">
         <div className="max-w-5xl mx-auto px-6">
 
           {/* Header */}
@@ -656,7 +660,7 @@ export default function GeracaoForte() {
       </section>
 
       {/* Organizadores e Anfitriões */}
-      <section className="relative z-10 py-20 bg-bg-primary overflow-hidden">
+      <section className="relative z-10 py-20 overflow-hidden">
         <div className="max-w-5xl mx-auto px-6">
           <div className="relative rounded-3xl overflow-hidden bg-[#0D0D0D]" style={{ border: '1px solid rgba(212,160,23,0.15)' }}>
             <div className="flex flex-col md:flex-row items-center md:items-stretch">
@@ -724,7 +728,7 @@ export default function GeracaoForte() {
       </section>
 
       {/* Patrocinadores Especiais */}
-      <section className="relative z-10 py-20 bg-bg-primary">
+      <section className="relative z-10 py-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex justify-center mb-6">
             <span className="text-xs text-text-muted border border-white/10 rounded-full px-4 py-1.5 uppercase tracking-widest">
@@ -802,7 +806,7 @@ export default function GeracaoForte() {
         </div>
       </section>
 
-      <section className="relative z-10 py-16 bg-bg-primary">
+      <section className="relative z-10 py-16">
         <div className="max-w-5xl mx-auto px-4">
           <PerkCounter
             eventId={EVENT_ID}
@@ -811,7 +815,7 @@ export default function GeracaoForte() {
         </div>
       </section>
 
-      <section id="inscricao" className="relative z-10 py-16 bg-bg-primary">
+      <section id="inscricao" className="relative z-10 py-16">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gold text-center mb-8">
             Faça sua Inscrição
@@ -849,6 +853,6 @@ export default function GeracaoForte() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   )
 }

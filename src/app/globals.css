@@ -28,7 +28,6 @@
   --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
   --animate-dropdown: dropdown-fade 0.2s ease-out forwards;
   --animate-simbolo-pulse: simbolo-pulse 3s ease-in-out infinite;
-  --animate-marquee: marquee 24s linear infinite;
 
   @keyframes fade-in {
     0% { opacity: 0; }
@@ -59,11 +58,6 @@
     0%, 100% { transform: scale(1); filter: brightness(1); }
     50% { transform: scale(1.05); filter: brightness(1.2); }
   }
-}
-
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
 }
 
 /* Respeitar a preferência de redução de movimento (acessibilidade + bateria mobile) */
@@ -801,5 +795,20 @@
 
   .bg-dark-overlay {
     background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%);
+  }
+
+  /* Modern edge-anchored ambient for the Geração Forte event page.
+     Applied to a fixed-position overlay (anchored to viewport, not page),
+     so the gradients stay at the screen edges as the user scrolls —
+     no visible "blobs" mid-page. Concert-light feel: purple spotlight
+     from above, warm gold underglow from below, subtle side hints.
+     Painted once, no animation, no GPU shader. */
+  .bg-event-ambient {
+    background:
+      radial-gradient(ellipse 100% 60% at 50% -10%, rgba(82,39,255,0.28) 0%, rgba(82,39,255,0.08) 30%, transparent 60%),
+      radial-gradient(ellipse 110% 50% at 50% 110%, rgba(212,160,23,0.20) 0%, rgba(212,160,23,0.05) 35%, transparent 65%),
+      radial-gradient(ellipse 60% 90% at -10% 50%, rgba(82,39,255,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 90% at 110% 50%, rgba(212,160,23,0.06) 0%, transparent 50%),
+      #0a0a14;
   }
 }
