@@ -13,6 +13,7 @@ export interface UserDTO {
   sexo?: Gender
   role: UserRole
   asaasCustomerId?: string
+  churchId: string | null
   isProfileComplete: boolean
   isProfileCompleteForEvent: boolean
   criadoEm: string | Date
@@ -46,6 +47,7 @@ export interface UserProfileResponse {
   dataNascimento?: string | Date
   sexo?: Gender
   role: UserRole
+  churchId: string | null
   isProfileComplete: boolean
   isProfileCompleteForEvent: boolean
 }

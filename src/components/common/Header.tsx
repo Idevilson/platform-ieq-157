@@ -2,16 +2,28 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '@/hooks'
 import logoIEQ from '@/assets/images/only-logo.png'
+import { ChurchBadge } from '@/components/church/ChurchBadge'
+import { useUserChurch } from '@/hooks/queries/useUserChurch'
+import { CHURCH_MODAL_DISMISS_KEY } from '@/shared/types'
 
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, isAuthenticated, loading, logout } = useAuth()
+  const { data: userChurch, isLoading: userChurchLoading } = useUserChurch(isAuthenticated)
   const [showDropdown, setShowDropdown] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const handleChurchBadgeClick = () => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHURCH_MODAL_DISMISS_KEY)
+    }
+    router.push('/minha-conta')
+  }
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/'
@@ -84,6 +96,17 @@ export default function Header() {
               <span className="text-sm text-text-muted">Carregando...</span>
             ) : isAuthenticated ? (
               <>
+                <div className="px-3">
+                  <ChurchBadge
+                    church={userChurch?.church ?? null}
+                    variant="header"
+                    loading={userChurchLoading}
+                    onSelectClick={() => {
+                      handleChurchBadgeClick()
+                      setMobileMenuOpen(false)
+                    }}
+                  />
+                </div>
                 <Link
                   href="/minha-conta"
                   className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary no-underline"
@@ -115,6 +138,13 @@ export default function Header() {
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-bg-tertiary animate-pulse" />
           ) : isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <ChurchBadge
+                church={userChurch?.church ?? null}
+                variant="header"
+                loading={userChurchLoading}
+                onSelectClick={handleChurchBadgeClick}
+              />
             <div className="relative">
               <button
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-transparent border border-gold/20 hover:border-gold/40 transition-all"
@@ -180,6 +210,7 @@ export default function Header() {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           ) : (
             <Link href="/login" className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-semibold text-sm rounded-lg shadow-gold hover:shadow-gold-lg hover:-translate-y-0.5 transition-all duration-200 no-underline">

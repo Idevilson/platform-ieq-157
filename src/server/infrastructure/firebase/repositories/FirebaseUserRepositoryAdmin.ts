@@ -17,6 +17,7 @@ interface UserDocument {
   sexo?: Gender
   role: UserRole
   asaasCustomerId?: string
+  churchId?: string | null
   criadoEm: Timestamp
   atualizadoEm: Timestamp
 }
@@ -98,7 +99,8 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
         asaasCustomerId: doc.asaasCustomerId,
       },
       doc.cpf,
-      (doc as unknown as { permissions?: string[] }).permissions
+      (doc as unknown as { permissions?: string[] }).permissions,
+      doc.churchId ?? null
     )
   }
 
@@ -109,6 +111,7 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
       email: json.email,
       nome: json.nome,
       role: json.role,
+      churchId: json.churchId ?? null,
       criadoEm: Timestamp.fromDate(json.criadoEm as Date),
       atualizadoEm: Timestamp.fromDate(json.atualizadoEm as Date),
     }

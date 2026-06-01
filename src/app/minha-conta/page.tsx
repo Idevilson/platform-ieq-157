@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRequireAuth } from '@/hooks'
+import { UserChurchesSection } from '@/components/church/UserChurchesSection'
 
 export default function MinhaContaPage() {
   const { user, loading } = useRequireAuth()
@@ -24,6 +25,8 @@ export default function MinhaContaPage() {
           Olá, {user?.profile?.nome || user?.displayName || 'Usuário'}!
         </p>
       </div>
+
+      <UserChurchesSection />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link

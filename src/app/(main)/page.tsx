@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { getProximoEvento, eventos } from '@/data/eventos'
 import { getUltimosAvisos, formatarData } from '@/data/avisos'
 import { LatestQ4NewsSection } from '@/components/home/LatestQ4NewsSection'
+import { HomeChurchBanner } from '@/components/home/HomeChurchBanner'
 import logoIEQ from '@/assets/images/only-logo.png'
 import pastoresImg from '@/assets/images/pr-heitor-e-pra-val.png'
 
@@ -97,6 +98,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Vínculo de igreja do usuário logado */}
+      <HomeChurchBanner />
 
       {/* Proximo Evento em Destaque */}
       {proximoEvento && (

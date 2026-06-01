@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/providers'
+import { ChurchSelectorBootstrap } from '@/components/church/ChurchSelectorBootstrap'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -34,6 +35,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {children}
+        <ChurchSelectorBootstrap />
       </AuthProvider>
     </QueryClientProvider>
   )

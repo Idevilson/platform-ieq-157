@@ -5,21 +5,31 @@ import { UserRole } from '@/server/domain/shared/types'
 
 export class User {
   private _permissions: string[]
+  private _churchId: string | null
 
   private constructor(
     private readonly identity: UserIdentity,
     private state: UserState,
-    permissions?: string[]
+    permissions?: string[],
+    churchId?: string | null
   ) {
     this._permissions = permissions ?? []
+    this._churchId = churchId ?? null
   }
 
   static create(id: string, email: string, nome: string, telefone?: string, cpf?: string, role?: UserRole): User {
     return new User(UserIdentity.create(id, email, cpf), UserState.create(nome, telefone, role))
   }
 
-  static restore(id: string, email: string, params: RestoreUserStateParams, cpf?: string, permissions?: string[]): User {
-    return new User(UserIdentity.create(id, email, cpf), UserState.restore(params), permissions)
+  static restore(
+    id: string,
+    email: string,
+    params: RestoreUserStateParams,
+    cpf?: string,
+    permissions?: string[],
+    churchId?: string | null
+  ): User {
+    return new User(UserIdentity.create(id, email, cpf), UserState.restore(params), permissions, churchId)
   }
 
   isAdmin(): boolean {
@@ -33,6 +43,22 @@ export class User {
 
   get permissions(): string[] {
     return [...this._permissions]
+  }
+
+  getChurchId(): string | null {
+    return this._churchId
+  }
+
+  isLinkedToChurch(): boolean {
+    return this._churchId !== null
+  }
+
+  setChurch(churchId: string): void {
+    this._churchId = churchId
+  }
+
+  clearChurch(): void {
+    this._churchId = null
   }
 
   isProfileComplete(): boolean {
@@ -60,6 +86,11 @@ export class User {
   }
 
   toJSON() {
-    return { ...this.identity.toJSON(), ...this.state.toJSON(), permissions: this._permissions }
+    return {
+      ...this.identity.toJSON(),
+      ...this.state.toJSON(),
+      permissions: this._permissions,
+      churchId: this._churchId,
+    }
   }
 }

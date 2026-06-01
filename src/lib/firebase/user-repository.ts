@@ -22,6 +22,7 @@ interface UserDocument {
   sexo?: Gender
   role: UserRole
   asaasCustomerId?: string
+  churchId?: string | null
   criadoEm: Timestamp
   atualizadoEm: Timestamp
 }
@@ -57,6 +58,7 @@ function mapDocumentToDTO(data: UserDocument): UserDTO {
     sexo: data.sexo,
     role: data.role,
     asaasCustomerId: data.asaasCustomerId,
+    churchId: data.churchId ?? null,
     isProfileComplete: isProfileComplete(data),
     isProfileCompleteForEvent: isProfileCompleteForEvent(data),
     criadoEm: data.criadoEm?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -104,6 +106,7 @@ export const userRepository = {
       email: data.email.toLowerCase(),
       nome: data.nome,
       role: 'user',
+      churchId: null,
       criadoEm: now,
       atualizadoEm: now,
     }

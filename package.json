@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "seed:churches": "tsx scripts/seed-churches.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.18",

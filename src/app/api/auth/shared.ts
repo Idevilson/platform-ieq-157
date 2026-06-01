@@ -9,6 +9,7 @@ export interface UserDocument {
   dataNascimento?: { toDate: () => Date }
   sexo?: Gender
   role: string
+  churchId?: string | null
   criadoEm?: { toDate: () => Date }
   atualizadoEm?: { toDate: () => Date }
 }
@@ -39,6 +40,7 @@ export function mapUserDocumentToResponse(documentId: string, document: UserDocu
     dataNascimento: document.dataNascimento?.toDate?.()?.toISOString(),
     sexo: document.sexo,
     role: document.role,
+    churchId: document.churchId ?? null,
     isProfileComplete: isProfileComplete(document),
     isProfileCompleteForEvent: isProfileCompleteForEvent(document),
     criadoEm: document.criadoEm?.toDate?.()?.toISOString(),

@@ -14,6 +14,7 @@ function createNewUserData(userId: string, email: string, displayName: string) {
     email: email.toLowerCase(),
     nome: displayName,
     role: 'user',
+    churchId: null,
     criadoEm: FieldValue.serverTimestamp(),
     atualizadoEm: FieldValue.serverTimestamp(),
   }

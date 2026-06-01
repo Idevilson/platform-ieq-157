@@ -1,0 +1,22 @@
+{
+  "featureId": "005",
+  "featureName": "vinculo-igreja-usuario",
+  "branch": "005-vinculo-igreja-usuario",
+  "createdAt": "2026-05-15T15:40:12.335Z",
+  "specCreatedAt": "2026-05-15T15:40:12.335Z",
+  "currentMigration": "001",
+  "migrations": {
+    "001": {
+      "id": "001",
+      "timestamp": "2026-05-15_12-47-06",
+      "folder": "001_2026-05-15_12-47-06",
+      "status": "pending",
+      "tasksTotal": 0,
+      "tasksCompleted": 0,
+      "createdAt": "2026-05-15T15:47:06.350Z"
+    }
+  },
+  "splits": [],
+  "commits": [],
+  "expectation": "Usuário logado sem igreja vê modal de seleção; após escolher, badge passa a exibir 'SEDE DE REDENÇÃO' no header, modal de conta e home. Admin (role=admin) acessa nova aba 'Igrejas' com CRUD de igrejas + listagem de membros por igreja com ação de remover vínculo. Usuários pré-existentes não são auto-vinculados — modal os captura no próximo login."
+}

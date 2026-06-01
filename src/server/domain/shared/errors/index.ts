@@ -119,6 +119,48 @@ export class NewsNotFoundError extends DomainError {
   }
 }
 
+// Church errors
+export class ChurchNotFoundError extends DomainError {
+  constructor(churchId: string) {
+    super(`Igreja não encontrada: ${churchId}`, 'CHURCH_NOT_FOUND')
+    this.name = 'ChurchNotFoundError'
+  }
+}
+
+export class ChurchSlugAlreadyExistsError extends DomainError {
+  constructor(slug: string) {
+    super(`Já existe uma igreja com o slug: ${slug}`, 'CHURCH_SLUG_ALREADY_EXISTS')
+    this.name = 'ChurchSlugAlreadyExistsError'
+  }
+}
+
+export class CannotDeleteChurchWithMembersError extends DomainError {
+  constructor(totalMembros: number) {
+    super(
+      `Não é possível excluir uma igreja com ${totalMembros} membro(s). Inative-a em vez disso.`,
+      'CANNOT_DELETE_CHURCH_WITH_MEMBERS'
+    )
+    this.name = 'CannotDeleteChurchWithMembersError'
+  }
+}
+
+export class UserNotLinkedToChurchError extends DomainError {
+  constructor(userId: string, churchId: string) {
+    super(
+      `Usuário ${userId} não está vinculado à igreja ${churchId}`,
+      'USER_NOT_LINKED_TO_CHURCH'
+    )
+    this.name = 'UserNotLinkedToChurchError'
+  }
+}
+
+export class ChurchInactiveError extends DomainError {
+  constructor(churchId: string) {
+    super(`Igreja inativa: ${churchId}`, 'CHURCH_INACTIVE')
+    this.name = 'ChurchInactiveError'
+  }
+}
+
 // Authorization errors
 export class UnauthorizedError extends DomainError {
   constructor(message = 'Não autorizado') {
