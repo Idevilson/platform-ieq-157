@@ -429,7 +429,7 @@ export default function GeracaoForte() {
             </div>
           </div>
 
-          {/* Linha 2: Pulseiras LED — brinde primeiras 500 */}
+          {/* Linha 2: Pulseiras LED — brinde primeiras 600 */}
           <div className="rounded-2xl overflow-hidden bg-[#0D0D0D] flex flex-col md:flex-row card-hover"
             style={{ border: '1px solid rgba(123,63,181,0.3)', '--glow-color': 'rgba(123,63,181,0.4)' } as React.CSSProperties}
           >
@@ -442,12 +442,12 @@ export default function GeracaoForte() {
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
                   style={{ background: 'rgba(212,160,23,0.15)', color: '#D4A017', border: '1px solid rgba(212,160,23,0.35)' }}>
-                  ⚡ Primeiras 500 inscrições
+                  ⚡ Primeiras 600 inscrições
                 </span>
               </div>
               <p className="font-black text-white text-lg uppercase tracking-wide">Pulseiras de LED para o Show</p>
               <p className="text-text-muted text-sm leading-relaxed">
-                Os primeiros 500 inscritos pagantes confirmados ganham pulseiras LED coloridas exclusivas do congresso — acendem no ritmo da música durante o louvor.
+                Os primeiros 600 inscritos pagantes confirmados ganham pulseiras LED coloridas exclusivas do congresso — acendem no ritmo da música durante o louvor.
               </p>
               {perk && (
                 <div className="mt-1">
@@ -810,7 +810,7 @@ export default function GeracaoForte() {
         <div className="max-w-5xl mx-auto px-4">
           <PerkCounter
             eventId={EVENT_ID}
-            description="Os primeiros 500 inscritos pagantes confirmados ganham pulseiras LED coloridas exclusivas do congresso."
+            description="Os primeiros 600 inscritos pagantes confirmados ganham pulseiras LED coloridas exclusivas do congresso."
           />
         </div>
       </section>
@@ -827,7 +827,7 @@ export default function GeracaoForte() {
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">05 JUL</span>
             </div>
             <p className="text-text-secondary">
-              Early bird até <strong className="text-gold">31/05/2026</strong>. Depois dessa data, os valores sobem.
+              Garanta o valor promocional até <strong className="text-gold">07/06/2026</strong>. A partir do dia seguinte, o preço aumenta.
             </p>
           </div>
 

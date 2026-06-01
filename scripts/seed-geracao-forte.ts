@@ -9,7 +9,7 @@ const PERK_ID = 'pulseira-geracao-forte'
 const CATEGORY_REDENCAO_ID = 'redencao'
 const CATEGORY_OUTRAS_ID = 'outras-localidades'
 
-const EARLY_BIRD_DEADLINE = new Date('2026-05-31T23:59:59-03:00')
+const EARLY_BIRD_DEADLINE = new Date('2026-06-07T23:59:59-03:00')
 const DATA_INICIO = new Date('2026-07-03T19:00:00-03:00')
 const DATA_FIM = new Date('2026-07-05T22:00:00-03:00')
 
@@ -69,11 +69,11 @@ async function main() {
     const perk = EventPerk.create(PERK_ID, {
       eventId: EVENT_ID,
       nome: 'Pulseira Geração Forte',
-      descricao: 'Pulseira colorida exclusiva para os primeiros 500 pagantes confirmados',
-      limiteEstoque: 500,
+      descricao: 'Pulseira colorida exclusiva para os primeiros 600 pagantes confirmados',
+      limiteEstoque: 600,
     })
     await perkRepository.save(perk)
-    console.log(`[seed] Perk ${PERK_ID} criado com limiteEstoque=500`)
+    console.log(`[seed] Perk ${PERK_ID} criado com limiteEstoque=600`)
   }
 
   console.log('[seed] ✓ Seed concluído')
