@@ -339,12 +339,17 @@ export default function AdminEventDetailPage() {
   if (eventLoading) return <LoadingSpinner message="Carregando evento..." />
   if (!event) return <EventNotFound />
 
-  const totalInscriptions = inscriptionsData?.total ?? 0
-  const confirmedCount = inscriptions.filter(i => i.status === 'confirmado').length
-  const pendingCount = inscriptions.filter(i => i.status === 'pendente').length
+  const batchTotalParticipantes = batches.reduce((sum, b) => sum + b.totalParticipantes, 0)
+  const batchConfirmedParticipantes = batches.filter(b => b.status === 'confirmado').reduce((sum, b) => sum + b.totalParticipantes, 0)
+  const batchPendingParticipantes = batches.filter(b => b.status === 'pendente').reduce((sum, b) => sum + b.totalParticipantes, 0)
+  const batchRevenue = batches.filter(b => b.status === 'confirmado').reduce((sum, b) => sum + b.valorTotal, 0)
+
+  const totalInscriptions = (inscriptionsData?.total ?? 0) + batchTotalParticipantes
+  const confirmedCount = inscriptions.filter(i => i.status === 'confirmado').length + batchConfirmedParticipantes
+  const pendingCount = inscriptions.filter(i => i.status === 'pendente').length + batchPendingParticipantes
   const totalRevenue = inscriptions
     .filter(i => i.status === 'confirmado')
-    .reduce((sum, i) => sum + (i.valor || 0), 0)
+    .reduce((sum, i) => sum + (i.valor || 0), 0) + batchRevenue
 
   const handleStatusChange = async (newStatus: EventStatus) => {
     setIsStatusMenuOpen(false)

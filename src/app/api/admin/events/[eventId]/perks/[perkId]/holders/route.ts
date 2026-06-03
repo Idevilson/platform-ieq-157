@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ListPerkHolders } from '@/server/application/event/ListPerkHolders'
 import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
+import { FirebaseBatchInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseBatchInscriptionRepositoryAdmin'
 import { adminAuth } from '@/server/infrastructure/firebase/admin'
 
 const userRepository = new FirebaseUserRepositoryAdmin()
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
-const listPerkHolders = new ListPerkHolders(userRepository, inscriptionRepository)
+const batchRepository = new FirebaseBatchInscriptionRepositoryAdmin()
+const listPerkHolders = new ListPerkHolders(userRepository, inscriptionRepository, batchRepository)
 
 async function verifyAdmin(request: NextRequest): Promise<string | null> {
   const authHeader = request.headers.get('Authorization')

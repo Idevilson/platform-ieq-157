@@ -1,6 +1,7 @@
 import { getAdminFirestore } from '@/server/infrastructure/firebase/admin'
 import { IUserRepository } from '@/server/domain/user/repositories/IUserRepository'
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
+import { IBatchInscriptionRepository } from '@/server/domain/inscription/repositories/IBatchInscriptionRepository'
 
 export interface PerkAllocationDTO {
   inscriptionId: string
@@ -22,6 +23,7 @@ export class ListPerkHolders {
   constructor(
     private readonly userRepository: IUserRepository,
     private readonly inscriptionRepository: IInscriptionRepository,
+    private readonly batchRepository: IBatchInscriptionRepository,
   ) {}
 
   async execute(eventId: string, perkId: string): Promise<ListPerkHoldersOutput> {
@@ -33,11 +35,47 @@ export class ListPerkHolders {
       .orderBy('alocadoEm', 'asc')
       .get()
 
-    const holders = await Promise.all(
-      snap.docs.map((doc) => this.resolveHolder(doc, eventId)),
+    const holdersNested = await Promise.all(
+      snap.docs.map((doc) => this.resolveHolders(doc, eventId)),
     )
 
+    const holders = holdersNested.flat()
+
     return { perkId, total: holders.length, holders }
+  }
+
+  private async resolveHolders(
+    doc: FirebaseFirestore.DocumentSnapshot,
+    eventId: string,
+  ): Promise<PerkAllocationDTO[]> {
+    const d = doc.data()!
+
+    if (d.batchId) {
+      return this.resolveBatchHolders(d, doc.id)
+    }
+
+    return [await this.resolveHolder(doc, eventId)]
+  }
+
+  private async resolveBatchHolders(
+    d: FirebaseFirestore.DocumentData,
+    docId: string,
+  ): Promise<PerkAllocationDTO[]> {
+    const alocadoEm = d.alocadoEm?.toDate?.()?.toISOString?.() ?? ''
+    const batch = await this.batchRepository.findById(d.batchId ?? docId)
+    if (!batch) return []
+
+    const { cpf, email, telefone } = batch.responsavel
+
+    return batch.participantes.map((p, i) => ({
+      inscriptionId: `${batch.id}:${i}`,
+      userId: null,
+      nome: p.nome,
+      cpf,
+      email,
+      telefone,
+      alocadoEm,
+    }))
   }
 
   private async resolveHolder(
