@@ -47,7 +47,15 @@ export class CreateBatchInscription {
     const priceCents = category.getCurrentPrice(new Date()).getCents()
     const totalCents = priceCents * input.participantes.length
 
+    if (!input.responsavel.nome.trim()) {
+      throw new ValidationError('Nome do responsável é obrigatório')
+    }
+
     const cleanCpf = CPF.clean(input.responsavel.cpf)
+    if (!cleanCpf) {
+      throw new ValidationError('CPF do responsável é obrigatório para inscrição coletiva')
+    }
+
     const cleanTelefone = Phone.clean(input.responsavel.telefone)
     const dataNascimento = input.responsavel.dataNascimento instanceof Date
       ? input.responsavel.dataNascimento

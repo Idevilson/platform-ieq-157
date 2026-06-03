@@ -242,6 +242,23 @@ export class BatchInscription implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
+  updateResponsavel(data: { nome?: string; cpf?: string }): void {
+    if (data.nome !== undefined) this.responsavel.nome = data.nome
+    if (data.cpf !== undefined) this.responsavel.cpf = data.cpf
+    this._atualizadoEm = new Date()
+  }
+
+  resetPaymentData(): void {
+    this._paymentId = undefined
+    this._pixCopiaECola = undefined
+    this._pixQrCode = undefined
+    this._checkoutUrl = undefined
+    this._dataVencimentoPagamento = undefined
+    this._paymentStatus = undefined
+    this._breakdown = undefined
+    this._atualizadoEm = new Date()
+  }
+
   allocateParticipantBrinde(index: number, perkId: string): void {
     if (index < 0 || index >= this.participantes.length) {
       throw new Error(`Índice de participante inválido: ${index}`)

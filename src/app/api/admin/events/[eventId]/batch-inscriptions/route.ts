@@ -46,6 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         valorTotalFormatado: batch.breakdown?.valorTotal.getFormatted() ?? batch.valorTotalFormatado,
         status: batch.status,
         preferredPaymentMethod: batch.preferredPaymentMethod,
+        paymentId: batch.paymentId,
         paymentStatus: json.paymentStatus,
         criadoEm: json.criadoEm,
         participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo })),

@@ -143,6 +143,7 @@ export interface AdminBatchListItem {
   valorTotalFormatado: string
   status: 'pendente' | 'confirmado' | 'cancelado'
   preferredPaymentMethod: InscriptionPaymentMethod
+  paymentId?: string
   paymentStatus?: string
   criadoEm: string
   participantes: BatchParticipantDTO[]

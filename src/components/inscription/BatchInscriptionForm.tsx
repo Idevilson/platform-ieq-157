@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import Link from "next/link";
 import { BatchParticipantRow } from "./BatchParticipantRow";
 import { CategorySelector } from "./CategorySelector";
 import { useCreateBatchInscription, useCreateBatchPayment } from "@/hooks/mutations/useBatchInscriptionMutations";
@@ -52,6 +53,13 @@ export function BatchInscriptionForm({
     sexo?: Gender;
     cidade?: string;
   };
+
+  const missingProfileFields = useMemo(() => {
+    const missing: string[] = [];
+    if (!userData.nome?.trim()) missing.push("nome completo");
+    if (!userData.cpf?.trim()) missing.push("CPF");
+    return missing;
+  }, [userData.nome, userData.cpf]);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     categories.find((c) => c.nome.toLowerCase().includes("lote"))?.id ||
@@ -116,6 +124,10 @@ export function BatchInscriptionForm({
     const errs: Record<string, string> = {};
     if (!selectedCategoryId) errs.category = "Selecione uma categoria";
     if (!cidade.trim()) errs.cidade = "Cidade de origem é obrigatória";
+
+    if (missingProfileFields.length > 0) {
+      errs.responsavel = `Dados obrigatórios ausentes no seu perfil: ${missingProfileFields.join(" e ")}.`;
+    }
 
     const filled = participants.filter((p) => p.nome.trim().length >= 2 && p.sexo);
     if (filled.length < 2) {
@@ -260,8 +272,29 @@ export function BatchInscriptionForm({
 
   const isLoading = createBatch.isPending || createPayment.isPending;
 
+  const hasProfileIssue = missingProfileFields.length > 0;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {hasProfileIssue && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-4">
+          <p className="text-sm font-semibold text-red-400 mb-1">Perfil incompleto</p>
+          <p className="text-sm text-red-300">
+            Para fazer uma inscrição coletiva, seu perfil precisa ter:{" "}
+            <span className="font-medium">{missingProfileFields.join(" e ")}</span>.
+          </p>
+          <Link
+            href="/minha-conta/perfil"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-red-400 underline underline-offset-2 hover:text-red-300 transition-colors"
+          >
+            Completar meu perfil
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
+
       <CategorySelector
         categories={categories}
         selectedCategoryId={selectedCategoryId}
@@ -370,7 +403,8 @@ export function BatchInscriptionForm({
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || hasProfileIssue}
+        title={hasProfileIssue ? `Complete seu perfil antes de continuar: falta ${missingProfileFields.join(" e ")}` : undefined}
         className="w-full py-3 bg-gold text-bg-primary font-semibold rounded-xl hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? "Processando..." : `Inscrever ${validParticipants.length} Participante${validParticipants.length !== 1 ? "s" : ""}`}

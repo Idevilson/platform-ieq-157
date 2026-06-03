@@ -41,3 +41,33 @@ export function useAdminDeleteBatch(eventId: string) {
     },
   })
 }
+
+export function useAdminUpdateBatchResponsavel(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ batchId, nome, cpf }: { batchId: string; nome?: string; cpf?: string }) =>
+      adminFetch(`/api/admin/batch-inscriptions/${batchId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ nome, cpf }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'batches', eventId] })
+    },
+  })
+}
+
+export function useAdminRegeneratePayment(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      adminFetch<{ batch: { id: string; eventId: string } }>(
+        `/api/admin/batch-inscriptions/${batchId}/regenerate-payment`,
+        { method: 'POST' },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'batches', eventId] })
+    },
+  })
+}
