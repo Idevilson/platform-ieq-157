@@ -35,4 +35,18 @@ export interface IEventPerkRepository {
     batchId: string,
     count: number,
   ): Promise<{ allocated: number; perkId: string | null }>
+
+  incrementBatchAllocation(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    delta: number,
+  ): Promise<{ allocated: number }>
+
+  deallocateFromBatch(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    count: number,
+  ): Promise<void>
 }

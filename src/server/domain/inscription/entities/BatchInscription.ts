@@ -242,6 +242,26 @@ export class BatchInscription implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
+  updateParticipants(
+    newParticipants: BatchParticipantInput[],
+    categoryPriceCents: number,
+  ): { oldCount: number; oldBrindeCount: number; oldPerkId: string | undefined } {
+    if (this._status === 'cancelado') throw new Error('Lote cancelado não pode ser editado')
+    if (newParticipants.length < 2) throw new Error('Lote deve ter pelo menos 2 participantes')
+    if (newParticipants.length > 50) throw new Error('Lote não pode ter mais de 50 participantes')
+
+    const oldCount = this.participantes.length
+    const brindeParticipants = this.participantes.filter(p => p.temBrinde && p.perkId)
+    const oldBrindeCount = brindeParticipants.length
+    const oldPerkId = brindeParticipants[0]?.perkId
+
+    ;(this.participantes as BatchParticipant[]) = newParticipants.map(p => BatchParticipant.create(p))
+    ;(this.valorTotal as Money) = Money.fromCents(categoryPriceCents * newParticipants.length)
+    this._atualizadoEm = new Date()
+
+    return { oldCount, oldBrindeCount, oldPerkId }
+  }
+
   updateResponsavel(data: { nome?: string; cpf?: string }): void {
     if (data.nome !== undefined) this.responsavel.nome = data.nome
     if (data.cpf !== undefined) this.responsavel.cpf = data.cpf

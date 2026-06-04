@@ -57,6 +57,27 @@ export function useAdminUpdateBatchResponsavel(eventId: string) {
   })
 }
 
+export function useAdminUpdateBatchParticipants(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      participantes,
+    }: {
+      batchId: string
+      participantes: { nome: string; sexo: string; tamanho?: string }[]
+    }) =>
+      adminFetch(`/api/admin/batch-inscriptions/${batchId}/participants`, {
+        method: 'PUT',
+        body: JSON.stringify({ participantes }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'batches', eventId] })
+    },
+  })
+}
+
 export function useAdminRegeneratePayment(eventId: string) {
   const queryClient = useQueryClient()
 

@@ -196,6 +196,103 @@ export class FirebaseEventPerkRepositoryAdmin implements IEventPerkRepository {
     })
   }
 
+  async incrementBatchAllocation(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    delta: number,
+  ): Promise<{ allocated: number }> {
+    if (delta <= 0) return { allocated: 0 }
+
+    const perkDocRef = this.perksRef(eventId).doc(perkId)
+    const allocationDocRef = this.allocationsRef(eventId, perkId).doc(batchId)
+
+    return this.db.runTransaction(async (tx) => {
+      const [perkSnap, allocationSnap] = await Promise.all([
+        tx.get(perkDocRef),
+        tx.get(allocationDocRef),
+      ])
+
+      if (!perkSnap.exists) return { allocated: 0 }
+
+      const perkData = perkSnap.data() as PerkDocument
+      const available = Math.max(0, perkData.limiteEstoque - perkData.quantidadeAlocada)
+      const toAllocate = Math.min(delta, available)
+
+      if (toAllocate === 0) return { allocated: 0 }
+
+      const now = Timestamp.now()
+      const currentAllocated = allocationSnap.exists
+        ? (allocationSnap.data()!.quantidadeAlocada as number)
+        : 0
+
+      tx.update(perkDocRef, {
+        quantidadeAlocada: perkData.quantidadeAlocada + toAllocate,
+        atualizadoEm: now,
+      })
+
+      if (allocationSnap.exists) {
+        tx.update(allocationDocRef, {
+          quantidadeAlocada: currentAllocated + toAllocate,
+          atualizadoEm: now,
+        })
+      } else {
+        tx.set(allocationDocRef, {
+          batchId,
+          eventId,
+          perkId,
+          quantidadeAlocada: toAllocate,
+          alocadoEm: now,
+        })
+      }
+
+      return { allocated: toAllocate }
+    })
+  }
+
+  async deallocateFromBatch(
+    eventId: string,
+    perkId: string,
+    batchId: string,
+    count: number,
+  ): Promise<void> {
+    if (count <= 0) return
+
+    const perkDocRef = this.perksRef(eventId).doc(perkId)
+    const allocationDocRef = this.allocationsRef(eventId, perkId).doc(batchId)
+
+    await this.db.runTransaction(async (tx) => {
+      const [perkSnap, allocationSnap] = await Promise.all([
+        tx.get(perkDocRef),
+        tx.get(allocationDocRef),
+      ])
+
+      if (!perkSnap.exists || !allocationSnap.exists) return
+
+      const perkData = perkSnap.data() as PerkDocument
+      const currentAllocated = allocationSnap.data()!.quantidadeAlocada as number
+      const toRemove = Math.min(count, currentAllocated)
+
+      if (toRemove === 0) return
+
+      const now = Timestamp.now()
+      tx.update(perkDocRef, {
+        quantidadeAlocada: Math.max(0, perkData.quantidadeAlocada - toRemove),
+        atualizadoEm: now,
+      })
+
+      const newAllocated = currentAllocated - toRemove
+      if (newAllocated <= 0) {
+        tx.delete(allocationDocRef)
+      } else {
+        tx.update(allocationDocRef, {
+          quantidadeAlocada: newAllocated,
+          atualizadoEm: now,
+        })
+      }
+    })
+  }
+
   private mapToEntity(snap: FirebaseFirestore.DocumentSnapshot): EventPerk {
     const data = snap.data() as PerkDocument
     return EventPerk.fromPersistence({

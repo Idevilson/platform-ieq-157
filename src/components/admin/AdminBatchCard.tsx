@@ -4,8 +4,9 @@ import { useState } from "react";
 import { AdminBatchListItem } from "@/shared/types/inscription";
 import { formatCPF, formatDateTime } from "@/lib/formatters";
 import { INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from "@/shared/constants";
-import { useAdminUpdateBatchResponsavel, useAdminRegeneratePayment } from "@/hooks/mutations/useAdminBatchMutations";
+import { useAdminUpdateBatchResponsavel, useAdminRegeneratePayment, useAdminUpdateBatchParticipants } from "@/hooks/mutations/useAdminBatchMutations";
 import { EditBatchResponsavelModal } from "./EditBatchResponsavelModal";
+import { EditBatchParticipantsModal } from "./EditBatchParticipantsModal";
 
 interface AdminBatchCardProps {
   batch: AdminBatchListItem;
@@ -31,9 +32,11 @@ export function AdminBatchCard({
   const [expanded, setExpanded] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [regenerateError, setRegenerateError] = useState("");
 
   const updateResponsavel = useAdminUpdateBatchResponsavel(batch.eventId);
+  const updateParticipants = useAdminUpdateBatchParticipants(batch.eventId);
   const regeneratePayment = useAdminRegeneratePayment(batch.eventId);
 
   const isPending = batch.status === "pendente";
@@ -58,6 +61,18 @@ export function AdminBatchCard({
 
   return (
     <>
+      {showParticipantsModal && (
+        <EditBatchParticipantsModal
+          batchId={batch.id}
+          batchStatus={batch.status}
+          initialParticipants={batch.participantes}
+          onSave={async (batchId, participantes) => {
+            await updateParticipants.mutateAsync({ batchId, participantes })
+          }}
+          onClose={() => setShowParticipantsModal(false)}
+        />
+      )}
+
       {showEditModal && (
         <EditBatchResponsavelModal
           currentNome={batch.responsavelNome}
@@ -134,6 +149,15 @@ export function AdminBatchCard({
         )}
 
         <div className="mt-4 pt-4 border-t border-gold/10 flex flex-wrap gap-3">
+          {batch.status !== "cancelado" && (
+            <button
+              onClick={() => setShowParticipantsModal(true)}
+              className="flex-1 min-w-32 py-2 bg-gold/10 text-gold border border-gold/30 rounded-lg text-sm font-medium hover:bg-gold/20 transition-colors"
+            >
+              Editar Participantes
+            </button>
+          )}
+
           {batch.status !== "confirmado" && (
             <button
               onClick={() => setShowEditModal(true)}

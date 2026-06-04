@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         paymentId: batch.paymentId,
         paymentStatus: json.paymentStatus,
         criadoEm: json.criadoEm,
-        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo })),
+        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo, tamanho: p.tamanho ?? undefined })),
       }
     })
 
