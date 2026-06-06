@@ -45,84 +45,96 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg-primary/95 backdrop-blur-md border-b border-gold/10">
       <div className="max-w-[1400px] mx-auto px-6 h-[70px] flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
+        <Link href="/" className="flex-shrink-0 flex items-center gap-2.5 no-underline">
           <Image src={logoIEQ} alt="Logo IEQ" className="w-10 h-10" width={40} height={40} />
-          <span className="text-lg font-semibold text-gold tracking-wide">IEQ 157</span>
+          <span className="text-lg font-semibold text-gold tracking-wide whitespace-nowrap">IEQ 157</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className={`
-          md:flex md:items-center md:gap-1 md:static md:bg-transparent md:p-0 md:border-none md:h-auto
-          ${mobileMenuOpen
-            ? 'flex flex-col fixed top-[70px] left-0 right-0 bg-bg-primary/98 backdrop-blur-md border-b border-gold/10 p-6 gap-2 animate-dropdown z-40'
-            : 'hidden md:flex'
-          }
-        `}>
-          <Link href="/" className={navLinkClass(isActive('/'))} onClick={() => setMobileMenuOpen(false)}>
-            Inicio
-          </Link>
-          <Link href="/eventos" className={navLinkClass(isActive('/eventos'))} onClick={() => setMobileMenuOpen(false)}>
-            Eventos
-          </Link>
-          <Link href="/q4-news" className={navLinkClass(isActive('/q4-news'))} onClick={() => setMobileMenuOpen(false)}>
-            Q4-News
-          </Link>
-          <Link href="/avisos" className={navLinkClass(isActive('/avisos'))} onClick={() => setMobileMenuOpen(false)}>
-            Avisos
-          </Link>
-          <Link href="/calendario" className={navLinkClass(isActive('/calendario'))} onClick={() => setMobileMenuOpen(false)}>
-            Calendario
-          </Link>
-          <Link href="/sobre" className={navLinkClass(isActive('/sobre'))} onClick={() => setMobileMenuOpen(false)}>
-            Sobre
-          </Link>
-          <Link href="/historia" className={navLinkClass(isActive('/historia'))} onClick={() => setMobileMenuOpen(false)}>
-            História
-          </Link>
-
-          {/* Mobile account section */}
-          <div className="md:hidden flex flex-col gap-2 mt-4 pt-4 border-t border-gold/10">
-            {loading ? (
-              <span className="text-sm text-text-muted">Carregando...</span>
-            ) : isAuthenticated ? (
-              <>
-                {isAdmin && (
-                  <Link
-                    href="/minha-conta/admin"
-                    className="px-3 py-2 text-sm font-medium text-gold hover:text-gold/80 no-underline"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Admin
-                  </Link>
-                )}
-                <Link
-                  href="/minha-conta"
-                  className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary no-underline"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Minha Conta
-                </Link>
-                <button
-                  className="px-3 py-2 text-sm text-red-500 text-left hover:bg-red-500/10 rounded-lg transition-colors"
-                  onClick={handleLogout}
-                >
-                  Sair
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-semibold text-sm rounded-lg shadow-gold no-underline"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Entrar
-              </Link>
-            )}
-          </div>
+        <nav className="hidden md:flex md:items-center md:gap-1 md:overflow-hidden">
+          <Link href="/" className={navLinkClass(isActive('/'))}>Inicio</Link>
+          <Link href="/eventos" className={navLinkClass(isActive('/eventos'))}>Eventos</Link>
+          <Link href="/q4-news" className={navLinkClass(isActive('/q4-news'))}>Q4-News</Link>
+          <Link href="/avisos" className={navLinkClass(isActive('/avisos'))}>Avisos</Link>
+          <Link href="/calendario" className={navLinkClass(isActive('/calendario'))}>Calendario</Link>
+          <Link href="/sobre" className={navLinkClass(isActive('/sobre'))}>Sobre</Link>
+          <Link href="/historia" className={navLinkClass(isActive('/historia'))}>História</Link>
         </nav>
 
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed top-[70px] left-0 right-0 bg-bg-primary/98 backdrop-blur-md border-b border-gold/10 p-4 animate-dropdown z-40">
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {[
+                { href: '/', label: 'Início' },
+                { href: '/eventos', label: 'Eventos' },
+                { href: '/q4-news', label: 'Q4-News' },
+                { href: '/avisos', label: 'Avisos' },
+                { href: '/calendario', label: 'Calendário' },
+                { href: '/sobre', label: 'Sobre' },
+                { href: '/historia', label: 'História' },
+              ].map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center justify-center px-3 py-3 text-sm font-medium rounded-lg transition-colors no-underline ${
+                    isActive(href)
+                      ? 'bg-gold/15 text-gold'
+                      : 'bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="border-t border-gold/10 pt-4 flex flex-col gap-2">
+              {loading ? (
+                <span className="text-sm text-text-muted">Carregando...</span>
+              ) : isAuthenticated ? (
+                <>
+                  {isAdmin && (
+                    <Link
+                      href="/minha-conta/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gold bg-gold/10 rounded-lg no-underline"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                      </svg>
+                      Admin
+                    </Link>
+                  )}
+                  <Link
+                    href="/minha-conta"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary rounded-lg no-underline"
+                  >
+                    Minha Conta
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-2.5 text-sm text-red-500 text-left hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold to-gold-dark text-bg-primary font-semibold text-sm rounded-lg no-underline"
+                >
+                  Entrar
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Desktop account section */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex flex-shrink-0 items-center gap-4">
           {isAdmin && (
             <Link
               href="/minha-conta/admin"

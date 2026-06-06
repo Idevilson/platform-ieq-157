@@ -295,6 +295,7 @@ export default function AdminEventDetailPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
   const [selectedInscription, setSelectedInscription] = useState<InscriptionWithDetails | null>(null)
+  const [activeTab, setActiveTab] = useState<'avulsas' | 'coletivas'>('avulsas')
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useEventById(eventId)
   const { data: inscriptionsData, isLoading: inscriptionsLoading, refetch: refetchInscriptions } = useAdminEventInscriptions(
@@ -593,14 +594,49 @@ export default function AdminEventDetailPage() {
         />
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-bg-secondary border border-gold/10 rounded-xl p-1">
+        <button
+          onClick={() => setActiveTab('avulsas')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'avulsas'
+              ? 'bg-gold text-bg-primary'
+              : 'text-text-secondary hover:text-text-primary hover:bg-gold/5'
+          }`}
+        >
+          Inscrições Avulsas
+          <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold ${
+            activeTab === 'avulsas' ? 'bg-bg-primary/20 text-bg-primary' : 'bg-gold/15 text-gold'
+          }`}>
+            {inscriptionsData?.total ?? 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('coletivas')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === 'coletivas'
+              ? 'bg-gold text-bg-primary'
+              : 'text-text-secondary hover:text-text-primary hover:bg-gold/5'
+          }`}
+        >
+          Inscrições Coletivas
+          <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold ${
+            activeTab === 'coletivas' ? 'bg-bg-primary/20 text-bg-primary' : 'bg-gold/15 text-gold'
+          }`}>
+            {batches.length}
+          </span>
+        </button>
+      </div>
+
       {/* Inscriptions Section */}
+      {activeTab === 'avulsas' && (
       <div className="bg-bg-secondary border border-gold/10 rounded-xl">
         <div className="p-6 border-b border-gold/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <h2 className="text-lg font-semibold text-text-primary">Inscricoes</h2>
 
             {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-2">
               {/* Search Input */}
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,32 +647,33 @@ export default function AdminEventDetailPage() {
                   placeholder="Buscar por nome, CPF, email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-bg-tertiary border border-gold/20 rounded-lg pl-10 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold w-full sm:w-64"
+                  className="bg-bg-tertiary border border-gold/20 rounded-lg pl-10 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold w-full"
                 />
               </div>
+              <div className="flex gap-2">
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as InscriptionStatus | '')}
+                  className="flex-1 bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
+                >
+                  <option value="">Status: Todos</option>
+                  {INSCRIPTION_STATUSES.map((status) => (
+                    <option key={status} value={status}>{INSCRIPTION_STATUS_LABELS[status]}</option>
+                  ))}
+                </select>
 
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as InscriptionStatus | '')}
-                className="bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
-              >
-                <option value="">Status: Todos</option>
-                {INSCRIPTION_STATUSES.map((status) => (
-                  <option key={status} value={status}>{INSCRIPTION_STATUS_LABELS[status]}</option>
-                ))}
-              </select>
-
-              {/* Payment Method Filter */}
-              <select
-                value={paymentMethodFilter}
-                onChange={(e) => setPaymentMethodFilter(e.target.value as InscriptionPaymentMethod | '')}
-                className="bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
-              >
-                <option value="">Pagamento: Todos</option>
-                <option value="PIX">PIX</option>
-                <option value="CASH">Dinheiro</option>
-              </select>
+                {/* Payment Method Filter */}
+                <select
+                  value={paymentMethodFilter}
+                  onChange={(e) => setPaymentMethodFilter(e.target.value as InscriptionPaymentMethod | '')}
+                  className="flex-1 bg-bg-tertiary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold"
+                >
+                  <option value="">Pagamento: Todos</option>
+                  <option value="PIX">PIX</option>
+                  <option value="CASH">Dinheiro</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -698,14 +735,14 @@ export default function AdminEventDetailPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gold/10">
-                  <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">Nome</th>
-                  <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">Contato</th>
-                  <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">CPF</th>
-                  <th className="text-left py-3 px-6 text-sm font-medium text-text-secondary">Categoria</th>
-                  <th className="text-right py-3 px-6 text-sm font-medium text-text-secondary">Valor</th>
-                  <th className="text-center py-3 px-6 text-sm font-medium text-text-secondary">Pagamento</th>
-                  <th className="text-center py-3 px-6 text-sm font-medium text-text-secondary">Status</th>
-                  <th className="text-right py-3 px-6 text-sm font-medium text-text-secondary">Data</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-text-secondary">Nome</th>
+                  <th className="hidden md:table-cell text-left py-3 px-4 text-sm font-medium text-text-secondary">Contato</th>
+                  <th className="hidden lg:table-cell text-left py-3 px-4 text-sm font-medium text-text-secondary">CPF</th>
+                  <th className="hidden sm:table-cell text-left py-3 px-4 text-sm font-medium text-text-secondary">Categoria</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-text-secondary">Valor</th>
+                  <th className="hidden sm:table-cell text-center py-3 px-4 text-sm font-medium text-text-secondary">Pagamento</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-text-secondary">Status</th>
+                  <th className="hidden md:table-cell text-right py-3 px-4 text-sm font-medium text-text-secondary">Data</th>
                 </tr>
               </thead>
               <tbody>
@@ -715,30 +752,30 @@ export default function AdminEventDetailPage() {
                     onClick={() => setSelectedInscription(inscription)}
                     className="border-b border-gold/5 hover:bg-gold/5 transition-colors cursor-pointer"
                   >
-                    <td className="py-4 px-6">
-                      <span className="font-medium text-text-primary">{inscription.nome ?? '-'}</span>
+                    <td className="py-3 px-4">
+                      <span className="font-medium text-text-primary text-sm">{inscription.nome ?? '-'}</span>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="hidden md:table-cell py-3 px-4">
                       <div className="text-sm">
                         <p className="text-text-secondary">{inscription.email ?? '-'}</p>
                         <p className="text-text-muted">{formatPhoneSafe(inscription.telefone)}</p>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="hidden lg:table-cell py-3 px-4">
                       <span className="text-sm text-text-secondary font-mono">{formatCPFSafe(inscription.cpf)}</span>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="hidden sm:table-cell py-3 px-4">
                       <span className="text-sm text-text-primary">{inscription.categoryNome ?? '-'}</span>
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-3 px-4 text-right">
                       <span className="text-sm font-medium text-gold">{inscription.valorFormatado}</span>
                     </td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="hidden sm:table-cell py-3 px-4 text-center">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${inscription.preferredPaymentMethod === 'CASH' ? 'bg-orange-500/20 text-orange-400' : 'bg-sky-500/20 text-sky-400'}`}>
                         {INSCRIPTION_PAYMENT_METHOD_LABELS[inscription.preferredPaymentMethod] || 'PIX'}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-3 px-4 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getInscriptionStatusClassName(inscription.status)}`}>
                           {inscription.statusLabel}
@@ -748,7 +785,7 @@ export default function AdminEventDetailPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="hidden md:table-cell py-3 px-4 text-right">
                       <span className="text-xs text-text-secondary">{formatDateTime(inscription.criadoEm)}</span>
                     </td>
                   </tr>
@@ -764,6 +801,7 @@ export default function AdminEventDetailPage() {
           </div>
         )}
       </div>
+      )}
 
       {selectedInscription && (
         <ConfirmModal
@@ -784,16 +822,12 @@ export default function AdminEventDetailPage() {
         />
       )}
 
-      <div className="mt-8 bg-bg-secondary rounded-2xl border border-gold/10 overflow-hidden">
+      {activeTab === 'coletivas' && (
+      <div className="bg-bg-secondary rounded-2xl border border-gold/10 overflow-hidden">
         <div className="p-6 border-b border-gold/10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-text-primary">Inscrições Coletivas</h2>
-              <p className="text-sm text-text-secondary mt-1">
-                {batchesLoading ? 'Carregando...' : `${batches.length} lote(s)`}
-              </p>
-            </div>
-          </div>
+          <p className="text-sm text-text-secondary">
+            {batchesLoading ? 'Carregando...' : `${batches.length} lote(s) · ${batchTotalParticipantes} participantes`}
+          </p>
         </div>
 
         {batchesLoading ? (
@@ -819,6 +853,7 @@ export default function AdminEventDetailPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

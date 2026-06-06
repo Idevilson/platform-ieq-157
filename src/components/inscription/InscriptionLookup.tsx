@@ -231,7 +231,7 @@ export function InscriptionLookup({
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             id="lookup-cpf"
             type="text"
@@ -245,7 +245,7 @@ export function InscriptionLookup({
           <button
             type="submit"
             disabled={isLoading || cpf.replace(/\D/g, "").length !== 11}
-            className="px-6 py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Buscando..." : "Buscar"}
           </button>

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -31,6 +32,7 @@ import imgPulseiraAzul from '@/assets/images/geracao-forte/kit/pulseira-azul.jpe
 import imgPulseirasLed from '@/assets/images/geracao-forte/kit/pulseiras-led.png'
 
 const EVENT_ID = 'geracao-forte'
+
 
 const SPEAKERS = [
   { name: 'PR. PAULO BENGTSON',   photo: imgBengtson },
@@ -86,6 +88,7 @@ export default function GeracaoForte() {
   const { data: evento } = useEventById(EVENT_ID)
   const { data: categorias } = useEventCategories(EVENT_ID)
   const { data: perk } = useQuery({
+
     queryKey: ['perk-summary', EVENT_ID],
     queryFn: async () => {
       const res = await fetch(`/api/events/${EVENT_ID}/perks/summary`)
@@ -854,15 +857,37 @@ export default function GeracaoForte() {
               </a>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <a href="/ajuda" className="text-sm text-text-muted hover:text-gold transition-colors no-underline">
-                Dúvidas frequentes →
-              </a>
-              <span className="hidden sm:inline text-gold/20">|</span>
+              <Link
+                href="/ajuda"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border border-gold/30 text-gold bg-gold/10 hover:bg-gold/20 transition-colors no-underline"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Dúvidas frequentes
+              </Link>
               <WhatsAppSupport label="Problemas? Fale conosco" />
             </div>
           </div>
         </div>
       </section>
+
+      <Link
+        href="/ajuda"
+        className="fixed bottom-[88px] right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl no-underline"
+        style={{
+          background: 'rgba(13,13,13,0.92)',
+          border: '1px solid rgba(212,160,23,0.5)',
+          color: '#D4A017',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="hidden sm:inline">Dúvidas Frequentes</span>
+        <span className="sm:hidden">Dúvidas</span>
+      </Link>
 
       <WhatsAppSupport variant="floating" />
     </div>

@@ -87,7 +87,7 @@ export default function Eventos() {
           <InscriptionLookup />
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-2 mb-8">
           {filtros.map(f => (
             <button
               key={f.value}

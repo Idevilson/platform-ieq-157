@@ -84,17 +84,17 @@ export default function MinhaContaLayout({ children }: MinhaContaLayoutProps) {
         </aside>
 
         {/* Mobile Navigation */}
-        <nav className="md:hidden fixed top-[70px] left-0 right-0 bg-bg-secondary border-b border-gold/10 z-40 overflow-x-auto scrollbar-hide">
-          <div className="flex">
+        <nav className="md:hidden fixed top-[70px] left-0 right-0 bg-bg-secondary border-b border-gold/10 z-40">
+          <div className="grid grid-cols-3 gap-1 p-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex-shrink-0 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center justify-center text-center px-2 py-2.5 text-xs font-medium rounded-lg transition-colors no-underline leading-tight ${
                   isActive(item.href, item.exact)
-                    ? 'text-gold border-gold'
-                    : 'text-text-secondary hover:text-text-primary border-transparent'
-                } no-underline`}
+                    ? 'bg-gold/15 text-gold'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-gold/5'
+                }`}
               >
                 {item.label}
               </Link>
@@ -103,7 +103,7 @@ export default function MinhaContaLayout({ children }: MinhaContaLayoutProps) {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 md:ml-[260px] p-6 md:p-8 mt-[52px] md:mt-0">
+        <main className="flex-1 min-w-0 md:ml-[260px] p-4 sm:p-6 md:p-8 mt-[96px] md:mt-0">
           {children}
         </main>
       </div>
