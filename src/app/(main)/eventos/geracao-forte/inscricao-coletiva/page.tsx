@@ -10,6 +10,7 @@ import { BatchInscriptionForm } from '@/components/inscription/BatchInscriptionF
 import { BatchInscriptionCard } from '@/components/inscription/BatchInscriptionCard'
 import { BatchInscriptionDTO } from '@/shared/types/inscription'
 import { AuthModal } from '@/components/auth'
+import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
 
 const EVENT_ID = 'geracao-forte'
 const DETAIL_BASE = '/eventos/geracao-forte/inscricao-coletiva/confirmado'
@@ -250,6 +251,7 @@ export default function GeracaoForteBatchInscricao() {
           </div>
         )}
       </div>
+      <WhatsAppSupport variant="floating" />
     </section>
   )
 }
