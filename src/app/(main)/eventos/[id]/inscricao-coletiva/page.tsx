@@ -265,7 +265,7 @@ function BatchInscricaoContent({ id }: { id: string }) {
             <BatchInscriptionForm
               eventId={id}
               categories={mappedCategories}
-              user={{ id: authUser.uid, email: authUser.email ?? '', nome: authUser.displayName ?? '' } as Parameters<typeof BatchInscriptionForm>[0]['user']}
+              user={{ id: authUser.uid, email: authUser.email ?? '', nome: authUser.profile?.nome || authUser.displayName || '', cpf: authUser.profile?.cpf || '' } as Parameters<typeof BatchInscriptionForm>[0]['user']}
               onSuccess={(batch: BatchInscriptionDTO) =>
                 router.push(`/eventos/${id}/inscricao-coletiva/confirmado?batchId=${batch.id}`)
               }

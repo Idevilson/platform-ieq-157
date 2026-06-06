@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
+import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
 import { adminAuth } from '@/server/infrastructure/firebase/admin'
 
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
+const userRepository = new FirebaseUserRepositoryAdmin()
 
 export async function GET(
   request: NextRequest,
@@ -20,13 +22,19 @@ export async function GET(
     const decodedToken = await adminAuth.verifyIdToken(token)
     const userId = decodedToken.uid
 
-    const inscription = await inscriptionRepository.findByEventIdAndUserId(eventId, userId)
+    const byUserId = await inscriptionRepository.findByEventIdAndUserId(eventId, userId)
+    if (byUserId) {
+      return NextResponse.json({ inscription: byUserId.toJSON() })
+    }
 
-    if (!inscription) {
+    const user = await userRepository.findById(userId)
+    const cpf = user?.toJSON().cpf?.replace(/\D/g, '')
+    if (!cpf) {
       return NextResponse.json({ inscription: null })
     }
 
-    return NextResponse.json({ inscription: inscription.toJSON() })
+    const byCpf = await inscriptionRepository.findByEventIdAndCPF(eventId, cpf)
+    return NextResponse.json({ inscription: byCpf?.toJSON() ?? null })
   } catch (error) {
     console.error('Get user inscription by event error:', error)
     return NextResponse.json({ error: 'Erro ao buscar inscrição' }, { status: 500 })

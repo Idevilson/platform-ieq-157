@@ -9,9 +9,11 @@ import logoIEQ from '@/assets/images/only-logo.png'
 
 export default function Header() {
   const pathname = usePathname()
-  const { user, isAuthenticated, loading, logout } = useAuth()
+  const { user, isAuthenticated, isAdmin, loading, logout } = useAuth()
   const [showDropdown, setShowDropdown] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const displayName = user?.profile?.nome || user?.displayName
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/'
@@ -84,6 +86,15 @@ export default function Header() {
               <span className="text-sm text-text-muted">Carregando...</span>
             ) : isAuthenticated ? (
               <>
+                {isAdmin && (
+                  <Link
+                    href="/minha-conta/admin"
+                    className="px-3 py-2 text-sm font-medium text-gold hover:text-gold/80 no-underline"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/minha-conta"
                   className="px-3 py-2 text-sm text-text-secondary hover:text-text-primary no-underline"
@@ -112,6 +123,17 @@ export default function Header() {
 
         {/* Desktop account section */}
         <div className="hidden md:flex items-center gap-4">
+          {isAdmin && (
+            <Link
+              href="/minha-conta/admin"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gold border border-gold/30 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all no-underline"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2L10 6H14L11 9L12 13L8 11L4 13L5 9L2 6H6L8 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+              </svg>
+              Admin
+            </Link>
+          )}
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-bg-tertiary animate-pulse" />
           ) : isAuthenticated ? (
@@ -122,10 +144,10 @@ export default function Header() {
                 aria-label="Menu da conta"
               >
                 <span className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-xs font-semibold text-gold">
-                  {getInitials(user?.displayName)}
+                  {getInitials(displayName)}
                 </span>
                 <span className="text-sm text-text-primary max-w-[100px] truncate">
-                  {user?.displayName?.split(' ')[0] || 'Usuario'}
+                  {displayName?.split(' ')[0] || 'Usuario'}
                 </span>
                 <svg
                   className={`w-3 h-3 text-text-muted transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
