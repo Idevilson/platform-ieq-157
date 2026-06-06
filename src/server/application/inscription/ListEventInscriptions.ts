@@ -26,6 +26,7 @@ export interface InscriptionWithDetails {
   statusLabel: string
   valor: number
   valorFormatado: string
+  cidade?: string
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: string
@@ -99,6 +100,7 @@ export class ListEventInscriptions {
         email,
         cpf,
         telefone,
+        cidade: inscription.guestData?.cidade,
         status: inscription.status,
         statusLabel: inscription.statusLabel,
         valor: inscription.valorCents,

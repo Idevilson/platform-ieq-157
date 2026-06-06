@@ -40,6 +40,7 @@ export interface InscriptionWithDetails {
   statusLabel: string
   valor: number
   valorFormatado: string
+  cidade?: string
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: string
