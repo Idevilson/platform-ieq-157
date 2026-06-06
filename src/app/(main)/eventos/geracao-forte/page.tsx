@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEventById, useEventCategories } from '@/hooks/queries/useEvents'
 import { SmartInscriptionForm } from '@/components/inscription'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
+import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
 import followMeLogo from '@/assets/images/geracao-forte/follow-me-logo.png'
 import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengtson ESTILOSO.jpg'
 import imgCarmona from '@/assets/images/geracao-forte/palestrantes/Martinho Carmona.jpg'
@@ -839,20 +840,31 @@ export default function GeracaoForte() {
             onSuccess={handleInscriptionSuccess}
           />
 
-          <div className="mt-8 pt-8 border-t border-gold/10 text-center">
-            <p className="text-text-secondary text-sm mb-3">Vindo com um grupo? Use a inscrição coletiva.</p>
-            <a
-              href={`/eventos/${EVENT_ID}/inscricao-coletiva`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 text-gold border border-gold/30 rounded-xl font-medium hover:bg-gold/20 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Inscrição Coletiva (2–50 pessoas)
-            </a>
+          <div className="mt-8 pt-8 border-t border-gold/10 text-center space-y-4">
+            <div>
+              <p className="text-text-secondary text-sm mb-3">Vindo com um grupo? Use a inscrição coletiva.</p>
+              <a
+                href={`/eventos/${EVENT_ID}/inscricao-coletiva`}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 text-gold border border-gold/30 rounded-xl font-medium hover:bg-gold/20 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Inscrição Coletiva (2–50 pessoas)
+              </a>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <a href="/ajuda" className="text-sm text-text-muted hover:text-gold transition-colors no-underline">
+                Dúvidas frequentes →
+              </a>
+              <span className="hidden sm:inline text-gold/20">|</span>
+              <WhatsAppSupport label="Problemas? Fale conosco" />
+            </div>
           </div>
         </div>
       </section>
+
+      <WhatsAppSupport variant="floating" />
     </div>
   )
 }
