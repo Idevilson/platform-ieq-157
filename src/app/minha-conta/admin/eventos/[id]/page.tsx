@@ -10,6 +10,7 @@ import { useUpdateEventStatus, useConfirmInscription, useDeleteInscription, useC
 import { useAdminConfirmBatchCash, useAdminDeleteBatch } from '@/hooks/mutations/useAdminBatchMutations'
 import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
 import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
+import { DailyReportCard } from '@/components/admin/DailyReportCard'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
@@ -520,6 +521,8 @@ export default function AdminEventDetailPage() {
       </div>
 
       <AdminPerkCard eventId={eventId} />
+
+      <DailyReportCard eventId={eventId} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

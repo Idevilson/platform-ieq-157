@@ -274,4 +274,39 @@ export const adminService = {
     })
     if (!response.success) throw new Error(response.error || 'Erro ao deletar noticia')
   },
+
+  async sendDailyReport(options?: { eventId?: string; dryRun?: boolean }): Promise<SendDailyReportResponse> {
+    const params = new URLSearchParams()
+    if (options?.eventId) params.set('eventId', options.eventId)
+    if (options?.dryRun) params.set('dryRun', 'true')
+    const query = params.toString()
+    const endpoint = `/cron/daily-report${query ? `?${query}` : ''}`
+
+    const response = await authFetch<SendDailyReportResponse>(endpoint, { method: 'POST' })
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao enviar relatório')
+  },
+}
+
+export interface SendDailyReportResponse {
+  ok: boolean
+  role: 'cron' | 'admin'
+  skipped?: 'event-ended'
+  dryRun?: boolean
+  preview?: string
+  stats?: {
+    date: string
+    eventTitle: string
+    total: number
+    confirmadas: number
+    pendentes: number
+    receita: number
+    novasHoje: number
+    receitaHoje: number
+    redencao: number
+    fora: number
+    perkLimite?: number
+    perkRestante?: number
+  }
+  sent?: { messageId: string; status: string; remoteJid: string }
 }
