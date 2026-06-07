@@ -10,6 +10,7 @@ export interface ListEventsParams extends PaginationParams {
 
 export interface IEventRepository {
   findById(id: string): Promise<Event | null>
+  existsById(id: string): Promise<boolean>
   findAll(params?: ListEventsParams): Promise<PaginatedResult<Event>>
   findExpiredOpenEvents(): Promise<Event[]>
   save(event: Event): Promise<void>

@@ -14,9 +14,8 @@ export class GetEventCategories {
   constructor(private readonly eventRepository: IEventRepository) {}
 
   async execute(input: GetEventCategoriesInput): Promise<GetEventCategoriesOutput> {
-    // Verify event exists
-    const event = await this.eventRepository.findById(input.eventId)
-    if (!event) {
+    const exists = await this.eventRepository.existsById(input.eventId)
+    if (!exists) {
       throw new EventNotFoundError(input.eventId)
     }
 

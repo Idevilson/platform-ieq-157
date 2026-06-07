@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEventById, useEventCategories } from '@/hooks/queries/useEvents'
+import { useEventById } from '@/hooks/queries/useEvents'
 import { SmartInscriptionForm } from '@/components/inscription'
 import temaImg from '@/assets/images/startup/tema.webp'
 import homemImg from '@/assets/images/startup/homem.jpeg'
@@ -15,7 +15,6 @@ const STARTUP_EVENT_ID = 'startup'
 export default function Startup() {
   const router = useRouter()
   const { data: evento } = useEventById(STARTUP_EVENT_ID)
-  const { data: categorias } = useEventCategories(STARTUP_EVENT_ID)
 
   const handleInscricao = () => {
     document.getElementById('inscricao')?.scrollIntoView({ behavior: 'smooth' })
@@ -25,7 +24,7 @@ export default function Startup() {
     router.push(`/eventos/startup/confirmado?inscriptionId=${inscriptionId}&eventId=${STARTUP_EVENT_ID}`)
   }
 
-  const eventCategorias = categorias || evento?.categorias || []
+  const eventCategorias = evento?.categorias ?? []
 
   return (
     <>

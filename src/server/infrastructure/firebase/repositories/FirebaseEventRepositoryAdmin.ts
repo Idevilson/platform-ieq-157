@@ -17,6 +17,11 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
     return this.db.collection(EVENTS_COLLECTION)
   }
 
+  async existsById(id: string): Promise<boolean> {
+    const docSnap = await this.eventsRef.doc(id).get()
+    return docSnap.exists
+  }
+
   async findById(id: string): Promise<Event | null> {
     const docSnap = await this.eventsRef.doc(id).get()
 

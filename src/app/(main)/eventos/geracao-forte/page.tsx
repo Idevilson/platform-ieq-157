@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { useEventById, useEventCategories } from '@/hooks/queries/useEvents'
+import { useEventById } from '@/hooks/queries/useEvents'
+import { usePerkSummary } from '@/hooks/queries/usePerkSummary'
 import { SmartInscriptionForm } from '@/components/inscription'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
 import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
@@ -86,18 +86,7 @@ const SCHEDULE = [
 export default function GeracaoForte() {
   const router = useRouter()
   const { data: evento } = useEventById(EVENT_ID)
-  const { data: categorias } = useEventCategories(EVENT_ID)
-  const { data: perk } = useQuery({
-
-    queryKey: ['perk-summary', EVENT_ID],
-    queryFn: async () => {
-      const res = await fetch(`/api/events/${EVENT_ID}/perks/summary`)
-      if (!res.ok) return null
-      const json = await res.json() as { summary: { limiteEstoque: number; quantidadeRestante: number; disponivel: boolean } | null }
-      return json.summary
-    },
-    staleTime: 30_000,
-  })
+  const { data: perk } = usePerkSummary(EVENT_ID)
 
   const handleInscricao = () => {
     document.getElementById('inscricao')?.scrollIntoView({ behavior: 'smooth' })
@@ -107,7 +96,7 @@ export default function GeracaoForte() {
     router.push(`/eventos/${EVENT_ID}/confirmado?inscriptionId=${inscriptionId}&eventId=${EVENT_ID}`)
   }
 
-  const eventCategorias = categorias || evento?.categorias || []
+  const eventCategorias = evento?.categorias ?? []
 
   return (
     <div className="relative">
