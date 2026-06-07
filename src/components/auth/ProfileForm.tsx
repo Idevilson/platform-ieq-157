@@ -32,7 +32,7 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
     if (user?.profile) {
       setValue('nome', user.profile.nome || '')
       setValue('cpf', user.profile.cpfFormatado || '')
-      setValue('telefone', user.profile.telefone || '')
+      setValue('telefone', formatPhone(user.profile.telefone || ''))
     }
   }, [user, setValue])
 
