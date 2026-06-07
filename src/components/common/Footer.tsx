@@ -35,9 +35,7 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wider">Contato</h4>
           <div className="space-y-2 text-sm text-text-secondary">
-            <p>Rua Example, 157</p>
             <p>Redencao - PA</p>
-            <p>(94) 99999-9999</p>
           </div>
         </div>
 

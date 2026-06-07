@@ -127,9 +127,9 @@ export default function GeracaoForte() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-primary" />
         <div className="relative z-10 text-center px-4 py-16 max-w-4xl mx-auto animate-fade-in">
-          <h2 className="text-sm md:text-base uppercase tracking-[0.3em] text-gold/80 mb-4">
+          <p className="text-sm md:text-base uppercase tracking-[0.3em] text-gold/80 mb-4">
             Geração Forte · IEQ Sede Campo 157
-          </h2>
+          </p>
 
           <div className="relative mx-auto mb-8 max-w-2xl">
             <div
@@ -148,9 +148,9 @@ export default function GeracaoForte() {
             />
           </div>
 
-          <p className="text-xl md:text-2xl text-gold font-semibold mb-4">
-            Congresso Setorizado da Geração Forte
-          </p>
+          <h1 className="text-xl md:text-2xl text-gold font-semibold mb-4">
+            Congresso Setorizado da Geração Forte 2026 · Follow Me · Redenção-PA
+          </h1>
           <p className="text-lg text-text-secondary mb-6">03 a 05 de Julho de 2026</p>
 
           <div className="max-w-2xl mx-auto mb-8 flex items-center gap-4">
