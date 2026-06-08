@@ -7,6 +7,7 @@ import { useEventById } from '@/hooks/queries/useEvents'
 import { usePerkSummary } from '@/hooks/queries/usePerkSummary'
 import { SmartInscriptionForm } from '@/components/inscription'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
+import { DeadlineExtensionBanner } from '@/components/eventos/DeadlineExtensionBanner'
 import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
 import followMeLogo from '@/assets/images/geracao-forte/follow-me-logo.png'
 import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengtson ESTILOSO.jpg'
@@ -820,9 +821,11 @@ export default function GeracaoForte() {
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">05 JUL</span>
             </div>
             <p className="text-text-secondary">
-              Garanta o valor promocional até <strong className="text-gold">07/06/2026</strong>. A partir do dia seguinte, o preço aumenta.
+              Garanta o valor promocional até <strong className="text-gold">14/06/2026</strong>. A partir do dia seguinte, o preço aumenta.
             </p>
           </div>
+
+          <DeadlineExtensionBanner />
 
           <SmartInscriptionForm
             eventId={EVENT_ID}
