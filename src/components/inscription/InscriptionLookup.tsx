@@ -105,6 +105,11 @@ function isPendingPayment(status?: PaymentStatus): boolean {
   return status === "PENDING" || status === "OVERDUE";
 }
 
+function isPixExpired(dataVencimento?: string): boolean {
+  if (!dataVencimento) return false;
+  return new Date(dataVencimento) < new Date();
+}
+
 export function InscriptionLookup({
   eventId,
   onInscriptionFound,
@@ -342,92 +347,108 @@ export function InscriptionLookup({
                         result.payment.status as PaymentStatus,
                       ) && (
                         <div className="mt-4 pt-4 border-t border-gold/10">
-                          <button
-                            onClick={() =>
-                              handleTogglePayment(result.inscription.id)
-                            }
-                            className="w-full sm:w-auto px-4 py-2 bg-gold/20 text-gold font-medium rounded-lg hover:bg-gold/30 transition-colors text-sm flex items-center gap-2"
-                          >
-                            <svg
-                              className={`w-4 h-4 transition-transform ${expandedPayment === result.inscription.id ? "rotate-180" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                            {expandedPayment === result.inscription.id
-                              ? "Ocultar Pagamento"
-                              : "Ver 2ª Via do Pagamento"}
-                          </button>
-
-                          {expandedPayment === result.inscription.id &&
-                            result.payment && (
-                              <div className="mt-4 p-4 bg-bg-secondary rounded-lg border border-gold/20 space-y-4">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-text-secondary">
-                                    Valor:
-                                  </span>
-                                  <span className="text-gold font-semibold text-lg">
-                                    {result.payment.valor}
-                                  </span>
-                                </div>
-
-                                {result.payment.pixCopiaECola && (
-                                  <div className="space-y-2">
-                                    <p className="text-sm text-text-secondary">
-                                      PIX Copia e Cola:
-                                    </p>
-                                    <div className="bg-bg-primary p-3 rounded-lg border border-gold/10">
-                                      <code className="text-xs text-text-primary break-all block mb-2">
-                                        {result.payment.pixCopiaECola.substring(
-                                          0,
-                                          100,
-                                        )}
-                                        ...
-                                      </code>
-                                      <button
-                                        onClick={() =>
-                                          handleCopyPix(
-                                            result.payment!.pixCopiaECola!,
-                                          )
-                                        }
-                                        className="w-full py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors text-sm"
-                                      >
-                                        {copiedPix
-                                          ? "Copiado!"
-                                          : "Copiar Código PIX"}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {result.payment.boletoUrl && (
-                                  <div className="space-y-2">
-                                    <a
-                                      href={result.payment.boletoUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="block w-full py-2 bg-gold/20 text-gold font-medium rounded-lg hover:bg-gold/30 transition-colors text-sm text-center"
-                                    >
-                                      Abrir Boleto
-                                    </a>
-                                  </div>
-                                )}
-
-                                <p className="text-xs text-text-muted text-center">
-                                  Vencimento:{" "}
-                                  {new Date(
-                                    result.payment.dataVencimento,
-                                  ).toLocaleDateString("pt-BR")}
-                                </p>
+                          {isPixExpired(result.payment.dataVencimento) ? (
+                            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+                              <div className="flex items-center gap-2 text-red-400">
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-sm font-medium">
+                                  Pagamento PIX expirado em{" "}
+                                  {new Date(result.payment.dataVencimento).toLocaleDateString("pt-BR")}
+                                </span>
                               </div>
-                            )}
+                              <p className="text-xs text-text-secondary">
+                                Clique em &quot;Ver Detalhes&quot; para gerar um novo código PIX com o valor da sua inscrição.
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleTogglePayment(result.inscription.id)
+                                }
+                                className="w-full sm:w-auto px-4 py-2 bg-gold/20 text-gold font-medium rounded-lg hover:bg-gold/30 transition-colors text-sm flex items-center gap-2"
+                              >
+                                <svg
+                                  className={`w-4 h-4 transition-transform ${expandedPayment === result.inscription.id ? "rotate-180" : ""}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 9l-7 7-7-7"
+                                  />
+                                </svg>
+                                {expandedPayment === result.inscription.id
+                                  ? "Ocultar Pagamento"
+                                  : "Ver 2ª Via do Pagamento"}
+                              </button>
+
+                              {expandedPayment === result.inscription.id &&
+                                result.payment && (
+                                  <div className="mt-4 p-4 bg-bg-secondary rounded-lg border border-gold/20 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-text-secondary">
+                                        Valor:
+                                      </span>
+                                      <span className="text-gold font-semibold text-lg">
+                                        {result.payment.valor}
+                                      </span>
+                                    </div>
+
+                                    {result.payment.pixCopiaECola && (
+                                      <div className="space-y-2">
+                                        <p className="text-sm text-text-secondary">
+                                          PIX Copia e Cola:
+                                        </p>
+                                        <div className="bg-bg-primary p-3 rounded-lg border border-gold/10">
+                                          <code className="text-xs text-text-primary break-all block mb-2">
+                                            {result.payment.pixCopiaECola.substring(0, 100)}
+                                            ...
+                                          </code>
+                                          <button
+                                            onClick={() =>
+                                              handleCopyPix(
+                                                result.payment!.pixCopiaECola!,
+                                              )
+                                            }
+                                            className="w-full py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors text-sm"
+                                          >
+                                            {copiedPix
+                                              ? "Copiado!"
+                                              : "Copiar Código PIX"}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {result.payment.boletoUrl && (
+                                      <div className="space-y-2">
+                                        <a
+                                          href={result.payment.boletoUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="block w-full py-2 bg-gold/20 text-gold font-medium rounded-lg hover:bg-gold/30 transition-colors text-sm text-center"
+                                        >
+                                          Abrir Boleto
+                                        </a>
+                                      </div>
+                                    )}
+
+                                    <p className="text-xs text-text-muted text-center">
+                                      Vencimento:{" "}
+                                      {new Date(
+                                        result.payment.dataVencimento,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </p>
+                                  </div>
+                                )}
+                            </>
+                          )}
                         </div>
                       )}
 
