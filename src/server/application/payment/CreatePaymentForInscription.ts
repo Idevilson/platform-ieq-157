@@ -76,6 +76,9 @@ export class CreatePaymentForInscription {
     const isPaid = asaasPayment.status === 'RECEIVED' || asaasPayment.status === 'CONFIRMED'
 
     if (!isPaid) {
+      if (asaasPayment.status === 'OVERDUE' || asaasPayment.status === 'CANCELLED') {
+        return this.regeneratePayment(payment, inscription, eventId)
+      }
       return { payment: payment.toJSON() }
     }
 

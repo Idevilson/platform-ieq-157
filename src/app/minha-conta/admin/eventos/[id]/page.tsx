@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useEventById } from '@/hooks/queries/useEvents'
 import { useAdminEventInscriptions } from '@/hooks/queries/useAdminEvents'
 import { useAdminBatches } from '@/hooks/queries/useAdminBatches'
-import { useUpdateEventStatus, useConfirmInscription, useDeleteInscription, useChangeEventSlug } from '@/hooks/mutations/useAdminEventMutations'
+import { useUpdateEventStatus, useConfirmInscription, useDeleteInscription, useChangeEventSlug, useRegenerateInscriptionPayment } from '@/hooks/mutations/useAdminEventMutations'
 import { useAdminConfirmBatchCash, useAdminDeleteBatch } from '@/hooks/mutations/useAdminBatchMutations'
 import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
 import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
@@ -99,20 +99,36 @@ interface ConfirmModalProps {
   onClose: () => void
   onConfirm: () => void
   onDelete: () => void
+  onRegeneratePayment: () => Promise<void>
   isLoading: boolean
   isDeleting: boolean
+  isRegenerating: boolean
 }
 
-function ConfirmModal({ inscription, onClose, onConfirm, onDelete, isLoading, isDeleting }: ConfirmModalProps) {
+function ConfirmModal({ inscription, onClose, onConfirm, onDelete, onRegeneratePayment, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
   const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
+  const canRegenerate = isPending && inscription.preferredPaymentMethod !== 'CASH'
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [regenError, setRegenError] = useState('')
+  const [regenDone, setRegenDone] = useState(false)
+
+  const handleRegenerate = async () => {
+    setRegenError('')
+    setRegenDone(false)
+    try {
+      await onRegeneratePayment()
+      setRegenDone(true)
+    } catch (err) {
+      setRegenError(err instanceof Error ? err.message : 'Erro ao regerar pagamento')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg bg-bg-secondary border border-gold/20 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col bg-bg-secondary border border-gold/20 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
           <h2 className="text-xl font-bold text-text-primary">Detalhes da Inscrição</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +137,7 @@ function ConfirmModal({ inscription, onClose, onConfirm, onDelete, isLoading, is
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto -mr-2 pr-2">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-text-muted">Nome</label>
@@ -237,6 +253,42 @@ function ConfirmModal({ inscription, onClose, onConfirm, onDelete, isLoading, is
             </div>
           )}
 
+          {canRegenerate && (
+            <div className="pt-4 border-t border-gold/10">
+              <div className="bg-sky-500/10 border border-sky-500/30 rounded-lg p-4 mb-3">
+                <p className="text-sm text-sky-400 font-medium mb-1">Regerar Cobrança</p>
+                <p className="text-xs text-text-secondary">
+                  Cancela a cobrança atual no Asaas e gera uma nova com QR válido. Use quando o QR antigo estiver com erro (ex.: gerado em ambiente de testes).
+                </p>
+              </div>
+
+              {regenDone ? (
+                <p className="text-sm text-green-400 text-center py-2">Cobrança regerada com sucesso! O participante já pode usar o novo QR.</p>
+              ) : (
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isLoading || isDeleting || isRegenerating}
+                  className="w-full py-3 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 border border-sky-500/30"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+                      Regerando...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Regerar PIX / Cobrança
+                    </>
+                  )}
+                </button>
+              )}
+              {regenError && <p className="text-red-400 text-xs mt-2 text-center">{regenError}</p>}
+            </div>
+          )}
+
           <div className="pt-4 border-t border-gold/10">
             {!confirmDelete ? (
               <button
@@ -306,6 +358,7 @@ export default function AdminEventDetailPage() {
   const updateStatus = useUpdateEventStatus()
   const confirmInscription = useConfirmInscription()
   const deleteInscription = useDeleteInscription()
+  const regenerateInscriptionPayment = useRegenerateInscriptionPayment()
   const changeSlug = useChangeEventSlug()
   const { data: batchesData, isLoading: batchesLoading } = useAdminBatches(eventId)
   const confirmBatchCash = useAdminConfirmBatchCash(eventId)
@@ -820,8 +873,13 @@ export default function AdminEventDetailPage() {
               console.error('Erro ao excluir inscrição:', error)
             }
           }}
+          onRegeneratePayment={async () => {
+            await regenerateInscriptionPayment.mutateAsync({ eventId, inscriptionId: selectedInscription.id })
+            refetchInscriptions()
+          }}
           isLoading={confirmInscription.isPending}
           isDeleting={deleteInscription.isPending}
+          isRegenerating={regenerateInscriptionPayment.isPending}
         />
       )}
 

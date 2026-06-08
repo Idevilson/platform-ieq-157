@@ -105,6 +105,16 @@ export interface ConfirmInscriptionResponse {
   }
 }
 
+export interface RegenerateInscriptionPaymentResponse {
+  payment: {
+    id: string
+    status: string
+    pixQrCode?: string
+    pixCopiaECola?: string
+    checkoutUrl?: string
+  }
+}
+
 async function authFetch<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
   const token = await firebaseAuthService.getIdToken()
   if (!token) {
@@ -222,6 +232,14 @@ export const adminService = {
     })
     if (response.success && response.data) return response.data
     throw new Error(response.error || 'Erro ao excluir inscrição')
+  },
+
+  async regenerateInscriptionPayment(eventId: string, inscriptionId: string): Promise<RegenerateInscriptionPaymentResponse> {
+    const response = await authFetch<RegenerateInscriptionPaymentResponse>(`/events/${eventId}/inscriptions/${inscriptionId}/regenerate-payment`, {
+      method: 'POST',
+    })
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao regerar pagamento')
   },
 
   async confirmInscription(inscriptionId: string, eventId: string): Promise<ConfirmInscriptionResponse> {
