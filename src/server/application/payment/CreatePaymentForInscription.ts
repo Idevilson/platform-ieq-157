@@ -65,7 +65,14 @@ export class CreatePaymentForInscription {
       return { payment: payment.toJSON() }
     }
 
-    const asaasPayment = await asaasService.getPayment(payment.asaasPaymentId)
+    let asaasPayment: Awaited<ReturnType<typeof asaasService.getPayment>>
+    try {
+      asaasPayment = await asaasService.getPayment(payment.asaasPaymentId)
+    } catch {
+      // Asaas payment no longer exists (expired/deleted) — regenerate using stored inscription price
+      return this.regeneratePayment(payment, inscription, eventId)
+    }
+
     const isPaid = asaasPayment.status === 'RECEIVED' || asaasPayment.status === 'CONFIRMED'
 
     if (!isPaid) {
@@ -76,6 +83,20 @@ export class CreatePaymentForInscription {
     await this.paymentRepository.update(payment, eventId)
 
     return { payment: payment.toJSON() }
+  }
+
+  private async regeneratePayment(
+    stalePayment: Payment,
+    inscription: Inscription,
+    eventId: string,
+  ): Promise<CreatePaymentOutput> {
+    await this.paymentRepository.delete(stalePayment.id, eventId, stalePayment.inscriptionId)
+
+    const input: CreatePaymentInput = { eventId, inscriptionId: inscription.id }
+    if (stalePayment.metodoPagamento === 'CREDIT_CARD') {
+      return this.createCardCheckoutPayment(inscription, input)
+    }
+    return this.createPixPayment(inscription, input)
   }
 
   private syncPaymentFromAsaas(payment: Payment, asaasPayment: { status: string; paymentDate?: string }): void {
