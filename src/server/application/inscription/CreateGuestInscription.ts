@@ -18,6 +18,7 @@ export interface CreateGuestInscriptionInput {
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
   guestData: {
     nome: string
     email: string
@@ -110,6 +111,7 @@ export class CreateGuestInscription {
       valor: valorCents,
       preferredPaymentMethod: input.preferredPaymentMethod,
       tamanho: input.tamanho,
+      campoMissionario: input.campoMissionario,
       guestData: {
         nome: input.guestData.nome.trim(),
         email: input.guestData.email,

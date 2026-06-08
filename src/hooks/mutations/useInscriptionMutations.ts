@@ -11,6 +11,7 @@ interface CreateGuestInscriptionParams {
   guestData: GuestDataDTO
   preferredPaymentMethod?: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
 }
 
 interface CreateUserInscriptionParams {
@@ -18,6 +19,7 @@ interface CreateUserInscriptionParams {
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
   profileUpdate?: {
     cpf?: string
     telefone?: string
@@ -41,8 +43,8 @@ export function useCreateGuestInscription() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ eventId, categoryId, guestData, preferredPaymentMethod, tamanho }: CreateGuestInscriptionParams) =>
-      inscriptionService.createGuestInscription(eventId, categoryId, guestData, preferredPaymentMethod, tamanho),
+    mutationFn: ({ eventId, categoryId, guestData, preferredPaymentMethod, tamanho, campoMissionario }: CreateGuestInscriptionParams) =>
+      inscriptionService.createGuestInscription(eventId, categoryId, guestData, preferredPaymentMethod, tamanho, campoMissionario),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inscriptionKeys.all })
     },
@@ -66,6 +68,19 @@ export function useCreateUserInscription() {
   return useMutation({
     mutationFn: (params: CreateUserInscriptionParams) =>
       inscriptionService.createUserInscription(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inscriptionKeys.all })
+      queryClient.invalidateQueries({ queryKey: userInscriptionKeys.all })
+    },
+  })
+}
+
+export function useUpdateCampoMissionario() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ inscriptionId, eventId, campoMissionario }: { inscriptionId: string; eventId: string; campoMissionario: string }) =>
+      inscriptionService.updateCampoMissionario(inscriptionId, eventId, campoMissionario),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inscriptionKeys.all })
       queryClient.invalidateQueries({ queryKey: userInscriptionKeys.all })

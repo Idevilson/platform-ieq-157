@@ -15,6 +15,7 @@ export interface InscriptionProps {
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: Date
@@ -30,6 +31,7 @@ export interface CreateInscriptionDTO {
   guestData?: GuestDataInput
   preferredPaymentMethod?: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
 }
 
 export class Inscription implements Timestamps {
@@ -41,6 +43,7 @@ export class Inscription implements Timestamps {
   readonly valor: Money
   readonly preferredPaymentMethod: InscriptionPaymentMethod
   readonly tamanho?: ShirtSize
+  private _campoMissionario?: string
   private _status: InscriptionStatus
   private _paymentId?: string
   private _temBrinde?: boolean
@@ -58,6 +61,7 @@ export class Inscription implements Timestamps {
     this.valor = props.valor
     this.preferredPaymentMethod = props.preferredPaymentMethod
     this.tamanho = props.tamanho
+    this._campoMissionario = props.campoMissionario
     this._status = props.status
     this._paymentId = props.paymentId
     this._temBrinde = props.temBrinde
@@ -86,6 +90,7 @@ export class Inscription implements Timestamps {
       valor: Money.fromCents(dto.valor),
       preferredPaymentMethod: dto.preferredPaymentMethod || 'PIX',
       tamanho: dto.tamanho,
+      campoMissionario: dto.campoMissionario,
       status: 'pendente',
       criadoEm: now,
       atualizadoEm: now,
@@ -110,6 +115,7 @@ export class Inscription implements Timestamps {
     paymentId?: string
     preferredPaymentMethod?: InscriptionPaymentMethod
     tamanho?: ShirtSize
+    campoMissionario?: string
     temBrinde?: boolean
     perkId?: string
     brindeAlocadoEm?: Date
@@ -125,6 +131,7 @@ export class Inscription implements Timestamps {
       valor: Money.fromCents(data.valor),
       preferredPaymentMethod: data.preferredPaymentMethod || 'PIX',
       tamanho: data.tamanho,
+      campoMissionario: data.campoMissionario,
       status: data.status,
       paymentId: data.paymentId,
       temBrinde: data.temBrinde,
@@ -158,6 +165,10 @@ export class Inscription implements Timestamps {
 
   get brindeAlocadoEm(): Date | undefined {
     return this._brindeAlocadoEm
+  }
+
+  get campoMissionario(): string | undefined {
+    return this._campoMissionario
   }
 
   get atualizadoEm(): Date {
@@ -261,6 +272,11 @@ export class Inscription implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
+  setCampoMissionario(campo: string): void {
+    this._campoMissionario = campo
+    this._atualizadoEm = new Date()
+  }
+
   // Serialization
   toJSON() {
     return {
@@ -273,6 +289,7 @@ export class Inscription implements Timestamps {
       valorFormatado: this.valor.getFormatted(),
       preferredPaymentMethod: this.preferredPaymentMethod,
       tamanho: this.tamanho,
+      campoMissionario: this._campoMissionario,
       status: this._status,
       statusLabel: this.statusLabel,
       paymentId: this._paymentId,

@@ -69,6 +69,7 @@ export class FirebaseBatchInscriptionRepositoryAdmin implements IBatchInscriptio
         dataNascimento: data.responsavel.dataNascimento?.toDate?.() || new Date(),
         sexo: data.responsavel.sexo as Gender,
         cidade: data.responsavel.cidade,
+        campoMissionario: data.responsavel.campoMissionario ?? undefined,
       },
       cidade: data.cidade,
       participantes: (data.participantes || []).map((p: { nome: string; sexo: Gender; tamanho?: string; temBrinde?: boolean; perkId?: string; brindeAlocadoEm?: FirebaseFirestore.Timestamp }) => ({
@@ -108,6 +109,7 @@ export class FirebaseBatchInscriptionRepositoryAdmin implements IBatchInscriptio
         dataNascimento: Timestamp.fromDate(new Date(json.responsavel.dataNascimento)),
         sexo: json.responsavel.sexo,
         cidade: json.responsavel.cidade,
+        campoMissionario: json.responsavel.campoMissionario ?? null,
       },
       cidade: json.cidade,
       participantes: json.participantes.map(p => ({

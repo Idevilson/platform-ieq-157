@@ -14,6 +14,7 @@ const FIELD_LABELS: Record<string, string> = {
   idade: 'Idade',
   sexo: 'Sexo',
   tamanho: 'Tamanho da camiseta',
+  campoMissionario: 'Número do campo missionário',
 }
 
 // Converte idade para data de nascimento (1 de janeiro do ano calculado)
@@ -37,6 +38,7 @@ interface MissingFieldsForm {
   telefone?: string
   idade?: number
   sexo?: Gender
+  campoMissionario: string
 }
 
 interface UserInscriptionFormProps {
@@ -117,6 +119,10 @@ export function UserInscriptionForm({
     setValue('telefone', formatPhone(event.target.value))
   }
 
+  const handleCampoMissionarioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldValidate: isSubmitted })
+  }
+
   const onSubmit = (data: MissingFieldsForm) => {
     if (!selectedCategoryId) {
       setError('Selecione uma categoria')
@@ -142,6 +148,7 @@ export function UserInscriptionForm({
         categoryId: selectedCategoryId,
         preferredPaymentMethod: paymentMethod,
         tamanho: selectedTamanho as ShirtSize,
+        campoMissionario: data.campoMissionario,
         profileUpdate: Object.keys(profileUpdate).length > 0 ? profileUpdate : undefined,
       },
       {
@@ -311,6 +318,26 @@ export function UserInscriptionForm({
           </div>
         </div>
       )}
+
+      <div className="space-y-2 mb-6">
+        <label htmlFor="campoMissionario" className="block text-sm font-medium text-text-secondary">
+          Número do campo missionário *
+        </label>
+        <input
+          id="campoMissionario"
+          type="text"
+          inputMode="numeric"
+          {...register('campoMissionario', {
+            required: 'Número do campo missionário é obrigatório',
+            pattern: { value: /^\d+$/, message: 'O campo missionário deve conter apenas números' },
+          })}
+          onChange={handleCampoMissionarioChange}
+          placeholder="Ex: 157"
+          disabled={isLoading}
+          className={`input w-full ${errors.campoMissionario ? 'input-error' : ''}`}
+        />
+        {errors.campoMissionario && <span className="text-red-400 text-sm">{errors.campoMissionario.message}</span>}
+      </div>
 
       <div className="mb-6">
         <h4 className="text-base font-semibold text-text-primary mb-3">Tamanho da camiseta *</h4>

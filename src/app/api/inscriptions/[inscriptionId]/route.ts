@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GetInscriptionById } from '@/server/application/inscription/GetInscriptionById'
 import { CancelInscription } from '@/server/application/inscription/CancelInscription'
+import { UpdateCampoMissionario } from '@/server/application/inscription/UpdateCampoMissionario'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { adminAuth } from '@/server/infrastructure/firebase/admin'
 import { InscriptionNotFoundError, ValidationError } from '@/server/domain/shared/errors'
@@ -9,6 +10,7 @@ const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 
 const getInscriptionById = new GetInscriptionById(inscriptionRepository)
 const cancelInscription = new CancelInscription(inscriptionRepository)
+const updateCampoMissionario = new UpdateCampoMissionario(inscriptionRepository)
 
 interface RouteParams {
   params: Promise<{ inscriptionId: string }>
@@ -62,6 +64,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { error: 'Erro ao buscar inscrição' },
       { status: 500 }
     )
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { inscriptionId } = await params
+    const userId = await getUserIdFromRequest(request)
+
+    const body = await request.json()
+    const { campoMissionario, eventId } = body
+
+    if (!campoMissionario || !eventId) {
+      return NextResponse.json({ error: 'campoMissionario e eventId são obrigatórios' }, { status: 400 })
+    }
+
+    await updateCampoMissionario.execute({
+      inscriptionId,
+      eventId,
+      campoMissionario,
+      userId: userId || undefined,
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof InscriptionNotFoundError) {
+      return NextResponse.json({ error: 'Inscrição não encontrada' }, { status: 404 })
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    return NextResponse.json({ error: 'Erro ao atualizar campo missionário' }, { status: 500 })
   }
 }
 

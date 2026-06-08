@@ -20,6 +20,7 @@ export interface CreateInscriptionInput {
   categoryId: string
   preferredPaymentMethod?: InscriptionPaymentMethod
   tamanho?: ShirtSize
+  campoMissionario?: string
 }
 
 export interface CreateInscriptionOutput {
@@ -105,6 +106,7 @@ export class CreateInscription {
       valor: valorCents,
       preferredPaymentMethod: input.preferredPaymentMethod,
       tamanho: input.tamanho,
+      campoMissionario: input.campoMissionario,
     })
   }
 }

@@ -26,6 +26,7 @@ export interface InscriptionDTO {
   paymentId?: string
   paymentStatus?: PaymentStatus
   tamanho?: string
+  campoMissionario?: string
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: string | Date
@@ -69,6 +70,7 @@ export interface BatchResponsavelDTO {
   dataNascimento: string
   sexo: Gender
   cidade: string
+  campoMissionario?: string
 }
 
 export interface BatchInscriptionDTO {
@@ -107,6 +109,7 @@ export interface CreateBatchInscriptionRequest {
     dataNascimento: string
     sexo: Gender
     cidade: string
+    campoMissionario?: string
   }
   cidade: string
   participantes: BatchParticipantDTO[]

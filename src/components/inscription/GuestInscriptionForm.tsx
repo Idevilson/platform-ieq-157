@@ -17,6 +17,7 @@ const FIELD_LABELS: Record<string, string> = {
   idade: 'Idade',
   sexo: 'Sexo',
   tamanho: 'Tamanho da camiseta',
+  campoMissionario: 'Número do campo missionário',
 }
 
 // Converte idade para data de nascimento (1 de janeiro do ano calculado)
@@ -44,6 +45,7 @@ interface GuestFormData {
   idade: number
   sexo: Gender
   tamanho: ShirtSize
+  campoMissionario: string
   observacoes?: string
 }
 
@@ -148,6 +150,10 @@ export function GuestInscriptionForm({
     setValue('telefone', formatPhone(event.target.value))
   }
 
+  const handleCampoMissionarioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldValidate: isSubmitted })
+  }
+
   const onSubmit = (data: GuestFormData) => {
     if (!selectedCategoryId) {
       setError('Selecione uma categoria')
@@ -162,6 +168,7 @@ export function GuestInscriptionForm({
         categoryId: selectedCategoryId,
         preferredPaymentMethod: paymentMethod,
         tamanho: data.tamanho,
+        campoMissionario: data.campoMissionario,
         guestData: {
           nome: data.nome,
           email: data.email,
@@ -279,6 +286,24 @@ export function GuestInscriptionForm({
             disabled={isLoading}
           />
           {errors.cidade && <span className="error">{errors.cidade.message}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="campoMissionario">Número do campo missionário *</label>
+          <input
+            id="campoMissionario"
+            type="text"
+            inputMode="numeric"
+            className={errors.campoMissionario ? 'input-error' : ''}
+            {...register('campoMissionario', {
+              required: 'Número do campo missionário é obrigatório',
+              pattern: { value: /^\d+$/, message: 'O campo missionário deve conter apenas números' },
+            })}
+            onChange={handleCampoMissionarioChange}
+            placeholder="Ex: 157"
+            disabled={isLoading}
+          />
+          {errors.campoMissionario && <span className="error">{errors.campoMissionario.message}</span>}
         </div>
 
         <div className="form-row form-row-aligned">

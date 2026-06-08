@@ -14,6 +14,7 @@ export interface BatchResponsavelData {
   dataNascimento: Date
   sexo: Gender
   cidade: string
+  campoMissionario?: string
 }
 
 export interface BatchInscriptionProps {

@@ -57,7 +57,8 @@ export const inscriptionService = {
     categoryId: string,
     guestData: GuestDataDTO,
     preferredPaymentMethod?: InscriptionPaymentMethod,
-    tamanho?: ShirtSize
+    tamanho?: ShirtSize,
+    campoMissionario?: string
   ): Promise<InscriptionDTO> {
     const response = await apiClient.post<CreateInscriptionResponse>('/inscriptions', {
       eventId,
@@ -65,6 +66,7 @@ export const inscriptionService = {
       guestData,
       preferredPaymentMethod,
       tamanho,
+      campoMissionario,
     })
     if (response.success && response.data) {
       return response.data.inscription
@@ -130,6 +132,7 @@ export const inscriptionService = {
     categoryId: string
     preferredPaymentMethod?: InscriptionPaymentMethod
     tamanho?: ShirtSize
+    campoMissionario?: string
     profileUpdate?: {
       cpf?: string
       telefone?: string
@@ -145,5 +148,15 @@ export const inscriptionService = {
       return response.data.inscription
     }
     throw new Error(response.error || 'Erro ao criar inscrição')
+  },
+
+  async updateCampoMissionario(inscriptionId: string, eventId: string, campoMissionario: string): Promise<void> {
+    const response = await authFetch(`/inscriptions/${inscriptionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ campoMissionario, eventId }),
+    })
+    if (!response.success) {
+      throw new Error(response.error || 'Erro ao atualizar campo missionário')
+    }
   },
 }

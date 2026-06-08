@@ -68,6 +68,7 @@ export function BatchInscriptionForm({
   );
   const [paymentMethod, setPaymentMethod] = useState<InscriptionPaymentMethod>("PIX");
   const [cidade, setCidade] = useState("");
+  const [campoMissionario, setCampoMissionario] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([
     { nome: "", sexo: "", tamanho: "" },
     { nome: "", sexo: "", tamanho: "" },
@@ -124,6 +125,7 @@ export function BatchInscriptionForm({
     const errs: Record<string, string> = {};
     if (!selectedCategoryId) errs.category = "Selecione uma categoria";
     if (!cidade.trim()) errs.cidade = "Cidade de origem é obrigatória";
+    if (!campoMissionario.trim()) errs.campoMissionario = "Número do campo missionário é obrigatório";
 
     if (missingProfileFields.length > 0) {
       errs.responsavel = `Dados obrigatórios ausentes no seu perfil: ${missingProfileFields.join(" e ")}.`;
@@ -168,6 +170,7 @@ export function BatchInscriptionForm({
           dataNascimento: userData.dataNascimento ?? new Date().toISOString(),
           sexo: (userData.sexo as Gender) ?? "masculino",
           cidade: cidade.trim(),
+          campoMissionario: campoMissionario.trim(),
         },
         cidade: cidade.trim(),
         participantes: filledParticipants,
@@ -315,6 +318,21 @@ export function BatchInscriptionForm({
         />
         {errors.cidade && <p className="text-red-400 text-sm mt-1">{errors.cidade}</p>}
         <p className="text-xs text-text-muted mt-1">Cidade de origem para todos os participantes do lote</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-text-secondary mb-1">
+          Número do campo missionário <span className="text-red-400">*</span>
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={campoMissionario}
+          onChange={(e) => { setCampoMissionario(e.target.value.replace(/\D/g, "")); setErrors((err) => ({ ...err, campoMissionario: "" })); }}
+          placeholder="Ex: 157"
+          className="w-full bg-bg-primary border border-gold/20 rounded-lg px-4 py-2.5 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50"
+        />
+        {errors.campoMissionario && <p className="text-red-400 text-sm mt-1">{errors.campoMissionario}</p>}
       </div>
 
       <div>

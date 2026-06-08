@@ -25,6 +25,7 @@ export interface CreateBatchInscriptionInput {
     dataNascimento: Date | string
     sexo: Gender
     cidade: string
+    campoMissionario?: string
   }
   cidade: string
   participantes: { nome: string; sexo: Gender }[]
@@ -74,6 +75,7 @@ export class CreateBatchInscription {
         dataNascimento,
         sexo: input.responsavel.sexo,
         cidade: input.responsavel.cidade.trim(),
+        campoMissionario: input.responsavel.campoMissionario,
       },
       cidade: input.cidade.trim(),
       participantes: input.participantes,

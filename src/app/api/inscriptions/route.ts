@@ -32,7 +32,7 @@ const createGuestInscription = new CreateGuestInscription(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { eventId, categoryId, guestData, preferredPaymentMethod, tamanho } = body
+    const { eventId, categoryId, guestData, preferredPaymentMethod, tamanho, campoMissionario } = body
 
     if (!eventId || !categoryId) {
       return NextResponse.json(
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
         guestData,
         preferredPaymentMethod,
         tamanho,
+        campoMissionario,
       })
     } else {
       return NextResponse.json(

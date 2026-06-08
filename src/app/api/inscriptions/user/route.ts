@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const userId = decodedToken.uid
 
     const body = await request.json()
-    const { eventId, categoryId, profileUpdate, preferredPaymentMethod, tamanho } = body
+    const { eventId, categoryId, profileUpdate, preferredPaymentMethod, tamanho, campoMissionario } = body
 
     if (!eventId || !categoryId) {
       return NextResponse.json(
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       categoryId,
       preferredPaymentMethod,
       tamanho,
+      campoMissionario,
     })
 
     return NextResponse.json(result, { status: 201 })
