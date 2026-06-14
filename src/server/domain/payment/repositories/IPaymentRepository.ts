@@ -10,6 +10,8 @@ export interface IPaymentRepository {
   findById(id: string, eventId?: string, inscriptionId?: string): Promise<Payment | null>
   findByAsaasPaymentId(asaasPaymentId: string): Promise<Payment | null>
   findByInscriptionId(inscriptionId: string, eventId?: string): Promise<Payment | null>
+  /** Todos os pagamentos de uma inscrição (inclui tipo AJUSTE). Usado em limpeza/exclusão. */
+  findAllByInscriptionId(inscriptionId: string, eventId: string): Promise<Payment[]>
   findByUserId(userId: string, params?: ListPaymentsParams): Promise<Payment[]>
   save(payment: Payment, eventId: string): Promise<void>
   update(payment: Payment, eventId: string): Promise<void>

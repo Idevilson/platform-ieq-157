@@ -3,6 +3,14 @@ import { Money } from '@/server/domain/shared/value-objects/Money'
 import { PaymentBreakdown } from '@/server/domain/shared/value-objects/PaymentBreakdown'
 import { PaymentStatus, PaymentMethod, Timestamps, PAYMENT_STATUS_LABELS } from '@/server/domain/shared/types'
 
+/**
+ * Discrimina o papel do pagamento. INSCRICAO é o pagamento que representa a
+ * inscrição (default; inclui registros legados sem o campo). AJUSTE é a cobrança
+ * de diferença de um upgrade de categoria — invisível aos leitores padrão
+ * (findByInscriptionId/consulta pública), acessada apenas por asaasPaymentId.
+ */
+export type PaymentTipo = 'INSCRICAO' | 'AJUSTE'
+
 export interface PaymentProps {
   id: string
   inscriptionId: string
@@ -12,6 +20,7 @@ export interface PaymentProps {
   breakdown: PaymentBreakdown | null
   status: PaymentStatus
   metodoPagamento: PaymentMethod
+  tipo: PaymentTipo
   pixQrCode?: string
   pixCopiaECola?: string
   boletoUrl?: string
@@ -29,6 +38,7 @@ export interface CreatePaymentDTO {
   valor: number
   breakdown?: PaymentBreakdown | null
   metodoPagamento: PaymentMethod
+  tipo?: PaymentTipo
   dataVencimento: Date
   pixQrCode?: string
   pixCopiaECola?: string
@@ -45,6 +55,7 @@ export class Payment implements Timestamps {
   readonly breakdown: PaymentBreakdown | null
   private _status: PaymentStatus
   readonly metodoPagamento: PaymentMethod
+  readonly tipo: PaymentTipo
   private _pixQrCode?: string
   private _pixCopiaECola?: string
   private _boletoUrl?: string
@@ -63,6 +74,7 @@ export class Payment implements Timestamps {
     this.breakdown = props.breakdown
     this._status = props.status
     this.metodoPagamento = props.metodoPagamento
+    this.tipo = props.tipo
     this._pixQrCode = props.pixQrCode
     this._pixCopiaECola = props.pixCopiaECola
     this._boletoUrl = props.boletoUrl
@@ -84,6 +96,7 @@ export class Payment implements Timestamps {
       breakdown: dto.breakdown ?? null,
       status: 'PENDING',
       metodoPagamento: dto.metodoPagamento,
+      tipo: dto.tipo ?? 'INSCRICAO',
       pixQrCode: dto.pixQrCode,
       pixCopiaECola: dto.pixCopiaECola,
       boletoUrl: dto.boletoUrl,
@@ -110,6 +123,7 @@ export class Payment implements Timestamps {
     } | null
     status: PaymentStatus
     metodoPagamento: PaymentMethod
+    tipo?: PaymentTipo
     pixQrCode?: string
     pixCopiaECola?: string
     boletoUrl?: string
@@ -128,6 +142,7 @@ export class Payment implements Timestamps {
       breakdown: data.breakdown ? PaymentBreakdown.fromCents(data.breakdown) : null,
       status: data.status,
       metodoPagamento: data.metodoPagamento,
+      tipo: data.tipo ?? 'INSCRICAO',
       pixQrCode: data.pixQrCode,
       pixCopiaECola: data.pixCopiaECola,
       boletoUrl: data.boletoUrl,
@@ -271,6 +286,7 @@ export class Payment implements Timestamps {
       status: this._status,
       statusLabel: this.statusLabel,
       metodoPagamento: this.metodoPagamento,
+      tipo: this.tipo,
       pixQrCode: this._pixQrCode,
       pixCopiaECola: this._pixCopiaECola,
       boletoUrl: this._boletoUrl,

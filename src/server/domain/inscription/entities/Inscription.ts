@@ -2,6 +2,7 @@
 import { Money } from '@/server/domain/shared/value-objects/Money'
 import { InscriptionStatus, Timestamps, INSCRIPTION_STATUS_LABELS } from '@/server/domain/shared/types'
 import { GuestData, GuestDataInput } from '../value-objects/GuestData'
+import { PendingUpgrade } from '../value-objects/PendingUpgrade'
 import { Gender, InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 
 export interface InscriptionProps {
@@ -19,6 +20,7 @@ export interface InscriptionProps {
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: Date
+  pendingUpgrade?: PendingUpgrade
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -38,9 +40,9 @@ export class Inscription implements Timestamps {
   readonly id: string
   readonly eventId: string
   readonly userId?: string
-  readonly categoryId: string
+  private _categoryId: string
   readonly guestData?: GuestData
-  readonly valor: Money
+  private _valor: Money
   readonly preferredPaymentMethod: InscriptionPaymentMethod
   readonly tamanho?: ShirtSize
   private _campoMissionario?: string
@@ -49,6 +51,7 @@ export class Inscription implements Timestamps {
   private _temBrinde?: boolean
   private _perkId?: string
   private _brindeAlocadoEm?: Date
+  private _pendingUpgrade?: PendingUpgrade
   readonly criadoEm: Date
   private _atualizadoEm: Date
 
@@ -56,9 +59,9 @@ export class Inscription implements Timestamps {
     this.id = props.id
     this.eventId = props.eventId
     this.userId = props.userId
-    this.categoryId = props.categoryId
+    this._categoryId = props.categoryId
     this.guestData = props.guestData
-    this.valor = props.valor
+    this._valor = props.valor
     this.preferredPaymentMethod = props.preferredPaymentMethod
     this.tamanho = props.tamanho
     this._campoMissionario = props.campoMissionario
@@ -67,8 +70,21 @@ export class Inscription implements Timestamps {
     this._temBrinde = props.temBrinde
     this._perkId = props.perkId
     this._brindeAlocadoEm = props.brindeAlocadoEm
+    this._pendingUpgrade = props.pendingUpgrade
     this.criadoEm = props.criadoEm
     this._atualizadoEm = props.atualizadoEm
+  }
+
+  get categoryId(): string {
+    return this._categoryId
+  }
+
+  get valor(): Money {
+    return this._valor
+  }
+
+  get pendingUpgrade(): PendingUpgrade | undefined {
+    return this._pendingUpgrade
   }
 
   static create(id: string, dto: CreateInscriptionDTO): Inscription {
@@ -119,6 +135,14 @@ export class Inscription implements Timestamps {
     temBrinde?: boolean
     perkId?: string
     brindeAlocadoEm?: Date
+    pendingUpgrade?: {
+      targetCategoryId: string
+      targetValorCents: number
+      diferencaBaseCents: number
+      adjustmentPaymentId: string
+      metodo: InscriptionPaymentMethod
+      criadoEm: Date
+    }
     criadoEm: Date
     atualizadoEm: Date
   }): Inscription {
@@ -137,6 +161,7 @@ export class Inscription implements Timestamps {
       temBrinde: data.temBrinde,
       perkId: data.perkId,
       brindeAlocadoEm: data.brindeAlocadoEm,
+      pendingUpgrade: data.pendingUpgrade ? PendingUpgrade.fromPersistence(data.pendingUpgrade) : undefined,
       criadoEm: data.criadoEm,
       atualizadoEm: data.atualizadoEm,
     })
@@ -277,6 +302,45 @@ export class Inscription implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
+  // Upgrade de categoria (cobrança de diferença)
+  hasPendingUpgrade(): boolean {
+    return this._pendingUpgrade !== undefined
+  }
+
+  requestUpgrade(upgrade: PendingUpgrade): void {
+    if (this._status !== 'confirmado') {
+      throw new Error('Apenas inscrições confirmadas podem solicitar upgrade de categoria')
+    }
+    if (upgrade.targetCategoryId === this._categoryId) {
+      throw new Error('A categoria de destino deve ser diferente da atual')
+    }
+    this._pendingUpgrade = upgrade
+    this._atualizadoEm = new Date()
+  }
+
+  applyUpgrade(): void {
+    if (!this._pendingUpgrade) {
+      throw new Error('Não há upgrade pendente para aplicar')
+    }
+    this._categoryId = this._pendingUpgrade.targetCategoryId
+    this._valor = Money.fromCents(this._pendingUpgrade.targetValorCents)
+    this._pendingUpgrade = undefined
+    this._atualizadoEm = new Date()
+  }
+
+  cancelUpgrade(): void {
+    this._pendingUpgrade = undefined
+    this._atualizadoEm = new Date()
+  }
+
+  /** Troca direta de categoria sem cobrança (caso downgrade). */
+  changeCategory(newCategoryId: string, newValorCents: number): void {
+    this._categoryId = newCategoryId
+    this._valor = Money.fromCents(newValorCents)
+    this._pendingUpgrade = undefined
+    this._atualizadoEm = new Date()
+  }
+
   // Serialization
   toJSON() {
     return {
@@ -296,6 +360,7 @@ export class Inscription implements Timestamps {
       temBrinde: this._temBrinde,
       perkId: this._perkId,
       brindeAlocadoEm: this._brindeAlocadoEm?.toISOString(),
+      pendingUpgrade: this._pendingUpgrade?.toJSON(),
       criadoEm: this.criadoEm,
       atualizadoEm: this._atualizadoEm,
     }

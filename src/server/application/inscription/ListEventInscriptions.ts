@@ -33,8 +33,18 @@ export interface InscriptionWithDetails {
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: Date
+  pendingUpgrade?: PendingUpgradeDetails
   criadoEm: Date
   atualizadoEm: Date
+}
+
+export interface PendingUpgradeDetails {
+  targetCategoryId: string
+  targetCategoryNome: string
+  targetValorCents: number
+  diferencaBaseCents: number
+  adjustmentPaymentId: string
+  metodo: InscriptionPaymentMethod
 }
 
 export interface ListEventInscriptionsOutput {
@@ -67,6 +77,7 @@ export class ListEventInscriptions {
 
     for (const inscription of result.items) {
       const category = event.getCategory(inscription.categoryId)
+      const pending = inscription.pendingUpgrade
 
       let nome = ''
       let email = ''
@@ -111,6 +122,16 @@ export class ListEventInscriptions {
         temBrinde: inscription.temBrinde,
         perkId: inscription.perkId,
         brindeAlocadoEm: inscription.brindeAlocadoEm,
+        pendingUpgrade: pending
+          ? {
+              targetCategoryId: pending.targetCategoryId,
+              targetCategoryNome: event.getCategory(pending.targetCategoryId)?.nome || '',
+              targetValorCents: pending.targetValorCents,
+              diferencaBaseCents: pending.diferencaBaseCents,
+              adjustmentPaymentId: pending.adjustmentPaymentId,
+              metodo: pending.metodo,
+            }
+          : undefined,
         criadoEm: inscription.criadoEm,
         atualizadoEm: inscription.atualizadoEm,
       })

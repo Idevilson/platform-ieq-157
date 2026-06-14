@@ -1,5 +1,5 @@
 import { getAdminFirestore } from '../admin'
-import { Payment } from '@/server/domain/payment/entities/Payment'
+import { Payment, PaymentTipo } from '@/server/domain/payment/entities/Payment'
 import { IPaymentRepository, ListPaymentsParams } from '@/server/domain/payment/repositories/IPaymentRepository'
 import { PaymentStatus, PaymentMethod } from '@/server/domain/shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
@@ -21,6 +21,7 @@ interface PaymentDocument {
   breakdown?: PaymentBreakdownDocument | null
   status: PaymentStatus
   metodoPagamento: PaymentMethod
+  tipo?: PaymentTipo
   pixQrCode?: string
   pixCopiaECola?: string
   boletoUrl?: string
@@ -78,14 +79,18 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
   }
 
   async findByInscriptionId(inscriptionId: string, eventId?: string): Promise<Payment | null> {
+    // Cobranças de ajuste (tipo AJUSTE) são invisíveis aqui — quem precisa delas
+    // usa findByAsaasPaymentId. tipo ausente (legado) é tratado como primário.
+    const isPrimary = (doc: FirebaseFirestore.DocumentSnapshot) =>
+      ((doc.data()?.tipo as PaymentTipo | undefined) ?? 'INSCRICAO') !== 'AJUSTE'
+
     if (eventId) {
       const querySnapshot = await this.paymentsRef(eventId, inscriptionId)
         .orderBy('criadoEm', 'desc')
-        .limit(1)
         .get()
 
-      if (querySnapshot.empty) return null
-      return this.mapToEntity(querySnapshot.docs[0], inscriptionId)
+      const doc = querySnapshot.docs.find(isPrimary)
+      return doc ? this.mapToEntity(doc, inscriptionId) : null
     }
 
     const querySnapshot = await this.paymentsGroupRef
@@ -94,11 +99,19 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
 
     for (const doc of querySnapshot.docs) {
       const parentInscriptionId = doc.ref.parent.parent?.id
-      if (parentInscriptionId === inscriptionId) {
+      if (parentInscriptionId === inscriptionId && isPrimary(doc)) {
         return this.mapToEntity(doc, inscriptionId)
       }
     }
     return null
+  }
+
+  async findAllByInscriptionId(inscriptionId: string, eventId: string): Promise<Payment[]> {
+    const querySnapshot = await this.paymentsRef(eventId, inscriptionId)
+      .orderBy('criadoEm', 'desc')
+      .get()
+
+    return querySnapshot.docs.map(doc => this.mapToEntity(doc, inscriptionId))
   }
 
   async findByUserId(userId: string, params?: ListPaymentsParams): Promise<Payment[]> {
@@ -162,6 +175,7 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
       breakdown: data.breakdown ?? null,
       status: data.status,
       metodoPagamento: data.metodoPagamento,
+      tipo: data.tipo ?? 'INSCRICAO',
       pixQrCode: data.pixQrCode,
       pixCopiaECola: data.pixCopiaECola,
       boletoUrl: data.boletoUrl,
@@ -192,6 +206,7 @@ export class FirebasePaymentRepositoryAdmin implements IPaymentRepository {
         : null,
       status: json.status,
       metodoPagamento: json.metodoPagamento,
+      tipo: json.tipo ?? 'INSCRICAO',
       pixQrCode: json.pixQrCode ?? null,
       pixCopiaECola: json.pixCopiaECola ?? null,
       boletoUrl: json.boletoUrl ?? null,

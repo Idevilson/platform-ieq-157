@@ -163,6 +163,16 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       temBrinde: data.temBrinde,
       perkId: data.perkId ?? undefined,
       brindeAlocadoEm: data.brindeAlocadoEm?.toDate?.() ?? undefined,
+      pendingUpgrade: data.pendingUpgrade
+        ? {
+            targetCategoryId: data.pendingUpgrade.targetCategoryId,
+            targetValorCents: data.pendingUpgrade.targetValorCents,
+            diferencaBaseCents: data.pendingUpgrade.diferencaBaseCents,
+            adjustmentPaymentId: data.pendingUpgrade.adjustmentPaymentId,
+            metodo: data.pendingUpgrade.metodo as InscriptionPaymentMethod,
+            criadoEm: data.pendingUpgrade.criadoEm?.toDate?.() ?? new Date(),
+          }
+        : undefined,
       criadoEm: data.criadoEm?.toDate() || new Date(),
       atualizadoEm: data.atualizadoEm?.toDate() || new Date(),
     })
@@ -204,6 +214,16 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       temBrinde: inscription.temBrinde ?? null,
       perkId: inscription.perkId ?? null,
       brindeAlocadoEm: inscription.brindeAlocadoEm ? Timestamp.fromDate(inscription.brindeAlocadoEm) : null,
+      pendingUpgrade: inscription.pendingUpgrade
+        ? {
+            targetCategoryId: inscription.pendingUpgrade.targetCategoryId,
+            targetValorCents: inscription.pendingUpgrade.targetValorCents,
+            diferencaBaseCents: inscription.pendingUpgrade.diferencaBaseCents,
+            adjustmentPaymentId: inscription.pendingUpgrade.adjustmentPaymentId,
+            metodo: inscription.pendingUpgrade.metodo,
+            criadoEm: Timestamp.fromDate(inscription.pendingUpgrade.criadoEm),
+          }
+        : null,
       criadoEm: Timestamp.fromDate(json.criadoEm as Date),
       atualizadoEm: Timestamp.fromDate(json.atualizadoEm as Date),
     }

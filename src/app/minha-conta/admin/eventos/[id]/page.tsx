@@ -11,6 +11,8 @@ import { useAdminConfirmBatchCash, useAdminDeleteBatch } from '@/hooks/mutations
 import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
 import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
 import { DailyReportCard } from '@/components/admin/DailyReportCard'
+import { InscriptionUpgradeSection } from '@/components/admin/InscriptionUpgradeSection'
+import { EventCategoryDTO } from '@/shared/types/event'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
@@ -96,16 +98,19 @@ function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
 
 interface ConfirmModalProps {
   inscription: InscriptionWithDetails
+  eventId: string
+  categories: EventCategoryDTO[]
   onClose: () => void
   onConfirm: () => void
   onDelete: () => void
   onRegeneratePayment: () => Promise<void>
+  onUpgradeChanged: () => void
   isLoading: boolean
   isDeleting: boolean
   isRegenerating: boolean
 }
 
-function ConfirmModal({ inscription, onClose, onConfirm, onDelete, onRegeneratePayment, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
+function ConfirmModal({ inscription, eventId, categories, onClose, onConfirm, onDelete, onRegeneratePayment, onUpgradeChanged, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
   const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
   const canRegenerate = isPending && inscription.preferredPaymentMethod !== 'CASH'
@@ -289,6 +294,13 @@ function ConfirmModal({ inscription, onClose, onConfirm, onDelete, onRegenerateP
             </div>
           )}
 
+          <InscriptionUpgradeSection
+            eventId={eventId}
+            inscription={inscription}
+            categories={categories}
+            onChanged={onUpgradeChanged}
+          />
+
           <div className="pt-4 border-t border-gold/10">
             {!confirmDelete ? (
               <button
@@ -379,12 +391,15 @@ export default function AdminEventDetailPage() {
 
       // Filter by search term
       if (searchTerm) {
-        const search = searchTerm.toLowerCase()
+        const search = searchTerm.toLowerCase().trim()
+        const searchDigits = search.replace(/\D/g, '')
         const matchesName = inscription.nome?.toLowerCase().includes(search)
-        const matchesCPF = inscription.cpf?.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
         const matchesEmail = inscription.email?.toLowerCase().includes(search)
-        const matchesPhone = inscription.telefone?.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
-        return matchesName || matchesCPF || matchesEmail || matchesPhone
+        // Só compara CPF/telefone quando a busca tem dígitos — senão `includes('')`
+        // casaria com todas as inscrições e a busca por nome não filtraria nada.
+        const matchesCPF = searchDigits.length > 0 && !!inscription.cpf?.replace(/\D/g, '').includes(searchDigits)
+        const matchesPhone = searchDigits.length > 0 && !!inscription.telefone?.replace(/\D/g, '').includes(searchDigits)
+        return matchesName || matchesEmail || matchesCPF || matchesPhone
       }
 
       return true
@@ -862,6 +877,12 @@ export default function AdminEventDetailPage() {
       {selectedInscription && (
         <ConfirmModal
           inscription={selectedInscription}
+          eventId={eventId}
+          categories={event.categorias}
+          onUpgradeChanged={() => {
+            setSelectedInscription(null)
+            refetchInscriptions()
+          }}
           onClose={() => setSelectedInscription(null)}
           onConfirm={handleConfirmInscription}
           onDelete={async () => {

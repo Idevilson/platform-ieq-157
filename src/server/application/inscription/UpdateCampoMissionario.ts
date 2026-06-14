@@ -25,7 +25,9 @@ export class UpdateCampoMissionario {
       throw new InscriptionNotFoundError(input.inscriptionId)
     }
 
-    if (input.userId && inscription.userId && inscription.userId !== input.userId) {
+    // Inscrição vinculada a uma conta só pode ser alterada pelo próprio dono autenticado.
+    // Inscrição de visitante (sem conta) pode ser preenchida na consulta por CPF sem login.
+    if (inscription.userId && inscription.userId !== input.userId) {
       throw new ValidationError('Acesso negado')
     }
 

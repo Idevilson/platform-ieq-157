@@ -1,0 +1,39 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { adminService, RequestUpgradeResponse } from '@/lib/services/adminService'
+import { InscriptionPaymentMethod } from '@/shared/constants'
+
+interface RequestVars {
+  eventId: string
+  inscriptionId: string
+  newCategoryId: string
+  metodo: InscriptionPaymentMethod
+}
+
+function invalidateInscriptions(queryClient: ReturnType<typeof useQueryClient>, eventId: string) {
+  queryClient.invalidateQueries({ queryKey: ['admin', 'events', eventId, 'inscriptions'] })
+}
+
+export function useRequestInscriptionUpgrade() {
+  const queryClient = useQueryClient()
+  return useMutation<RequestUpgradeResponse, Error, RequestVars>({
+    mutationFn: ({ eventId, inscriptionId, newCategoryId, metodo }) =>
+      adminService.requestInscriptionUpgrade(eventId, inscriptionId, newCategoryId, metodo),
+    onSuccess: (_, variables) => invalidateInscriptions(queryClient, variables.eventId),
+  })
+}
+
+export function useCancelInscriptionUpgrade() {
+  const queryClient = useQueryClient()
+  return useMutation<{ success: boolean }, Error, { eventId: string; inscriptionId: string }>({
+    mutationFn: ({ eventId, inscriptionId }) => adminService.cancelInscriptionUpgrade(eventId, inscriptionId),
+    onSuccess: (_, variables) => invalidateInscriptions(queryClient, variables.eventId),
+  })
+}
+
+export function useConfirmUpgradeCash() {
+  const queryClient = useQueryClient()
+  return useMutation<{ success: boolean; newCategoryId: string }, Error, { eventId: string; inscriptionId: string }>({
+    mutationFn: ({ eventId, inscriptionId }) => adminService.confirmUpgradeCash(eventId, inscriptionId),
+    onSuccess: (_, variables) => invalidateInscriptions(queryClient, variables.eventId),
+  })
+}

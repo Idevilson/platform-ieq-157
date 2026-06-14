@@ -90,6 +90,11 @@ export class ProcessAsaasWebhook {
       return this.confirmBatchPayment(input, batchRef)
     }
 
+    const adjustmentRef = this.parseAdjustmentReference(input.payment.externalReference)
+    if (adjustmentRef) {
+      return this.confirmAdjustmentPayment(input, adjustmentRef)
+    }
+
     return this.confirmPayment(input)
   }
 
@@ -171,6 +176,53 @@ export class ProcessAsaasWebhook {
     const parts = externalReference.split(':')
     if (parts.length !== 3 || parts[1] !== 'batch') return null
     return { eventId: parts[0], batchId: parts[2] }
+  }
+
+  private parseAdjustmentReference(externalReference?: string): { eventId: string; inscriptionId: string } | null {
+    if (!externalReference) return null
+    const parts = externalReference.split(':')
+    if (parts.length !== 3 || parts[1] !== 'adjustment') return null
+    return { eventId: parts[0], inscriptionId: parts[2] }
+  }
+
+  /**
+   * Confirma a cobrança de diferença (tipo AJUSTE) e aplica o upgrade de categoria.
+   * Busca o pagamento pelo asaasPaymentId (não por inscrição, que ignora AJUSTE).
+   * Não realoca brinde: a inscrição já estava confirmada antes do upgrade.
+   */
+  private async confirmAdjustmentPayment(
+    input: ProcessAsaasWebhookInput,
+    ref: { eventId: string; inscriptionId: string },
+  ): Promise<ProcessAsaasWebhookOutput> {
+    const payment = await this.paymentRepository.findByAsaasPaymentId(input.payment.id)
+    if (!payment) {
+      return { success: false, message: `Adjustment payment not found: ${input.payment.id}` }
+    }
+    if (payment.isConfirmed()) {
+      return {
+        success: true,
+        message: 'Adjustment already confirmed (idempotent)',
+        paymentId: payment.id,
+        inscriptionId: ref.inscriptionId,
+      }
+    }
+
+    const dataPagamento = this.extractPaymentDate(input.payment)
+    this.markPaymentByEvent(payment, input.event, dataPagamento)
+    await this.paymentRepository.update(payment, ref.eventId)
+
+    const inscription = await this.inscriptionRepository.findById(ref.inscriptionId, ref.eventId)
+    if (inscription?.pendingUpgrade?.adjustmentPaymentId === payment.id) {
+      inscription.applyUpgrade()
+      await this.inscriptionRepository.update(inscription)
+    }
+
+    return {
+      success: true,
+      message: 'Adjustment payment confirmed and category upgraded',
+      paymentId: payment.id,
+      inscriptionId: ref.inscriptionId,
+    }
   }
 
   private parseExternalReference(externalReference?: string): { eventId: string; inscriptionId: string } | null {

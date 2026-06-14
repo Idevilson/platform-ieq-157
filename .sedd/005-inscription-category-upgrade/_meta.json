@@ -1,0 +1,87 @@
+{
+  "featureId": "005",
+  "featureName": "inscription-category-upgrade",
+  "branch": "main",
+  "createdAt": "2026-06-14T00:00:00Z",
+  "specCreatedAt": "2026-06-14T00:00:00Z",
+  "currentMigration": "001",
+  "migrations": {
+    "001": {
+      "id": "001",
+      "timestamp": "2026-06-14_clarify",
+      "folder": "001_2026-06-14_clarify",
+      "status": "in-progress",
+      "tasksTotal": 25,
+      "tasksCompleted": 22,
+      "createdAt": "2026-06-14T00:00:00Z",
+      "expectation": {
+        "summary": "Admin troca categoria de inscricao paga e cobra a diferenca (respeitando a data/early bird e as taxas); a troca so vale apos o pagamento confirmar (SSE); upgrade pendente fica claro no admin e na consulta publica (contate o suporte); consulta publica e total arrecadado seguem corretos; nada existente quebra.",
+        "must": [
+          "Trocar categoria de inscricao individual ja confirmada e cobrar a diferenca",
+          "Diferenca = novaCategoria.getCurrentPrice(criadoEm) - inscription.valorCents (base, respeita early bird)",
+          "Taxa por cima via AsaasFeeCalculator (nao entra no calculo da diferenca)",
+          "Suportar PIX, cartao e dinheiro fisico",
+          "Upgrade pendente: categoria so muda em applyUpgrade apos confirmacao do pagamento",
+          "Pagina dedicada admin-only em nova aba + confirmacao por SSE (padrao mantido)",
+          "Consulta publica com upgrade pendente mostra area contate o suporte (whatsappContato do evento)",
+          "Total arrecadado reflete o upgrade via inscription.valor (sem mudar codigo de receita)",
+          "Downgrade: trocar categoria sem cobranca + aviso de estorno manual"
+        ],
+        "mustNot": [
+          "Exibir a cobranca AJUSTE na consulta publica por CPF nem no SSE do participante",
+          "Alterar categoryId/valor antes do pagamento confirmar",
+          "Tocar/cancelar o pagamento original confirmado",
+          "Realocar brinde no webhook de ajuste",
+          "Mudar o codigo de calculo de receita",
+          "Gerar refund automatico (downgrade)",
+          "Suportar upgrade de inscricao de lote nesta migracao",
+          "Criar branch/commit/push"
+        ]
+      }
+    }
+  },
+  "splits": [],
+  "commits": [],
+  "expectation": "O administrador localiza a inscrição de um participante que escolheu a categoria errada (mais barata) e troca para a categoria correta (mais cara), cobrando automaticamente a DIFERENCA — respeitando o preco da DATA da inscricao (early bird) e as taxas do meio de pagamento escolhido (PIX, cartao ou dinheiro fisico). A troca de categoria so e efetivada APOS o pagamento da diferenca confirmar (via SSE/webhook). Enquanto pendente, fica visivel como 'upgrade pendente' no admin e na consulta publica por CPF (com area para contatar o suporte reenviar o meio de pagamento). A consulta publica por CPF continua mostrando o pagamento ORIGINAL (nunca o de ajuste) e o total arrecadado do admin reflete o novo valor automaticamente apos a confirmacao. Nenhum fluxo existente (inscricao individual, lote, consulta, webhook, receita) e quebrado.",
+  "architectureContract": {
+    "confirmedAt": "2026-06-14T00:00:00Z",
+    "techStack": {
+      "stateManagement": { "tech": "TanStack Query", "location": "src/hooks/queries/" },
+      "mutations": { "tech": "TanStack Query useMutation", "location": "src/hooks/mutations/" },
+      "realtime": { "tech": "SSE (ReadableStream + onSnapshot) + EventSource hook", "location": "src/app/api/.../status-stream/route.ts + src/hooks/use*SSE.ts" },
+      "validation": { "tech": "Zod", "location": "junto ao use case (schemas.ts)" },
+      "entities": { "tech": "private ctor + static create/fromPersistence/toJSON + metodos de mutacao", "location": "src/server/domain/inscription/entities/" },
+      "payments": { "tech": "Asaas (AsaasService + AsaasFeeCalculator) + PaymentBreakdown VO", "location": "src/server/infrastructure/asaas/ + src/server/domain/shared/value-objects/" },
+      "di": { "tech": "Manual (instanciacao na rota)", "location": "route.ts" }
+    },
+    "patternBindings": [
+      { "pattern": "Use Case (Application)", "usage": "Orquestracao de regra", "location": "src/server/application/inscription/ e /payment/" },
+      { "pattern": "Repository", "usage": "Acesso a dados", "location": "src/server/infrastructure/firebase/repositories/" },
+      { "pattern": "Value Object", "usage": "Money, PaymentBreakdown, GuestData, pendingUpgrade", "location": "src/server/domain/**/value-objects/" },
+      { "pattern": "Custom Hook SSE", "usage": "Estado realtime de pagamento", "location": "src/hooks/" },
+      { "pattern": "Admin route guard", "usage": "verifyAdmin (Bearer) nas rotas admin; useRequireAdmin nas paginas", "location": "src/app/api/admin/** e src/app/minha-conta/admin/layout.tsx" }
+    ],
+    "locationBindings": [
+      { "type": "entity", "mustBeIn": "src/server/domain/inscription/entities/", "neverIn": "fora do dominio" },
+      { "type": "valueObject", "mustBeIn": "src/server/domain/**/value-objects/", "neverIn": "inline no use case" },
+      { "type": "useCase", "mustBeIn": "src/server/application/inscription/ e /payment/", "neverIn": "na rota API" },
+      { "type": "repositoryImpl", "mustBeIn": "src/server/infrastructure/firebase/repositories/", "neverIn": "no use case" },
+      { "type": "apiRoute", "mustBeIn": "src/app/api/admin/events/[eventId]/inscriptions/[inscriptionId]/upgrade/**", "neverIn": "src/app/api/inscriptions/ (que e publico)" },
+      { "type": "sseRoute", "mustBeIn": "src/app/api/admin/.../upgrade/status-stream/route.ts", "neverIn": "rota publica sem auth" },
+      { "type": "dedicatedPage", "mustBeIn": "src/app/minha-conta/admin/eventos/[id]/inscricoes/[inscriptionId]/upgrade/page.tsx", "neverIn": "fora de minha-conta/admin (perderia o guard)" },
+      { "type": "hook", "mustBeIn": "src/hooks/", "neverIn": "dentro do componente" },
+      { "type": "component", "mustBeIn": "src/components/admin/ e src/components/inscription/", "neverIn": "src/app/" }
+    ],
+    "externalReferenceFormat": {
+      "individual": "eventId:inscriptionId",
+      "batch": "eventId:batch:batchId",
+      "adjustment": "eventId:adjustment:inscriptionId"
+    },
+    "invariants": {
+      "paymentTipo": "INSCRICAO (default, inclui legados sem o campo) entra na consulta publica e nos leitores padrao; AJUSTE e invisivel a findByInscriptionId/consulta/SSE-participante e so acessado por findByAsaasPaymentId",
+      "categoryChange": "categoryId/valor da Inscription so mudam via applyUpgrade(), disparado SOMENTE apos confirmacao do pagamento da diferenca",
+      "revenue": "Receita deriva de inscription.valor (card admin + BuildDailyReport), nunca da soma de pagamentos; applyUpgrade atualiza inscription.valor",
+      "noBranch": "Trabalhar na branch atual (main); nunca criar branch nem commit/push"
+    }
+  }
+}

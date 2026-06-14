@@ -28,8 +28,9 @@ export class DeleteInscription {
     const inscription = await this.inscriptionRepository.findById(input.inscriptionId, input.eventId)
     if (!inscription) throw new ValidationError('Inscrição não encontrada')
 
-    const asaasPaymentCancelled = await this.cancelAsaasPayment(input)
-    const paymentCancelled = await this.deleteLocalPayment(input)
+    // Uma inscrição pode ter mais de um pagamento (original + cobrança de ajuste de
+    // upgrade). Cancela na Asaas e remove TODOS, evitando cobranças/docs órfãos.
+    const { asaasPaymentCancelled, paymentCancelled } = await this.cleanupPayments(input)
     const brindeReverted = await this.revertPerkAllocation(input, inscription.perkId)
 
     await this.inscriptionRepository.delete(input.inscriptionId, input.eventId)
@@ -37,25 +38,27 @@ export class DeleteInscription {
     return { inscriptionDeleted: true, paymentCancelled, asaasPaymentCancelled, brindeReverted }
   }
 
-  private async cancelAsaasPayment(input: DeleteInscriptionInput): Promise<boolean> {
-    const payment = await this.paymentRepository.findByInscriptionId(input.inscriptionId, input.eventId)
-    if (!payment) return false
-    if (payment.isConfirmed()) return false
+  private async cleanupPayments(
+    input: DeleteInscriptionInput,
+  ): Promise<{ asaasPaymentCancelled: boolean; paymentCancelled: boolean }> {
+    const payments = await this.paymentRepository.findAllByInscriptionId(input.inscriptionId, input.eventId)
+    let asaasPaymentCancelled = false
+    let paymentCancelled = false
 
-    try {
-      await asaasService.cancelPayment(payment.asaasPaymentId)
-      return true
-    } catch {
-      return false
+    for (const payment of payments) {
+      if (!payment.isConfirmed() && !payment.asaasPaymentId.startsWith('CASH:')) {
+        try {
+          await asaasService.cancelPayment(payment.asaasPaymentId)
+          asaasPaymentCancelled = true
+        } catch {
+          // Cobrança já cancelada/inexistente no Asaas — prossegue.
+        }
+      }
+      await this.paymentRepository.delete(payment.id, input.eventId, input.inscriptionId)
+      paymentCancelled = true
     }
-  }
 
-  private async deleteLocalPayment(input: DeleteInscriptionInput): Promise<boolean> {
-    const payment = await this.paymentRepository.findByInscriptionId(input.inscriptionId, input.eventId)
-    if (!payment) return false
-
-    await this.paymentRepository.delete(payment.id, input.eventId, input.inscriptionId)
-    return true
+    return { asaasPaymentCancelled, paymentCancelled }
   }
 
   private async revertPerkAllocation(input: DeleteInscriptionInput, perkId?: string): Promise<boolean> {

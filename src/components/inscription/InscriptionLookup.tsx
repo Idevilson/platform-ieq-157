@@ -26,6 +26,8 @@ interface InscriptionResult {
     status: string;
     paymentStatus?: PaymentStatus;
     paymentId?: string;
+    campoMissionario?: string;
+    userId?: string;
     criadoEm: string;
     guestData?: {
       nome: string;
@@ -87,6 +89,84 @@ async function lookupInscriptions(
     return response.data;
   }
   throw new Error(response.error || "Erro ao consultar inscrição");
+}
+
+async function updateCampoMissionarioPublic(
+  inscriptionId: string,
+  eventId: string,
+  campoMissionario: string,
+): Promise<void> {
+  const response = await apiClient.patch(`/inscriptions/${inscriptionId}`, {
+    campoMissionario,
+    eventId,
+  });
+  if (!response.success) {
+    throw new Error(response.error || "Erro ao salvar campo missionário");
+  }
+}
+
+/**
+ * Exibe o campo missionário da inscrição; quando ausente (inscrições antigas,
+ * anteriores ao campo), oferece um input para preencher — funciona sem login
+ * (inscrições de visitante). onSaved recarrega a consulta.
+ */
+function CampoMissionarioInline({
+  inscriptionId,
+  eventId,
+  value,
+  onSaved,
+}: {
+  inscriptionId: string;
+  eventId: string;
+  value?: string;
+  onSaved: () => void;
+}) {
+  const [input, setInput] = useState("");
+  const [error, setError] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => updateCampoMissionarioPublic(inscriptionId, eventId, input.trim()),
+    onSuccess: onSaved,
+    onError: (err) => setError(err instanceof Error ? err.message : "Erro ao salvar"),
+  });
+
+  if (value) {
+    return (
+      <div className="mt-3 pt-3 border-t border-gold/10 flex items-center justify-between gap-2">
+        <span className="text-sm text-text-muted">Campo Missionário</span>
+        <span className="text-sm text-text-primary font-medium">{value}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gold/10">
+      <p className="text-sm text-yellow-400 mb-2 flex items-center gap-1">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Informe seu número do campo missionário
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={input}
+          onChange={(e) => { setInput(e.target.value.replace(/\D/g, "")); setError(""); }}
+          placeholder="Ex: 157"
+          className="flex-1 bg-bg-primary border border-gold/20 rounded-lg px-3 py-2 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50"
+        />
+        <button
+          type="button"
+          onClick={() => { if (!input.trim()) { setError("Informe o número"); return; } mutation.mutate(); }}
+          disabled={mutation.isPending}
+          className="px-4 py-2 bg-gold text-bg-primary font-medium rounded-lg hover:bg-gold-light transition-colors disabled:opacity-50"
+        >
+          {mutation.isPending ? "..." : "Salvar"}
+        </button>
+      </div>
+      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+    </div>
+  );
 }
 
 function getPaymentStatusClass(status?: PaymentStatus): string {
@@ -341,6 +421,18 @@ export function InscriptionLookup({
                         ).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
+
+                    {result.inscription.status !== "cancelado" && (
+                      <CampoMissionarioInline
+                        inscriptionId={result.inscription.id}
+                        eventId={result.inscription.eventId}
+                        value={result.inscription.campoMissionario}
+                        onSaved={() => {
+                          const clean = cpf.replace(/\D/g, "");
+                          if (clean.length === 11) lookupMutation.mutate(clean);
+                        }}
+                      />
+                    )}
 
                     {result.payment &&
                       isPendingPayment(

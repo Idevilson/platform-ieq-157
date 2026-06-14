@@ -47,8 +47,18 @@ export interface InscriptionWithDetails {
   temBrinde?: boolean | null
   perkId?: string
   brindeAlocadoEm?: string
+  pendingUpgrade?: PendingUpgradeDetails
   criadoEm: string
   atualizadoEm: string
+}
+
+export interface PendingUpgradeDetails {
+  targetCategoryId: string
+  targetCategoryNome: string
+  targetValorCents: number
+  diferencaBaseCents: number
+  adjustmentPaymentId: string
+  metodo: InscriptionPaymentMethod
 }
 
 export interface AdminInscriptionListResponse {
@@ -112,6 +122,38 @@ export interface RegenerateInscriptionPaymentResponse {
     pixQrCode?: string
     pixCopiaECola?: string
     checkoutUrl?: string
+  }
+}
+
+export interface UpgradePreviewDTO {
+  currentCategoryId: string
+  newCategoryId: string
+  newCategoryNome: string
+  targetValorCents: number
+  diferencaBaseCents: number
+  diferencaBaseFormatado: string
+  taxaCents: number
+  totalCents: number
+  totalFormatado: string
+  metodo: InscriptionPaymentMethod
+  isDowngrade: boolean
+}
+
+export interface RequestUpgradeResponse {
+  preview: UpgradePreviewDTO
+  payment?: {
+    id: string
+    asaasPaymentId: string
+    status: string
+    metodoPagamento: InscriptionPaymentMethod
+    pixQrCode?: string
+    pixCopiaECola?: string
+    checkoutUrl?: string
+  }
+  pendingUpgrade?: {
+    adjustmentPaymentId: string
+    targetCategoryId: string
+    metodo: InscriptionPaymentMethod
   }
 }
 
@@ -240,6 +282,52 @@ export const adminService = {
     })
     if (response.success && response.data) return response.data
     throw new Error(response.error || 'Erro ao regerar pagamento')
+  },
+
+  async getUpgradePreview(
+    eventId: string,
+    inscriptionId: string,
+    newCategoryId: string,
+    metodo: InscriptionPaymentMethod,
+  ): Promise<UpgradePreviewDTO> {
+    const qs = new URLSearchParams({ newCategoryId, metodo })
+    const response = await authFetch<{ preview: UpgradePreviewDTO }>(
+      `/events/${eventId}/inscriptions/${inscriptionId}/upgrade?${qs.toString()}`,
+    )
+    if (response.success && response.data) return response.data.preview
+    throw new Error(response.error || 'Erro ao calcular o upgrade')
+  },
+
+  async requestInscriptionUpgrade(
+    eventId: string,
+    inscriptionId: string,
+    newCategoryId: string,
+    metodo: InscriptionPaymentMethod,
+  ): Promise<RequestUpgradeResponse> {
+    const response = await authFetch<RequestUpgradeResponse>(
+      `/events/${eventId}/inscriptions/${inscriptionId}/upgrade`,
+      { method: 'POST', body: JSON.stringify({ newCategoryId, metodo }) },
+    )
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao gerar o upgrade')
+  },
+
+  async cancelInscriptionUpgrade(eventId: string, inscriptionId: string): Promise<{ success: boolean }> {
+    const response = await authFetch<{ success: boolean }>(
+      `/events/${eventId}/inscriptions/${inscriptionId}/upgrade/cancel`,
+      { method: 'POST' },
+    )
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao cancelar o upgrade')
+  },
+
+  async confirmUpgradeCash(eventId: string, inscriptionId: string): Promise<{ success: boolean; newCategoryId: string }> {
+    const response = await authFetch<{ success: boolean; newCategoryId: string }>(
+      `/events/${eventId}/inscriptions/${inscriptionId}/upgrade/confirm-cash`,
+      { method: 'POST' },
+    )
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao confirmar pagamento em dinheiro')
   },
 
   async confirmInscription(inscriptionId: string, eventId: string): Promise<ConfirmInscriptionResponse> {
