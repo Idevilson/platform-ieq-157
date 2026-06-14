@@ -95,13 +95,19 @@ function UpgradeForm({ eventId, inscription, categories, onChanged }: Props) {
 
   const handleGenerate = async () => {
     if (!newCategoryId) return
+    // Abre a aba ANTES do await (gesto do usuário) para não ser bloqueada por popup blocker.
+    const willCharge = !!preview && !preview.isDowngrade
+    const newTab = willCharge ? window.open('', '_blank') : null
     try {
       const res = await requestUpgrade.mutateAsync({ eventId, inscriptionId: inscription.id, newCategoryId, metodo })
-      if (res.payment && !res.preview.isDowngrade) {
-        window.open(upgradePageUrl(eventId, inscription.id, res.payment.id), '_blank')
+      if (res.payment && !res.preview.isDowngrade && newTab) {
+        newTab.location.href = upgradePageUrl(eventId, inscription.id, res.payment.id)
+      } else {
+        newTab?.close()
       }
       onChanged()
     } catch (err) {
+      newTab?.close()
       setPreviewError(err instanceof Error ? err.message : 'Erro ao gerar o upgrade')
     }
   }

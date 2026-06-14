@@ -26,11 +26,18 @@ export function ChangePaymentMethodSection({ eventId, inscription, onChanged }: 
 
   const handle = async () => {
     setError('')
+    // Abre a aba ANTES do await (gesto do usuário) para não ser bloqueada por popup blocker.
+    const newTab = metodo !== 'CASH' ? window.open('', '_blank') : null
     try {
       await change.mutateAsync({ eventId, inscriptionId: inscription.id, metodo })
       setDone(true)
+      if (newTab) {
+        const params = new URLSearchParams({ inscriptionId: inscription.id, eventId, metodo })
+        newTab.location.href = `/eventos/${eventId}/confirmado?${params.toString()}`
+      }
       onChanged()
     } catch (err) {
+      newTab?.close()
       setError(err instanceof Error ? err.message : 'Erro ao trocar o meio de pagamento')
     }
   }
