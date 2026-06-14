@@ -330,6 +330,19 @@ export const adminService = {
     throw new Error(response.error || 'Erro ao confirmar pagamento em dinheiro')
   },
 
+  async changeInscriptionPaymentMethod(
+    eventId: string,
+    inscriptionId: string,
+    metodo: InscriptionPaymentMethod,
+  ): Promise<{ preferredPaymentMethod: InscriptionPaymentMethod; payment: RegenerateInscriptionPaymentResponse['payment'] | null }> {
+    const response = await authFetch<{ preferredPaymentMethod: InscriptionPaymentMethod; payment: RegenerateInscriptionPaymentResponse['payment'] | null }>(
+      `/events/${eventId}/inscriptions/${inscriptionId}/change-payment-method`,
+      { method: 'POST', body: JSON.stringify({ metodo }) },
+    )
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao trocar o meio de pagamento')
+  },
+
   async confirmInscription(inscriptionId: string, eventId: string): Promise<ConfirmInscriptionResponse> {
     const response = await authFetch<ConfirmInscriptionResponse>(`/inscriptions/${inscriptionId}/confirm`, {
       method: 'POST',

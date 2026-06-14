@@ -12,6 +12,7 @@ import { AdminPerkCard } from '@/components/admin/AdminPerkCard'
 import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
 import { DailyReportCard } from '@/components/admin/DailyReportCard'
 import { InscriptionUpgradeSection } from '@/components/admin/InscriptionUpgradeSection'
+import { ChangePaymentMethodSection } from '@/components/admin/ChangePaymentMethodSection'
 import { EventCategoryDTO } from '@/shared/types/event'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
@@ -293,6 +294,13 @@ function ConfirmModal({ inscription, eventId, categories, onClose, onConfirm, on
               {regenError && <p className="text-red-400 text-xs mt-2 text-center">{regenError}</p>}
             </div>
           )}
+
+          <ChangePaymentMethodSection
+            key={inscription.id}
+            eventId={eventId}
+            inscription={inscription}
+            onChanged={onUpgradeChanged}
+          />
 
           <InscriptionUpgradeSection
             eventId={eventId}

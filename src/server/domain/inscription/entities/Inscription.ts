@@ -43,7 +43,7 @@ export class Inscription implements Timestamps {
   private _categoryId: string
   readonly guestData?: GuestData
   private _valor: Money
-  readonly preferredPaymentMethod: InscriptionPaymentMethod
+  private _preferredPaymentMethod: InscriptionPaymentMethod
   readonly tamanho?: ShirtSize
   private _campoMissionario?: string
   private _status: InscriptionStatus
@@ -62,7 +62,7 @@ export class Inscription implements Timestamps {
     this._categoryId = props.categoryId
     this.guestData = props.guestData
     this._valor = props.valor
-    this.preferredPaymentMethod = props.preferredPaymentMethod
+    this._preferredPaymentMethod = props.preferredPaymentMethod
     this.tamanho = props.tamanho
     this._campoMissionario = props.campoMissionario
     this._status = props.status
@@ -81,6 +81,10 @@ export class Inscription implements Timestamps {
 
   get valor(): Money {
     return this._valor
+  }
+
+  get preferredPaymentMethod(): InscriptionPaymentMethod {
+    return this._preferredPaymentMethod
   }
 
   get pendingUpgrade(): PendingUpgrade | undefined {
@@ -299,6 +303,14 @@ export class Inscription implements Timestamps {
 
   setCampoMissionario(campo: string): void {
     this._campoMissionario = campo
+    this._atualizadoEm = new Date()
+  }
+
+  changePaymentMethod(metodo: InscriptionPaymentMethod): void {
+    if (this._status !== 'pendente') {
+      throw new Error('Apenas inscrições pendentes podem trocar o meio de pagamento')
+    }
+    this._preferredPaymentMethod = metodo
     this._atualizadoEm = new Date()
   }
 

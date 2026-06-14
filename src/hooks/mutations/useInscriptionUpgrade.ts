@@ -37,3 +37,16 @@ export function useConfirmUpgradeCash() {
     onSuccess: (_, variables) => invalidateInscriptions(queryClient, variables.eventId),
   })
 }
+
+export function useChangeInscriptionPaymentMethod() {
+  const queryClient = useQueryClient()
+  return useMutation<
+    Awaited<ReturnType<typeof adminService.changeInscriptionPaymentMethod>>,
+    Error,
+    { eventId: string; inscriptionId: string; metodo: InscriptionPaymentMethod }
+  >({
+    mutationFn: ({ eventId, inscriptionId, metodo }) =>
+      adminService.changeInscriptionPaymentMethod(eventId, inscriptionId, metodo),
+    onSuccess: (_, variables) => invalidateInscriptions(queryClient, variables.eventId),
+  })
+}
