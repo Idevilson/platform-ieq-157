@@ -64,6 +64,7 @@ export default function InscriptionUpgradePage() {
         {payment?.metodoPagamento === 'PIX' && (
           <div className="bg-bg-secondary border border-gold/20 rounded-2xl p-5 space-y-4">
             {payment.pixQrCode && (
+              // eslint-disable-next-line @next/next/no-img-element -- QR em base64 (data URL); next/image não suporta bem
               <img
                 src={`data:image/png;base64,${payment.pixQrCode}`}
                 alt="QR Code PIX"

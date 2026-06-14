@@ -10,9 +10,9 @@
       "id": "001",
       "timestamp": "2026-06-14_clarify",
       "folder": "001_2026-06-14_clarify",
-      "status": "in-progress",
+      "status": "completed",
       "tasksTotal": 25,
-      "tasksCompleted": 22,
+      "tasksCompleted": 25,
       "createdAt": "2026-06-14T00:00:00Z",
       "expectation": {
         "summary": "Admin troca categoria de inscricao paga e cobra a diferenca (respeitando a data/early bird e as taxas); a troca so vale apos o pagamento confirmar (SSE); upgrade pendente fica claro no admin e na consulta publica (contate o suporte); consulta publica e total arrecadado seguem corretos; nada existente quebra.",

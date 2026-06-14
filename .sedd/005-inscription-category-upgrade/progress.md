@@ -3,11 +3,12 @@
 ## Summary
 | Migration | Total | Done | Progress |
 |-----------|-------|------|----------|
-| 001 | 25 | 22 | 88% |
+| 001 | 25 | 25 | 100% |
 
 ## Current Task
-Restam: T001-022 (aviso "contate suporte" na consulta pública), T001-023 (filtro AJUSTE
-no SSE do participante + teste receita), T001-024 (validação final).
+✅ Migração 001 completa (25/25). T001-022 (aviso "contate o suporte" na consulta pública),
+T001-023 (filtro AJUSTE no SSE do participante) e T001-024 (validação) concluídas.
+Validação: tsc limpo + 33 testes da feature passando (Node 23).
 
 ## API + UI concluídas
 - Rotas: GET preview, POST upgrade, confirm-cash, cancel, status-stream (SSE com token na query).

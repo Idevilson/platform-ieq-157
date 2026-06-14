@@ -7,7 +7,7 @@
 **Parent:** (none)
 
 ## Summary
-Total: 25 | Completed: 22 | Pending: 3
+Total: 25 | Completed: 25 | Pending: 0
 
 > Nota: T001-025 adicionada na auditoria pré-aplicação (DeleteInscription com múltiplos pagamentos).
 
@@ -41,12 +41,12 @@ Total: 25 | Completed: 22 | Pending: 3
 - [x] T001-019 [US1] Seção "Trocar categoria" no `ConfirmModal` (`admin/eventos/[id]/page.tsx`): select categoria + método + preview (GET preview); ao gerar → `window.open(.../upgrade, '_blank')`. Esconde quando já há pendingUpgrade.
 - [x] T001-020 [US1] Badge "Upgrade pendente (atual → nova)" na lista/detalhe admin; expor `pendingUpgrade` em `InscriptionWithDetails` (`adminService`/types + `ListEventInscriptions`).
 - [x] T001-021 [US2] Página dedicada `src/app/minha-conta/admin/eventos/[id]/inscricoes/[inscriptionId]/upgrade/page.tsx` (admin-only): QR/copia-e-cola PIX, link checkout cartão (compartilhar), botão confirmar dinheiro; estado via `useUpgradeSSE` ("Aguardando pagamento" → "Upgrade confirmado").
-- [ ] T001-022 [US4] Consulta pública por CPF: `LookupInscriptionByCPF` expõe `pendingUpgrade` (já em toJSON) + nomes de categoria + `whatsappContato`; UI de `/eventos` renderiza área "Upgrade pendente — contate o suporte" (WhatsApp do evento).
+- [x] T001-022 [US4] Consulta pública por CPF: `LookupInscriptionByCPF` expõe `pendingUpgrade` (já em toJSON) + nomes de categoria + `whatsappContato`; UI de `/eventos` renderiza área "Upgrade pendente — contate o suporte" (WhatsApp do evento).
 
 ### Não-regressão / Validação
 - [x] T001-025 [GNR/gap] `DeleteInscription` deixa de assumir 1 pagamento por inscrição: adicionar `findAllByInscriptionId` ao `IPaymentRepository`/`FirebasePaymentRepositoryAdmin` e, no delete, cancelar na Asaas + deletar TODOS os pagamentos não-confirmados (inclui AJUSTE pendente), evitando cobrança/doc órfãos. (Achado na auditoria pré-aplicação.)
-- [ ] T001-023 [GNR2] `status-stream/route.ts` (participante): `paymentRef.onSnapshot` escolhe o doc com `tipo !== 'AJUSTE'` (filtro em memória). Teste: consulta por CPF e SSE do participante seguem mostrando o pagamento original com um AJUSTE presente. Teste GNR4: card de receita reflete novo `inscription.valor` após applyUpgrade.
-- [ ] T001-024 [Validation] `npm test && npm run lint`; smoke manual em sandbox Asaas (gerar diferença PIX, pagar, ver SSE confirmar e categoria/valor trocarem; testar cash e cancel).
+- [x] T001-023 [GNR2] `status-stream/route.ts` (participante): `paymentRef.onSnapshot` escolhe o doc com `tipo !== 'AJUSTE'` (filtro em memória). Teste: consulta por CPF e SSE do participante seguem mostrando o pagamento original com um AJUSTE presente. Teste GNR4: card de receita reflete novo `inscription.valor` após applyUpgrade.
+- [x] T001-024 [Validation] `npm test && npm run lint`; smoke manual em sandbox Asaas (gerar diferença PIX, pagar, ver SSE confirmar e categoria/valor trocarem; testar cash e cancel).
 
 ## Dependencies
 

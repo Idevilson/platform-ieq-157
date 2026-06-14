@@ -37,6 +37,11 @@ interface InscriptionResult {
   eventTitle?: string;
   categoryName?: string;
   payment?: PaymentInfo;
+  upgradeNotice?: {
+    fromCategoryNome: string;
+    toCategoryNome: string;
+    supportWhatsapp?: string;
+  };
 }
 
 interface BatchPaymentInfo {
@@ -167,6 +172,13 @@ function CampoMissionarioInline({
       {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
     </div>
   );
+}
+
+function whatsappLink(number?: string): string | null {
+  if (!number) return null;
+  const digits = number.replace(/\D/g, "");
+  if (!digits) return null;
+  return `https://wa.me/${digits.startsWith("55") ? digits : `55${digits}`}`;
 }
 
 function getPaymentStatusClass(status?: PaymentStatus): string {
@@ -421,6 +433,37 @@ export function InscriptionLookup({
                         ).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
+
+                    {result.upgradeNotice && (
+                      <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg space-y-2">
+                        <p className="text-sm text-yellow-400 font-medium flex items-center gap-1">
+                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Upgrade pendente
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          Há uma atualização de categoria em andamento:{" "}
+                          <strong>{result.upgradeNotice.fromCategoryNome}</strong> →{" "}
+                          <strong>{result.upgradeNotice.toCategoryNome}</strong>. Falta o pagamento da
+                          diferença — a categoria atual continua valendo até a confirmação.
+                        </p>
+                        {whatsappLink(result.upgradeNotice.supportWhatsapp) ? (
+                          <a
+                            href={whatsappLink(result.upgradeNotice.supportWhatsapp)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 font-medium rounded-lg hover:bg-green-500/30 transition-colors text-sm border border-green-500/30"
+                          >
+                            Falar com o suporte (WhatsApp)
+                          </a>
+                        ) : (
+                          <p className="text-xs text-text-muted">
+                            Entre em contato com o suporte para receber o meio de pagamento da diferença.
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {result.inscription.status !== "cancelado" && (
                       <CampoMissionarioInline

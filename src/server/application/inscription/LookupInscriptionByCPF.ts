@@ -1,4 +1,5 @@
 import { Inscription } from '@/server/domain/inscription/entities/Inscription'
+import { Event } from '@/server/domain/event/entities/Event'
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
 import { IEventRepository } from '@/server/domain/event/repositories/IEventRepository'
 import { IPaymentRepository } from '@/server/domain/payment/repositories/IPaymentRepository'
@@ -22,11 +23,18 @@ export interface PaymentInfo {
   dataVencimento: Date
 }
 
+export interface UpgradeNotice {
+  fromCategoryNome: string
+  toCategoryNome: string
+  supportWhatsapp?: string
+}
+
 export interface InscriptionWithEvent {
   inscription: ReturnType<Inscription['toJSON']>
   eventTitle?: string
   categoryName?: string
   payment?: PaymentInfo
+  upgradeNotice?: UpgradeNotice
 }
 
 export interface LookupInscriptionByCPFOutput {
@@ -80,6 +88,7 @@ export class LookupInscriptionByCPF {
           eventTitle: event.titulo,
           categoryName: category?.toJSON().nome,
           payment,
+          upgradeNotice: this.buildUpgradeNotice(inscription, event),
         }],
       }
     }
@@ -101,10 +110,21 @@ export class LookupInscriptionByCPF {
         eventTitle: event?.titulo,
         categoryName: category?.toJSON().nome,
         payment,
+        upgradeNotice: this.buildUpgradeNotice(inscription, event),
       })
     }
 
     return { inscriptions: enrichedInscriptions }
+  }
+
+  private buildUpgradeNotice(inscription: Inscription, event: Event | null): UpgradeNotice | undefined {
+    const pending = inscription.pendingUpgrade
+    if (!pending || !event) return undefined
+    return {
+      fromCategoryNome: event.getCategory(inscription.categoryId)?.nome ?? '',
+      toCategoryNome: event.getCategory(pending.targetCategoryId)?.nome ?? '',
+      supportWhatsapp: event.whatsappContato,
+    }
   }
 
   private async findAllInscriptionsByCPF(cpf: string): Promise<Inscription[]> {

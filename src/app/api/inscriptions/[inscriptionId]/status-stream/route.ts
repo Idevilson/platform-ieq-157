@@ -52,8 +52,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })
 
       unsubPayment = paymentRef.onSnapshot((snap) => {
-        if (snap.empty) return
-        const doc = snap.docs[0]
+        // Ignora cobranças de ajuste de upgrade (tipo AJUSTE) — o participante
+        // acompanha o pagamento principal da inscrição. tipo ausente = primário.
+        const doc = snap.docs.find((d) => ((d.data().tipo as string | undefined) ?? 'INSCRICAO') !== 'AJUSTE')
+        if (!doc) return
         const d = doc.data()
         send('payment', {
           id: doc.id,
