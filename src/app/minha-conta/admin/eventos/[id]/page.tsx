@@ -13,7 +13,11 @@ import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
 import { DailyReportCard } from '@/components/admin/DailyReportCard'
 import { InscriptionUpgradeSection } from '@/components/admin/InscriptionUpgradeSection'
 import { ChangePaymentMethodSection } from '@/components/admin/ChangePaymentMethodSection'
+import { KitDeliveryList } from '@/components/admin/KitDeliveryList'
+import { EventKitConfig } from '@/components/admin/EventKitConfig'
+import { useDeliverInscriptionKit } from '@/hooks/mutations/useEventKit'
 import { EventCategoryDTO } from '@/shared/types/event'
+import { KitItemDef } from '@/shared/constants'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
@@ -101,6 +105,7 @@ interface ConfirmModalProps {
   inscription: InscriptionWithDetails
   eventId: string
   categories: EventCategoryDTO[]
+  kitItems: KitItemDef[]
   onClose: () => void
   onConfirm: () => void
   onDelete: () => void
@@ -111,8 +116,10 @@ interface ConfirmModalProps {
   isRegenerating: boolean
 }
 
-function ConfirmModal({ inscription, eventId, categories, onClose, onConfirm, onDelete, onRegeneratePayment, onUpgradeChanged, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
+function ConfirmModal({ inscription, eventId, categories, kitItems, onClose, onConfirm, onDelete, onRegeneratePayment, onUpgradeChanged, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
+  const deliverKit = useDeliverInscriptionKit()
+  const [kitDeliveries, setKitDeliveries] = useState(inscription.kitDeliveries ?? [])
   const hasPixPayment = inscription.preferredPaymentMethod === 'PIX'
   const canRegenerate = isPending && inscription.preferredPaymentMethod !== 'CASH'
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -225,6 +232,33 @@ function ConfirmModal({ inscription, eventId, categories, onClose, onConfirm, on
               )}
             </div>
           </div>
+
+          {inscription.confirmadoPorNome && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-text-muted">Confirmado por</label>
+                <p className="text-text-primary text-sm">{inscription.confirmadoPorNome}</p>
+              </div>
+              {inscription.confirmadoEm && (
+                <div>
+                  <label className="text-xs text-text-muted">Confirmado em</label>
+                  <p className="text-text-primary text-sm">{formatDateTime(inscription.confirmadoEm)}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {inscription.status === 'confirmado' && kitItems.length > 0 && (
+            <KitDeliveryList
+              items={kitItems}
+              deliveries={kitDeliveries}
+              elegivelLed={inscription.temBrinde === true}
+              busy={deliverKit.isPending}
+              onDeliverFull={() => {
+                deliverKit.mutateAsync({ eventId, inscriptionId: inscription.id }).then((r) => setKitDeliveries(r.kitDeliveries)).catch(() => {})
+              }}
+            />
+          )}
 
           {isPending && (
             <div className="pt-4 border-t border-gold/10">
@@ -598,6 +632,8 @@ export default function AdminEventDetailPage() {
 
       <AdminPerkCard eventId={eventId} />
 
+      <EventKitConfig eventId={eventId} kitItems={event.kitItems ?? []} />
+
       <DailyReportCard eventId={eventId} />
 
       {/* Stats Cards */}
@@ -884,9 +920,11 @@ export default function AdminEventDetailPage() {
 
       {selectedInscription && (
         <ConfirmModal
+          key={selectedInscription.id}
           inscription={selectedInscription}
           eventId={eventId}
           categories={event.categorias}
+          kitItems={event.kitItems ?? []}
           onUpgradeChanged={() => {
             setSelectedInscription(null)
             refetchInscriptions()
@@ -934,6 +972,7 @@ export default function AdminEventDetailPage() {
               <AdminBatchCard
                 key={batch.id}
                 batch={batch}
+                kitItems={event.kitItems ?? []}
                 onConfirmCash={(batchId) => confirmBatchCash.mutate(batchId)}
                 onDelete={(batchId) => deleteBatch.mutate(batchId)}
                 isConfirming={confirmBatchCash.isPending}

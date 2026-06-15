@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks'
 import { useRequireAuth } from '@/hooks'
+import { EVENT_OPS_PERMISSIONS } from '@/shared/constants'
 import Header from '@/components/common/Header'
 
 interface MinhaContaLayoutProps {
@@ -13,8 +14,9 @@ interface MinhaContaLayoutProps {
 
 export default function MinhaContaLayout({ children }: MinhaContaLayoutProps) {
   const pathname = usePathname()
-  const { logout, isAdmin } = useAuth()
+  const { logout, isAdmin, permissions } = useAuth()
   const { loading } = useRequireAuth()
+  const canOperate = isAdmin || permissions.some((g) => EVENT_OPS_PERMISSIONS.includes(g.key))
 
   const handleLogout = async () => {
     await logout()
@@ -27,11 +29,14 @@ export default function MinhaContaLayout({ children }: MinhaContaLayoutProps) {
       { href: '/minha-conta/inscricoes', label: 'Minhas inscrições' },
       { href: '/minha-conta/pagamentos', label: 'Meus pagamentos' },
     ]
+    if (canOperate) {
+      items.push({ href: '/minha-conta/operacao', label: 'Operação' })
+    }
     if (isAdmin) {
       items.push({ href: '/minha-conta/admin', label: 'Admin' })
     }
     return items
-  }, [isAdmin])
+  }, [isAdmin, canOperate])
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href

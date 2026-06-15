@@ -118,6 +118,32 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
     return this.mapToEntity(querySnapshot.docs[0], eventId)
   }
 
+  async findCashPendingByEvent(eventId: string): Promise<Inscription[]> {
+    const querySnapshot = await this.inscriptionsRef(eventId)
+      .where('status', '==', 'pendente')
+      .where('preferredPaymentMethod', '==', 'CASH')
+      .get()
+    return querySnapshot.docs.map((docSnap) => this.mapToEntity(docSnap, eventId))
+  }
+
+  async findKitPendingByEvent(eventId: string, limit: number): Promise<Inscription[]> {
+    const querySnapshot = await this.inscriptionsRef(eventId)
+      .where('status', '==', 'confirmado')
+      .where('kitPendente', '==', true)
+      .limit(limit)
+      .get()
+    return querySnapshot.docs.map((docSnap) => this.mapToEntity(docSnap, eventId))
+  }
+
+  async countKitPendingByEvent(eventId: string): Promise<number> {
+    const snapshot = await this.inscriptionsRef(eventId)
+      .where('status', '==', 'confirmado')
+      .where('kitPendente', '==', true)
+      .count()
+      .get()
+    return snapshot.data().count
+  }
+
   async countByEventId(eventId: string): Promise<number> {
     const querySnapshot = await this.inscriptionsRef(eventId).get()
     return querySnapshot.size
@@ -157,6 +183,9 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       valor: data.valor || 0,
       status: data.status as InscriptionStatus,
       paymentId: data.paymentId,
+      confirmadoPor: data.confirmadoPor ?? undefined,
+      confirmadoPorNome: data.confirmadoPorNome ?? undefined,
+      confirmadoEm: data.confirmadoEm?.toDate?.() ?? undefined,
       preferredPaymentMethod: (data.preferredPaymentMethod as InscriptionPaymentMethod) || 'PIX',
       tamanho: data.tamanho as ShirtSize | undefined,
       campoMissionario: data.campoMissionario ?? undefined,
@@ -173,6 +202,16 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
             criadoEm: data.pendingUpgrade.criadoEm?.toDate?.() ?? new Date(),
           }
         : undefined,
+      kitDeliveries: Array.isArray(data.kitDeliveries)
+        ? data.kitDeliveries.map((d: { itemId: string; entregue?: boolean; entreguePor?: string; entreguePorNome?: string; entregueEm?: Timestamp }) => ({
+            itemId: d.itemId,
+            entregue: !!d.entregue,
+            entreguePor: d.entreguePor ?? undefined,
+            entreguePorNome: d.entreguePorNome ?? undefined,
+            entregueEm: d.entregueEm?.toDate?.() ?? undefined,
+          }))
+        : undefined,
+      kitPendente: data.kitPendente ?? undefined,
       criadoEm: data.criadoEm?.toDate() || new Date(),
       atualizadoEm: data.atualizadoEm?.toDate() || new Date(),
     })
@@ -209,6 +248,9 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
       preferredPaymentMethod: json.preferredPaymentMethod,
       status: json.status,
       paymentId: json.paymentId || null,
+      confirmadoPor: inscription.confirmadoPor ?? null,
+      confirmadoPorNome: inscription.confirmadoPorNome ?? null,
+      confirmadoEm: inscription.confirmadoEm ? Timestamp.fromDate(inscription.confirmadoEm) : null,
       tamanho: inscription.tamanho ?? null,
       campoMissionario: inscription.campoMissionario ?? null,
       temBrinde: inscription.temBrinde ?? null,
@@ -224,6 +266,14 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
             criadoEm: Timestamp.fromDate(inscription.pendingUpgrade.criadoEm),
           }
         : null,
+      kitDeliveries: inscription.kitDeliveries.map(d => ({
+        itemId: d.itemId,
+        entregue: d.entregue,
+        entreguePor: d.entreguePor ?? null,
+        entreguePorNome: d.entreguePorNome ?? null,
+        entregueEm: d.entregueEm ? Timestamp.fromDate(d.entregueEm) : null,
+      })),
+      kitPendente: inscription.kitPendente ?? null,
       criadoEm: Timestamp.fromDate(json.criadoEm as Date),
       atualizadoEm: Timestamp.fromDate(json.atualizadoEm as Date),
     }

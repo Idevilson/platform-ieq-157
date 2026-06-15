@@ -1,14 +1,22 @@
 import { IInscriptionRepository } from '@/server/domain/inscription/repositories/IInscriptionRepository'
 import { IEventRepository } from '@/server/domain/event/repositories/IEventRepository'
 import { IPaymentRepository } from '@/server/domain/payment/repositories/IPaymentRepository'
+import { IEventPerkRepository } from '@/server/domain/event/repositories/IEventPerkRepository'
+import { IUserRepository } from '@/server/domain/user/repositories/IUserRepository'
+import { IAuditLogRepository } from '@/server/domain/audit/repositories/IAuditLogRepository'
+import { AuditLog } from '@/server/domain/audit/entities/AuditLog'
 import { InscriptionNotFoundError, ValidationError } from '@/server/domain/shared/errors'
 import { asaasService } from '@/server/infrastructure/asaas/AsaasService'
 import { Inscription } from '@/server/domain/inscription/entities/Inscription'
+import { allocateInscriptionPerk } from './allocateInscriptionPerk'
+import { resolveInscriptionTarget } from '../audit/resolveInscriptionName'
 
 export interface ConfirmInscriptionManuallyInput {
   eventId: string
   inscriptionId: string
   confirmedBy: string
+  confirmedByNome?: string
+  requireCash?: boolean
 }
 
 export interface ConfirmInscriptionManuallyOutput {
@@ -25,7 +33,10 @@ export class ConfirmInscriptionManually {
   constructor(
     private readonly inscriptionRepository: IInscriptionRepository,
     private readonly eventRepository: IEventRepository,
-    private readonly paymentRepository?: IPaymentRepository
+    private readonly paymentRepository?: IPaymentRepository,
+    private readonly perkRepository?: IEventPerkRepository,
+    private readonly auditLogRepository?: IAuditLogRepository,
+    private readonly userRepository?: IUserRepository,
   ) {}
 
   async execute(input: ConfirmInscriptionManuallyInput): Promise<ConfirmInscriptionManuallyOutput> {
@@ -33,11 +44,19 @@ export class ConfirmInscriptionManually {
     const inscription = await this.findInscription(input.inscriptionId, input.eventId)
 
     this.validatePendingStatus(inscription)
+    if (input.requireCash && !inscription.isCashPayment()) {
+      throw new ValidationError('Sem permissão para confirmar inscrições que não são em dinheiro')
+    }
 
     const asaasPaymentCancelled = await this.cancelAsaasPaymentIfExists(inscription, input.eventId)
 
-    inscription.confirmManually(input.confirmedBy)
+    inscription.confirmManually(input.confirmedBy, input.confirmedByNome)
+    if (this.perkRepository) {
+      await allocateInscriptionPerk(this.perkRepository, input.eventId, inscription)
+    }
     await this.inscriptionRepository.save(inscription)
+
+    await this.registerAudit(inscription, input)
 
     return {
       success: true,
@@ -47,6 +66,27 @@ export class ConfirmInscriptionManually {
         paymentId: inscription.paymentId,
       },
       asaasPaymentCancelled,
+    }
+  }
+
+  private async registerAudit(inscription: Inscription, input: ConfirmInscriptionManuallyInput): Promise<void> {
+    if (!this.auditLogRepository) return
+    try {
+      const { nome, cpf } = await resolveInscriptionTarget(inscription, this.userRepository)
+      await this.auditLogRepository.append(
+        AuditLog.create({
+          type: 'cash_confirm',
+          actorId: input.confirmedBy,
+          actorNome: input.confirmedByNome ?? '',
+          eventId: input.eventId,
+          targetKind: 'inscription',
+          targetId: inscription.id,
+          targetNome: nome,
+          targetCpf: cpf,
+        }),
+      )
+    } catch (error) {
+      console.error('[ConfirmInscriptionManually] Falha ao registrar auditoria:', error)
     }
   }
 

@@ -1,0 +1,105 @@
+{
+  "featureId": "006",
+  "featureName": "event-operations-permissions-kit",
+  "branch": "main",
+  "createdAt": "2026-06-14T00:00:00Z",
+  "specCreatedAt": "2026-06-14T00:00:00Z",
+  "currentMigration": "004",
+  "migrations": {
+    "004": {
+      "id": "004",
+      "timestamp": "2026-06-14_operacao",
+      "folder": "004_2026-06-14_operacao",
+      "status": "completed",
+      "phase": "Fase 4 — Área Operação do Evento",
+      "tasksTotal": 6,
+      "tasksCompleted": 6
+    },
+    "003": {
+      "id": "003",
+      "timestamp": "2026-06-14_kit",
+      "folder": "003_2026-06-14_kit",
+      "status": "completed",
+      "phase": "Fase 3 — Kit configurável + entrega",
+      "tasksTotal": 12,
+      "tasksCompleted": 12
+    },
+    "002": {
+      "id": "002",
+      "timestamp": "2026-06-14_caixa",
+      "folder": "002_2026-06-14_caixa",
+      "status": "completed",
+      "phase": "Fase 2 — Caixa escopada + auditoria",
+      "tasksTotal": 9,
+      "tasksCompleted": 9
+    },
+    "001": {
+      "id": "001",
+      "timestamp": "2026-06-14_clarify",
+      "folder": "001_2026-06-14_clarify",
+      "status": "completed",
+      "phase": "Fase 1 — Permissões",
+      "tasksTotal": 18,
+      "tasksCompleted": 18,
+      "createdAt": "2026-06-14T00:00:00Z",
+      "expectation": {
+        "summary": "Admin gerencia catalogo de permissoes e atribui qualquer permissao a um usuario comum escolhendo a quais EVENTOS vale (ou global); backend checa hasPermission(perm, eventId) com admin bypass; /auth/me expoe permissoes; gating por permissao pronto; retrocompativel (string legada/sem evento = global; Q4-News intacto).",
+        "must": [
+          "Catalogo de permissoes (sistema + custom) com seed das de sistema (deliver-kits, confirm-cash, adm-q4-news)",
+          "User.permissions -> Array<{key, eventIds[]}> + grant/revoke + hasPermission(perm, eventId?)",
+          "Retrocompat: string legada = global; sem eventId = global",
+          "Admin atribui permissao a usuario escolhendo eventos (ou Todos)",
+          "/auth/me + UserDTO expoem permissions (com escopo)",
+          "useRequirePermission (consciente de profileLoading) + AuthContext expoe permissions",
+          "Telas admin: catalogo de permissoes e usuarios (atribuir por evento)"
+        ],
+        "mustNot": [
+          "Usar Firebase custom claims",
+          "Quebrar hasPermission('adm-q4-news') existente",
+          "Dar efeito automatico a permissoes custom (so as de sistema tem comportamento)",
+          "Abrir gestao de usuarios/permissoes para nao-admin",
+          "Criar branch/commit/push"
+        ]
+      }
+    }
+  },
+  "splits": [],
+  "commits": [],
+  "expectation": "O administrador concede permissoes granulares a usuarios comuns escolhendo a quais EVENTOS cada permissao se aplica, e pode criar/gerenciar essas permissoes num catalogo. Usuarios com permissao de ENTREGA podem, numa area dedicada (tambem acessivel ao admin) escopada aos seus eventos, localizar a inscricao/participante e registrar a ENTREGA de cada item do KIT (LED so para quem ganhou o brinde; holografica e garrafa para todos os confirmados); usuarios com permissao de CAIXA confirmam SOMENTE pagamentos em DINHEIRO (individual e lote), nunca PIX/cartao. Tudo fica registrado e VISIVEL no painel admin: quem ENTREGOU cada item e quem APROVOU cada pagamento em dinheiro (pelo NOME). O kit e CONFIGURAVEL por evento. A inscricao em LOTE passa a exibir o brinde por participante. Nada existente (inscricao, lote, consulta, webhook, receita, upgrade) quebra. Nao criar branch; nao commit/push.",
+  "architectureContract": {
+    "confirmedAt": "2026-06-14T00:00:00Z",
+    "techStack": {
+      "stateManagement": { "tech": "TanStack Query", "location": "src/hooks/queries/" },
+      "mutations": { "tech": "TanStack Query useMutation", "location": "src/hooks/mutations/" },
+      "validation": { "tech": "Zod (junto ao use case)", "location": "src/server/application/**/schemas.ts" },
+      "entities": { "tech": "private ctor + static create/fromPersistence/toJSON + metodos de mutacao", "location": "src/server/domain/**/entities/ e /value-objects/" },
+      "auth": { "tech": "Firebase ID token (Bearer) -> adminAuth.verifyIdToken -> userRepository -> hasPermission; SEM custom claims (le Firestore)", "location": "rotas: verifyAdmin / verifyPermission inline" },
+      "di": { "tech": "Manual (instanciacao na rota)", "location": "route.ts" }
+    },
+    "patternBindings": [
+      { "pattern": "Permissao granular", "usage": "User._permissions + hasPermission(perm, eventId); admin bypassa", "location": "src/server/domain/user/" },
+      { "pattern": "Use Case", "usage": "Orquestracao de regra", "location": "src/server/application/{user,event,inscription,payment}/" },
+      { "pattern": "Repository", "usage": "Acesso a dados", "location": "src/server/infrastructure/firebase/repositories/" },
+      { "pattern": "Route guard por permissao", "usage": "verificar hasPermission(perm, eventId) em vez de so isAdmin", "location": "src/app/api/**/route.ts" },
+      { "pattern": "Pagina gated por permissao", "usage": "novo hook useRequirePermission (nao so useRequireAdmin)", "location": "src/hooks/ + src/app/minha-conta/**/layout.tsx" }
+    ],
+    "locationBindings": [
+      { "type": "entity/VO", "mustBeIn": "src/server/domain/**", "neverIn": "fora do dominio" },
+      { "type": "useCase", "mustBeIn": "src/server/application/**", "neverIn": "na rota API" },
+      { "type": "repositoryImpl", "mustBeIn": "src/server/infrastructure/firebase/repositories/", "neverIn": "no use case" },
+      { "type": "apiRoute admin/gestao", "mustBeIn": "src/app/api/admin/**", "neverIn": "rota publica" },
+      { "type": "area operacao (gated por permissao)", "mustBeIn": "src/app/minha-conta/operacao/** (gated por permissao, nao isAdmin)", "neverIn": "dentro de minha-conta/admin (que e admin-only)" },
+      { "type": "hook", "mustBeIn": "src/hooks/", "neverIn": "dentro do componente" },
+      { "type": "component", "mustBeIn": "src/components/{admin,operacao}/", "neverIn": "src/app/" }
+    ],
+    "invariants": {
+      "permissionEnforcement": "Permissao com EFEITO e a de SISTEMA reconhecida pelo codigo (deliver-kits, confirm-cash, adm-q4-news). Catalogo permite cadastrar rotulos/chaves; chaves custom so agem onde houver codigo que as verifique. Admin sempre bypassa.",
+      "eventScope": "Permissao e escopada a eventos; toda acao da equipe valida hasPermission(perm, eventId) para o evento do alvo.",
+      "cashOnly": "Nao-admin com confirm-cash confirma SOMENTE inscricao/lote CASH; backend rejeita nao-CASH (nao so o botao).",
+      "ledConditional": "Item de kit condicionalAoBrinde so e entregavel se temBrinde===true.",
+      "auditVisible": "entrega: entreguePor+entregueEm; caixa: confirmadoPor+confirmadoEm. DTOs admin resolvem userId->nome (confirmadoPorNome/entreguePorNome).",
+      "noClaims": "Nao usar Firebase custom claims; manter leitura de Firestore por request.",
+      "noBranch": "Trabalhar na branch atual (main); nunca criar branch nem commit/push."
+    }
+  }
+}

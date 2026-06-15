@@ -1,6 +1,6 @@
 // Shared User DTOs - used by both frontend and backend
 
-import { UserRole, Gender } from '../constants'
+import { UserRole, Gender, UserPermissionGrant } from '../constants'
 
 export interface UserDTO {
   id: string
@@ -12,6 +12,7 @@ export interface UserDTO {
   dataNascimento?: string | Date
   sexo?: Gender
   role: UserRole
+  permissions?: UserPermissionGrant[]
   asaasCustomerId?: string
   isProfileComplete: boolean
   isProfileCompleteForEvent: boolean

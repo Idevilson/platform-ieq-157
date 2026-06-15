@@ -48,8 +48,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         preferredPaymentMethod: batch.preferredPaymentMethod,
         paymentId: batch.paymentId,
         paymentStatus: json.paymentStatus,
+        confirmadoPorNome: batch.confirmadoPorNome,
+        confirmadoEm: batch.confirmadoEm?.toISOString(),
+        kitDeliveries: json.kitDeliveries,
         criadoEm: json.criadoEm,
-        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo, tamanho: p.tamanho ?? undefined })),
+        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo, tamanho: p.tamanho ?? undefined, temBrinde: p.temBrinde })),
       }
     })
 

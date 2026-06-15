@@ -13,6 +13,9 @@ export interface IInscriptionRepository {
   findByEventIdAndUserId(eventId: string, userId: string): Promise<Inscription | null>
   findByEventIdAndCPF(eventId: string, cpf: string): Promise<Inscription | null>
   findByCPF(cpf: string): Promise<Inscription[]>
+  findCashPendingByEvent(eventId: string): Promise<Inscription[]>
+  findKitPendingByEvent(eventId: string, limit: number): Promise<Inscription[]>
+  countKitPendingByEvent(eventId: string): Promise<number>
   save(inscription: Inscription): Promise<void>
   update(inscription: Inscription): Promise<void>
   delete(id: string, eventId: string): Promise<void>

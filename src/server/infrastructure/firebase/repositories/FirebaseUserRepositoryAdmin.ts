@@ -2,7 +2,7 @@ import { getAdminFirestore } from '../admin'
 import { User } from '@/server/domain/user/entities/User'
 import { IUserRepository } from '@/server/domain/user/repositories/IUserRepository'
 import { UserRole } from '@/server/domain/shared/types'
-import { Gender } from '@/shared/constants'
+import { Gender, UserPermissionGrant } from '@/shared/constants'
 import { Timestamp } from 'firebase-admin/firestore'
 
 const COLLECTION = 'users'
@@ -64,6 +64,20 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
     return this.mapDocumentToEntity(querySnapshot.docs[0].data() as UserDocument)
   }
 
+  async list(): Promise<User[]> {
+    const snapshot = await this.db.collection(COLLECTION).get()
+    return snapshot.docs.map((d) => this.mapDocumentToEntity(d.data() as UserDocument))
+  }
+
+  async findByPermissionIndexAny(values: string[]): Promise<User[]> {
+    if (!values.length) return []
+    const snapshot = await this.db
+      .collection(COLLECTION)
+      .where('permissionIndex', 'array-contains-any', values.slice(0, 30))
+      .get()
+    return snapshot.docs.map((d) => this.mapDocumentToEntity(d.data() as UserDocument))
+  }
+
   async save(user: User): Promise<void> {
     const json = user.toJSON()
     const docRef = this.db.collection(COLLECTION).doc(json.id)
@@ -98,7 +112,7 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
         asaasCustomerId: doc.asaasCustomerId,
       },
       doc.cpf,
-      (doc as unknown as { permissions?: string[] }).permissions
+      (doc as unknown as { permissions?: string[] | UserPermissionGrant[] }).permissions,
     )
   }
 
@@ -118,7 +132,10 @@ export class FirebaseUserRepositoryAdmin implements IUserRepository {
     if (json.dataNascimento) doc.dataNascimento = Timestamp.fromDate(json.dataNascimento as Date)
     if (json.sexo) doc.sexo = json.sexo
     if (json.asaasCustomerId) doc.asaasCustomerId = json.asaasCustomerId
-    if (json.permissions?.length) doc.permissions = json.permissions
+    if (json.permissions?.length) {
+      doc.permissions = json.permissions
+      doc.permissionIndex = json.permissionIndex
+    }
 
     return doc
   }

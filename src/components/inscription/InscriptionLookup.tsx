@@ -61,7 +61,7 @@ interface BatchResult {
   valorTotal: number;
   valorTotalFormatado: string;
   preferredPaymentMethod: string;
-  participantes: { nome: string; sexo: string }[];
+  participantes: { nome: string; sexo: string; tamanho?: string }[];
   payment?: BatchPaymentInfo;
 }
 
@@ -678,17 +678,18 @@ export function InscriptionLookup({
                         Total: <span className="text-gold">{batch.valorTotalFormatado}</span>
                       </p>
 
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {batch.participantes.slice(0, 5).map((p, i) => (
-                          <span key={i} className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">
-                            {p.nome}
-                          </span>
-                        ))}
-                        {batch.participantes.length > 5 && (
-                          <span className="text-xs text-text-muted px-2 py-0.5">
-                            +{batch.participantes.length - 5} mais
-                          </span>
-                        )}
+                      <div className="mt-3">
+                        <p className="text-xs text-text-muted uppercase tracking-wide mb-1.5">Participantes</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {batch.participantes.map((p, i) => (
+                            <div key={i} className="text-xs bg-gold/5 border border-gold/10 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2">
+                              <span className="text-text-primary truncate">{i + 1}. {p.nome}</span>
+                              <span className="text-text-muted whitespace-nowrap">
+                                {p.sexo === 'masculino' ? 'M' : 'F'}{p.tamanho ? ` · ${p.tamanho}` : ' · sem tam.'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       {batch.payment?.pixCopiaECola && batch.status === "pendente" && (

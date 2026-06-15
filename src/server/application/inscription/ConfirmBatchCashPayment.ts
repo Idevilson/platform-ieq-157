@@ -1,11 +1,16 @@
 import { IBatchInscriptionRepository } from '@/server/domain/inscription/repositories/IBatchInscriptionRepository'
 import { IEventPerkRepository } from '@/server/domain/event/repositories/IEventPerkRepository'
+import { IAuditLogRepository } from '@/server/domain/audit/repositories/IAuditLogRepository'
+import { AuditLog } from '@/server/domain/audit/entities/AuditLog'
+import { BatchInscription } from '@/server/domain/inscription/entities/BatchInscription'
 import { ValidationError } from '@/server/domain/shared/errors'
 import { asaasService } from '@/server/infrastructure/asaas/AsaasService'
 
 export interface ConfirmBatchCashPaymentInput {
   batchId: string
   confirmedBy: string
+  confirmedByNome?: string
+  requireCash?: boolean
 }
 
 export interface ConfirmBatchCashPaymentOutput {
@@ -20,6 +25,7 @@ export class ConfirmBatchCashPayment {
   constructor(
     private readonly batchRepository: IBatchInscriptionRepository,
     private readonly eventPerkRepository: IEventPerkRepository,
+    private readonly auditLogRepository?: IAuditLogRepository,
   ) {}
 
   async execute(input: ConfirmBatchCashPaymentInput): Promise<ConfirmBatchCashPaymentOutput> {
@@ -30,10 +36,13 @@ export class ConfirmBatchCashPayment {
     if (!batch.isPending()) {
       throw new ValidationError('Apenas lotes pendentes podem ser confirmados')
     }
+    if (input.requireCash && !batch.isCashPayment()) {
+      throw new ValidationError('Sem permissão para confirmar lotes que não são em dinheiro')
+    }
 
     const asaasPaymentCancelled = await this.cancelPendingPixIfExists(batch.paymentId)
 
-    batch.confirmCash(input.confirmedBy)
+    batch.confirmCash(input.confirmedBy, input.confirmedByNome)
 
     const { allocated, perkId } = await this.allocateBrindes(batch.eventId, batch.id, batch.totalParticipantes)
     for (let i = 0; i < batch.totalParticipantes; i++) {
@@ -47,12 +56,35 @@ export class ConfirmBatchCashPayment {
 
     await this.batchRepository.update(batch)
 
+    await this.registerAudit(batch, input)
+
     return {
       success: true,
       batchId: batch.id,
       status: batch.status,
       asaasPaymentCancelled,
       brindesAlocados,
+    }
+  }
+
+  private async registerAudit(batch: BatchInscription, input: ConfirmBatchCashPaymentInput): Promise<void> {
+    if (!this.auditLogRepository) return
+    try {
+      await this.auditLogRepository.append(
+        AuditLog.create({
+          type: 'cash_confirm',
+          actorId: input.confirmedBy,
+          actorNome: input.confirmedByNome ?? '',
+          eventId: batch.eventId,
+          targetKind: 'batch',
+          targetId: batch.id,
+          targetNome: batch.responsavel.nome,
+          targetCpf: batch.responsavel.cpf,
+          totalParticipantes: batch.totalParticipantes,
+        }),
+      )
+    } catch (error) {
+      console.error('[ConfirmBatchCashPayment] Falha ao registrar auditoria:', error)
     }
   }
 

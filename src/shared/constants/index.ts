@@ -128,5 +128,57 @@ export type ShirtSize = 'PP' | 'P' | 'M' | 'G' | 'GG' | 'XGG'
 
 export const SHIRT_SIZES: readonly ShirtSize[] = ['PP', 'P', 'M', 'G', 'GG', 'XGG'] as const
 
-// Q4-News permission
+// Permissions
 export const Q4_NEWS_PERMISSION = 'adm-q4-news'
+export const DELIVER_KITS_PERMISSION = 'deliver-kits'
+export const CONFIRM_CASH_PERMISSION = 'confirm-cash'
+
+export const GLOBAL_PERMISSION_SCOPE = '*'
+
+export const SYSTEM_PERMISSIONS: readonly { key: string; label: string; description: string }[] = [
+  { key: Q4_NEWS_PERMISSION, label: 'Gerenciar Q4-News', description: 'Acesso ao módulo Q4-News' },
+  { key: DELIVER_KITS_PERMISSION, label: 'Entregar kits', description: 'Registrar entrega de itens do kit nos eventos do escopo' },
+  { key: CONFIRM_CASH_PERMISSION, label: 'Confirmar dinheiro', description: 'Confirmar pagamentos em dinheiro nos eventos do escopo' },
+] as const
+
+export const EVENT_OPS_PERMISSIONS: readonly string[] = [DELIVER_KITS_PERMISSION, CONFIRM_CASH_PERMISSION] as const
+
+export interface UserPermissionGrant {
+  key: string
+  eventIds: string[] // ['*'] = global
+}
+
+export interface KitItemDef {
+  id: string
+  nome: string
+  condicionalAoBrinde?: boolean
+  porTamanho?: boolean
+}
+
+export interface KitDeliveryDTO {
+  itemId: string
+  entregue: boolean
+  entreguePor?: string
+  entreguePorNome?: string
+  entregueEm?: string
+}
+
+// Audit log (registros de operação)
+export type AuditLogType = 'cash_confirm' | 'kit_delivery'
+export type AuditLogTargetKind = 'inscription' | 'batch'
+
+export interface AuditLogDTO {
+  id: string
+  type: AuditLogType
+  actorId: string
+  actorNome: string
+  eventId: string
+  eventTitulo?: string
+  targetKind: AuditLogTargetKind
+  targetId: string
+  targetNome: string
+  targetCpf?: string
+  totalParticipantes?: number
+  comLed?: boolean
+  criadoEm: string
+}

@@ -1,5 +1,6 @@
 
 import { EventStatus, PaymentMethod, Timestamps, EVENT_STATUS_LABELS } from '@/server/domain/shared/types'
+import { KitItemDef } from '@/shared/constants'
 import { EventCategory } from './EventCategory'
 
 export interface EventProps {
@@ -18,6 +19,7 @@ export interface EventProps {
   metodosPagamento: PaymentMethod[]
   imagemUrl?: string
   categorias: EventCategory[]
+  kitItems?: KitItemDef[]
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -70,6 +72,7 @@ export class Event implements Timestamps {
   private _metodosPagamento: PaymentMethod[]
   private _imagemUrl?: string
   private _categorias: EventCategory[]
+  private _kitItems: KitItemDef[]
   readonly criadoEm: Date
   private _atualizadoEm: Date
 
@@ -89,6 +92,7 @@ export class Event implements Timestamps {
     this._metodosPagamento = props.metodosPagamento
     this._imagemUrl = props.imagemUrl
     this._categorias = props.categorias
+    this._kitItems = props.kitItems ?? []
     this.criadoEm = props.criadoEm
     this._atualizadoEm = props.atualizadoEm
   }
@@ -243,6 +247,15 @@ export class Event implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
+  get kitItems(): KitItemDef[] {
+    return [...this._kitItems]
+  }
+
+  setKitItems(items: KitItemDef[]): void {
+    this._kitItems = items
+    this._atualizadoEm = new Date()
+  }
+
   setCategorias(categorias: EventCategory[]): void {
     this._categorias = categorias
   }
@@ -266,6 +279,7 @@ export class Event implements Timestamps {
       metodosPagamento: this._metodosPagamento,
       imagemUrl: this._imagemUrl,
       categorias: this._categorias.map((c) => c.toJSON()),
+      kitItems: this._kitItems,
       criadoEm: this.criadoEm,
       atualizadoEm: this._atualizadoEm,
     }

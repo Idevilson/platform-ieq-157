@@ -217,6 +217,7 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
       metodosPagamento: (data.metodosPagamento || []) as PaymentMethod[],
       imagemUrl: data.imagemUrl,
       categorias: categories,
+      kitItems: Array.isArray(data.kitItems) ? data.kitItems : [],
       criadoEm: this.parseDate(data.criadoEm),
       atualizadoEm: this.parseDate(data.atualizadoEm),
     }
@@ -252,6 +253,7 @@ export class FirebaseEventRepositoryAdmin implements IEventRepository {
       status: event.status,
       metodosPagamento: event.metodosPagamento,
       imagemUrl: event.imagemUrl,
+      kitItems: event.kitItems,
       criadoEm: Timestamp.fromDate(event.criadoEm),
       atualizadoEm: Timestamp.fromDate(event.atualizadoEm),
     }

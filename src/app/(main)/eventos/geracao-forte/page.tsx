@@ -5,7 +5,9 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEventById } from '@/hooks/queries/useEvents'
 import { usePerkSummary } from '@/hooks/queries/usePerkSummary'
+import { useAuth } from '@/hooks'
 import { SmartInscriptionForm } from '@/components/inscription'
+import { AccountBenefitsCard } from '@/components/inscription/AccountBenefitsCard'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
 import { DeadlineExtensionBanner } from '@/components/eventos/DeadlineExtensionBanner'
 import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
@@ -88,6 +90,7 @@ export default function GeracaoForte() {
   const router = useRouter()
   const { data: evento } = useEventById(EVENT_ID)
   const { data: perk } = usePerkSummary(EVENT_ID)
+  const { isAuthenticated, loading: authLoading } = useAuth()
 
   const handleInscricao = () => {
     document.getElementById('inscricao')?.scrollIntoView({ behavior: 'smooth' })
@@ -826,6 +829,8 @@ export default function GeracaoForte() {
           </div>
 
           <DeadlineExtensionBanner />
+
+          {!authLoading && !isAuthenticated && <AccountBenefitsCard redirectTo={`/eventos/${EVENT_ID}#inscricao`} />}
 
           <SmartInscriptionForm
             eventId={EVENT_ID}

@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { AdminBatchListItem } from "@/shared/types/inscription";
 import { formatCPF, formatDateTime } from "@/lib/formatters";
-import { INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from "@/shared/constants";
+import { INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod, KitItemDef } from "@/shared/constants";
 import { useAdminUpdateBatchResponsavel, useAdminRegeneratePayment, useAdminUpdateBatchParticipants } from "@/hooks/mutations/useAdminBatchMutations";
+import { useDeliverBatchKit } from "@/hooks/mutations/useEventKit";
+import { KitDeliveryList } from "./KitDeliveryList";
 import { EditBatchResponsavelModal } from "./EditBatchResponsavelModal";
 import { EditBatchParticipantsModal } from "./EditBatchParticipantsModal";
 
 interface AdminBatchCardProps {
   batch: AdminBatchListItem;
+  kitItems?: KitItemDef[];
   onConfirmCash: (batchId: string) => void;
   onDelete: (batchId: string) => void;
   isConfirming: boolean;
@@ -24,12 +27,15 @@ function batchStatusClass(status: string): string {
 
 export function AdminBatchCard({
   batch,
+  kitItems = [],
   onConfirmCash,
   onDelete,
   isConfirming,
   isDeleting,
 }: AdminBatchCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const deliverKit = useDeliverBatchKit(batch.eventId);
+  const [kitDeliveries, setKitDeliveries] = useState(batch.kitDeliveries ?? []);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
@@ -111,6 +117,9 @@ export function AdminBatchCard({
             <p className="text-gold font-bold text-lg">{batch.valorTotalFormatado}</p>
             <p className="text-xs text-text-muted">{batch.totalParticipantes} participantes · {batch.cidade}</p>
             <p className="text-xs text-text-muted">{formatDateTime(batch.criadoEm)}</p>
+            {batch.confirmadoPorNome && (
+              <p className="text-xs text-green-400">Confirmado (dinheiro) por {batch.confirmadoPorNome}</p>
+            )}
           </div>
         </div>
 
@@ -137,9 +146,24 @@ export function AdminBatchCard({
                 <span className="ml-1 text-text-muted">({p.sexo === "masculino" ? "M" : "F"}</span>
                 {p.tamanho && <span className="text-text-muted"> · {p.tamanho}</span>}
                 <span className="text-text-muted">)</span>
+                {p.temBrinde && <span className="ml-1">🎁</span>}
               </div>
             ))}
           </div>
+        )}
+
+        {isConfirmed && kitItems.length > 0 && (
+          <KitDeliveryList
+            items={kitItems}
+            deliveries={kitDeliveries}
+            elegivelLed={batch.participantes.filter((p) => p.temBrinde).length > 0}
+            quantidadePorItem={batch.totalParticipantes}
+            ledQuantidade={batch.participantes.filter((p) => p.temBrinde).length}
+            busy={deliverKit.isPending}
+            onDeliverFull={() => {
+              deliverKit.mutateAsync({ batchId: batch.id }).then((r) => setKitDeliveries(r.kitDeliveries)).catch(() => {})
+            }}
+          />
         )}
 
         {regenerateError && (

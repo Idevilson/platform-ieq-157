@@ -1,6 +1,6 @@
 // Shared Event DTOs - used by both frontend and backend
 
-import { EventStatus, PaymentMethod } from '../constants'
+import { EventStatus, PaymentMethod, KitItemDef } from '../constants'
 
 export interface EventCategoryDTO {
   id: string
@@ -57,6 +57,7 @@ export interface EventDTO {
   metodosPagamento: PaymentMethod[]
   imagemUrl?: string
   categorias: EventCategoryDTO[]
+  kitItems?: KitItemDef[]
   criadoEm: string | Date
   atualizadoEm: string | Date
 }

@@ -3,6 +3,7 @@ import { Money } from '@/server/domain/shared/value-objects/Money'
 import { InscriptionStatus, Timestamps, INSCRIPTION_STATUS_LABELS } from '@/server/domain/shared/types'
 import { GuestData, GuestDataInput } from '../value-objects/GuestData'
 import { PendingUpgrade } from '../value-objects/PendingUpgrade'
+import { KitDeliveryRecord, upsertKitDelivery, kitDeliveryToJSON } from '../value-objects/KitDelivery'
 import { Gender, InscriptionPaymentMethod, ShirtSize } from '@/shared/constants'
 
 export interface InscriptionProps {
@@ -14,6 +15,9 @@ export interface InscriptionProps {
   valor: Money
   status: InscriptionStatus
   paymentId?: string
+  confirmadoPor?: string
+  confirmadoPorNome?: string
+  confirmadoEm?: Date
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: ShirtSize
   campoMissionario?: string
@@ -21,6 +25,8 @@ export interface InscriptionProps {
   perkId?: string
   brindeAlocadoEm?: Date
   pendingUpgrade?: PendingUpgrade
+  kitDeliveries?: KitDeliveryRecord[]
+  kitPendente?: boolean
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -48,10 +54,15 @@ export class Inscription implements Timestamps {
   private _campoMissionario?: string
   private _status: InscriptionStatus
   private _paymentId?: string
+  private _confirmadoPor?: string
+  private _confirmadoPorNome?: string
+  private _confirmadoEm?: Date
   private _temBrinde?: boolean
   private _perkId?: string
   private _brindeAlocadoEm?: Date
   private _pendingUpgrade?: PendingUpgrade
+  private _kitDeliveries: KitDeliveryRecord[]
+  private _kitPendente?: boolean
   readonly criadoEm: Date
   private _atualizadoEm: Date
 
@@ -67,10 +78,15 @@ export class Inscription implements Timestamps {
     this._campoMissionario = props.campoMissionario
     this._status = props.status
     this._paymentId = props.paymentId
+    this._confirmadoPor = props.confirmadoPor
+    this._confirmadoPorNome = props.confirmadoPorNome
+    this._confirmadoEm = props.confirmadoEm
     this._temBrinde = props.temBrinde
     this._perkId = props.perkId
     this._brindeAlocadoEm = props.brindeAlocadoEm
     this._pendingUpgrade = props.pendingUpgrade
+    this._kitDeliveries = props.kitDeliveries ?? []
+    this._kitPendente = props.kitPendente
     this.criadoEm = props.criadoEm
     this._atualizadoEm = props.atualizadoEm
   }
@@ -133,6 +149,9 @@ export class Inscription implements Timestamps {
     valor: number
     status: InscriptionStatus
     paymentId?: string
+    confirmadoPor?: string
+    confirmadoPorNome?: string
+    confirmadoEm?: Date
     preferredPaymentMethod?: InscriptionPaymentMethod
     tamanho?: ShirtSize
     campoMissionario?: string
@@ -147,6 +166,8 @@ export class Inscription implements Timestamps {
       metodo: InscriptionPaymentMethod
       criadoEm: Date
     }
+    kitDeliveries?: KitDeliveryRecord[]
+    kitPendente?: boolean
     criadoEm: Date
     atualizadoEm: Date
   }): Inscription {
@@ -162,10 +183,15 @@ export class Inscription implements Timestamps {
       campoMissionario: data.campoMissionario,
       status: data.status,
       paymentId: data.paymentId,
+      confirmadoPor: data.confirmadoPor,
+      confirmadoPorNome: data.confirmadoPorNome,
+      confirmadoEm: data.confirmadoEm,
       temBrinde: data.temBrinde,
       perkId: data.perkId,
       brindeAlocadoEm: data.brindeAlocadoEm,
       pendingUpgrade: data.pendingUpgrade ? PendingUpgrade.fromPersistence(data.pendingUpgrade) : undefined,
+      kitDeliveries: data.kitDeliveries,
+      kitPendente: data.kitPendente,
       criadoEm: data.criadoEm,
       atualizadoEm: data.atualizadoEm,
     })
@@ -276,16 +302,34 @@ export class Inscription implements Timestamps {
     }
     this._status = 'confirmado'
     this._paymentId = paymentId
+    this._kitPendente = true
     this._atualizadoEm = new Date()
   }
 
-  confirmManually(confirmedBy: string): void {
+  confirmManually(confirmedBy: string, confirmedByNome?: string): void {
     if (this._status !== 'pendente') {
       throw new Error('Apenas inscrições pendentes podem ser confirmadas')
     }
+    const now = new Date()
     this._status = 'confirmado'
-    this._paymentId = `MANUAL-${confirmedBy}-${Date.now()}`
-    this._atualizadoEm = new Date()
+    this._paymentId = `MANUAL-${confirmedBy}-${now.getTime()}`
+    this._confirmadoPor = confirmedBy
+    this._confirmadoPorNome = confirmedByNome
+    this._confirmadoEm = now
+    this._kitPendente = true
+    this._atualizadoEm = now
+  }
+
+  get confirmadoPor(): string | undefined {
+    return this._confirmadoPor
+  }
+
+  get confirmadoPorNome(): string | undefined {
+    return this._confirmadoPorNome
+  }
+
+  get confirmadoEm(): Date | undefined {
+    return this._confirmadoEm
   }
 
   cancel(): void {
@@ -304,6 +348,28 @@ export class Inscription implements Timestamps {
   setCampoMissionario(campo: string): void {
     this._campoMissionario = campo
     this._atualizadoEm = new Date()
+  }
+
+  get kitDeliveries(): KitDeliveryRecord[] {
+    return this._kitDeliveries.map((d) => ({ ...d }))
+  }
+
+  setKitDelivery(itemId: string, entregue: boolean, entreguePor?: string, entreguePorNome?: string): void {
+    this._kitDeliveries = upsertKitDelivery(this._kitDeliveries, itemId, entregue, entreguePor, entreguePorNome)
+    this._atualizadoEm = new Date()
+  }
+
+  get kitPendente(): boolean | undefined {
+    return this._kitPendente
+  }
+
+  recomputeKitPending(applicableItemIds: string[]): void {
+    if (this._status !== 'confirmado' || applicableItemIds.length === 0) {
+      this._kitPendente = false
+      return
+    }
+    const entregues = new Set(this._kitDeliveries.filter((d) => d.entregue).map((d) => d.itemId))
+    this._kitPendente = applicableItemIds.some((id) => !entregues.has(id))
   }
 
   changePaymentMethod(metodo: InscriptionPaymentMethod): void {
@@ -369,10 +435,15 @@ export class Inscription implements Timestamps {
       status: this._status,
       statusLabel: this.statusLabel,
       paymentId: this._paymentId,
+      confirmadoPor: this._confirmadoPor,
+      confirmadoPorNome: this._confirmadoPorNome,
+      confirmadoEm: this._confirmadoEm,
       temBrinde: this._temBrinde,
       perkId: this._perkId,
       brindeAlocadoEm: this._brindeAlocadoEm?.toISOString(),
       pendingUpgrade: this._pendingUpgrade?.toJSON(),
+      kitDeliveries: this._kitDeliveries.map(kitDeliveryToJSON),
+      kitPendente: this._kitPendente,
       criadoEm: this.criadoEm,
       atualizadoEm: this._atualizadoEm,
     }

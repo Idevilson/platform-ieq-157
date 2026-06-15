@@ -3,6 +3,7 @@ import { PaymentBreakdown } from '@/server/domain/shared/value-objects/PaymentBr
 import { Timestamps } from '@/server/domain/shared/types'
 import { Gender, InscriptionPaymentMethod } from '@/shared/constants'
 import { BatchParticipant, BatchParticipantInput, BatchParticipantData } from '../value-objects/BatchParticipant'
+import { KitDeliveryRecord, upsertKitDelivery, kitDeliveryToJSON } from '../value-objects/KitDelivery'
 
 export type BatchInscriptionStatus = 'pendente' | 'confirmado' | 'cancelado'
 
@@ -35,6 +36,11 @@ export interface BatchInscriptionProps {
   dataVencimentoPagamento?: Date
   paymentStatus?: string
   breakdown?: PaymentBreakdown
+  confirmadoPor?: string
+  confirmadoPorNome?: string
+  confirmadoEm?: Date
+  kitDeliveries?: KitDeliveryRecord[]
+  kitPendente?: boolean
   criadoEm: Date
   atualizadoEm: Date
 }
@@ -68,6 +74,11 @@ export class BatchInscription implements Timestamps {
   private _dataVencimentoPagamento?: Date
   private _paymentStatus?: string
   private _breakdown?: PaymentBreakdown
+  private _confirmadoPor?: string
+  private _confirmadoPorNome?: string
+  private _confirmadoEm?: Date
+  private _kitDeliveries: KitDeliveryRecord[]
+  private _kitPendente?: boolean
   private _atualizadoEm: Date
 
   private constructor(props: BatchInscriptionProps) {
@@ -89,6 +100,11 @@ export class BatchInscription implements Timestamps {
     this._dataVencimentoPagamento = props.dataVencimentoPagamento
     this._paymentStatus = props.paymentStatus
     this._breakdown = props.breakdown
+    this._confirmadoPor = props.confirmadoPor
+    this._confirmadoPorNome = props.confirmadoPorNome
+    this._confirmadoEm = props.confirmadoEm
+    this._kitDeliveries = props.kitDeliveries ?? []
+    this._kitPendente = props.kitPendente
     this._atualizadoEm = props.atualizadoEm
   }
 
@@ -137,6 +153,11 @@ export class BatchInscription implements Timestamps {
     dataVencimentoPagamento?: Date
     paymentStatus?: string
     breakdown?: { valorBase: number; valorTaxa: number; valorTotal: number; metodo: string; parcelas?: number }
+    confirmadoPor?: string
+    confirmadoPorNome?: string
+    confirmadoEm?: Date
+    kitDeliveries?: KitDeliveryRecord[]
+    kitPendente?: boolean
     criadoEm: Date
     atualizadoEm: Date
   }): BatchInscription {
@@ -158,6 +179,11 @@ export class BatchInscription implements Timestamps {
       dataVencimentoPagamento: data.dataVencimentoPagamento,
       paymentStatus: data.paymentStatus,
       breakdown: data.breakdown ? PaymentBreakdown.fromCents(data.breakdown as Parameters<typeof PaymentBreakdown.fromCents>[0]) : undefined,
+      confirmadoPor: data.confirmadoPor,
+      confirmadoPorNome: data.confirmadoPorNome,
+      confirmadoEm: data.confirmadoEm,
+      kitDeliveries: data.kitDeliveries,
+      kitPendente: data.kitPendente,
       criadoEm: data.criadoEm,
       atualizadoEm: data.atualizadoEm,
     })
@@ -223,16 +249,56 @@ export class BatchInscription implements Timestamps {
     }
     this._status = 'confirmado'
     this._paymentId = paymentId
+    this._kitPendente = true
     this._atualizadoEm = new Date()
   }
 
-  confirmCash(confirmedBy: string): void {
+  confirmCash(confirmedBy: string, confirmedByNome?: string): void {
     if (this._status !== 'pendente') {
       throw new Error('Apenas lotes pendentes podem ser confirmados')
     }
+    const now = new Date()
     this._status = 'confirmado'
-    this._paymentId = `MANUAL-${confirmedBy}-${Date.now()}`
+    this._paymentId = `MANUAL-${confirmedBy}-${now.getTime()}`
+    this._confirmadoPor = confirmedBy
+    this._confirmadoPorNome = confirmedByNome
+    this._confirmadoEm = now
+    this._kitPendente = true
+    this._atualizadoEm = now
+  }
+
+  get confirmadoPor(): string | undefined {
+    return this._confirmadoPor
+  }
+
+  get confirmadoPorNome(): string | undefined {
+    return this._confirmadoPorNome
+  }
+
+  get confirmadoEm(): Date | undefined {
+    return this._confirmadoEm
+  }
+
+  get kitDeliveries(): KitDeliveryRecord[] {
+    return this._kitDeliveries.map((d) => ({ ...d }))
+  }
+
+  setKitDelivery(itemId: string, entregue: boolean, entreguePor?: string, entreguePorNome?: string): void {
+    this._kitDeliveries = upsertKitDelivery(this._kitDeliveries, itemId, entregue, entreguePor, entreguePorNome)
     this._atualizadoEm = new Date()
+  }
+
+  get kitPendente(): boolean | undefined {
+    return this._kitPendente
+  }
+
+  recomputeKitPending(applicableItemIds: string[]): void {
+    if (this._status !== 'confirmado' || applicableItemIds.length === 0) {
+      this._kitPendente = false
+      return
+    }
+    const entregues = new Set(this._kitDeliveries.filter((d) => d.entregue).map((d) => d.itemId))
+    this._kitPendente = applicableItemIds.some((id) => !entregues.has(id))
   }
 
   cancel(): void {
@@ -320,6 +386,11 @@ export class BatchInscription implements Timestamps {
       dataVencimentoPagamento: this._dataVencimentoPagamento?.toISOString(),
       paymentStatus: this._paymentStatus,
       breakdown: this._breakdown?.toJSON() ?? null,
+      confirmadoPor: this._confirmadoPor,
+      confirmadoPorNome: this._confirmadoPorNome,
+      confirmadoEm: this._confirmadoEm?.toISOString(),
+      kitDeliveries: this._kitDeliveries.map(kitDeliveryToJSON),
+      kitPendente: this._kitPendente,
       criadoEm: this.criadoEm.toISOString(),
       atualizadoEm: this._atualizadoEm.toISOString(),
     }

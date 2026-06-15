@@ -14,7 +14,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push('/minha-conta')
+      const redirect = new URLSearchParams(window.location.search).get('redirect')
+      const safe = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/minha-conta'
+      router.push(safe)
     }
   }, [isAuthenticated, loading, router])
 

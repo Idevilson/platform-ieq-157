@@ -39,6 +39,43 @@ export class FirebaseBatchInscriptionRepositoryAdmin implements IBatchInscriptio
     return querySnapshot.docs.map(doc => this.mapToEntity(doc))
   }
 
+  async findByEventIdAndResponsavelCPF(eventId: string, cpf: string): Promise<BatchInscription[]> {
+    const querySnapshot = await this.batchRef
+      .where('eventId', '==', eventId)
+      .where('responsavel.cpf', '==', cpf)
+      .get()
+    return querySnapshot.docs.map((doc) => this.mapToEntity(doc))
+  }
+
+  async findCashPendingByEvent(eventId: string): Promise<BatchInscription[]> {
+    const querySnapshot = await this.batchRef
+      .where('eventId', '==', eventId)
+      .where('status', '==', 'pendente')
+      .where('preferredPaymentMethod', '==', 'CASH')
+      .get()
+    return querySnapshot.docs.map((doc) => this.mapToEntity(doc))
+  }
+
+  async findKitPendingByEvent(eventId: string, limit: number): Promise<BatchInscription[]> {
+    const querySnapshot = await this.batchRef
+      .where('eventId', '==', eventId)
+      .where('status', '==', 'confirmado')
+      .where('kitPendente', '==', true)
+      .limit(limit)
+      .get()
+    return querySnapshot.docs.map((doc) => this.mapToEntity(doc))
+  }
+
+  async countKitPendingByEvent(eventId: string): Promise<number> {
+    const snapshot = await this.batchRef
+      .where('eventId', '==', eventId)
+      .where('status', '==', 'confirmado')
+      .where('kitPendente', '==', true)
+      .count()
+      .get()
+    return snapshot.data().count
+  }
+
   async save(batch: BatchInscription): Promise<void> {
     await this.batchRef.doc(batch.id).set(this.mapToFirestore(batch))
   }
@@ -87,6 +124,19 @@ export class FirebaseBatchInscriptionRepositoryAdmin implements IBatchInscriptio
       dataVencimentoPagamento: data.dataVencimentoPagamento?.toDate?.() ?? undefined,
       paymentStatus: data.paymentStatus ?? undefined,
       breakdown: data.breakdown ?? undefined,
+      confirmadoPor: data.confirmadoPor ?? undefined,
+      confirmadoPorNome: data.confirmadoPorNome ?? undefined,
+      confirmadoEm: data.confirmadoEm?.toDate?.() ?? undefined,
+      kitDeliveries: Array.isArray(data.kitDeliveries)
+        ? data.kitDeliveries.map((d: { itemId: string; entregue?: boolean; entreguePor?: string; entreguePorNome?: string; entregueEm?: FirebaseFirestore.Timestamp }) => ({
+            itemId: d.itemId,
+            entregue: !!d.entregue,
+            entreguePor: d.entreguePor ?? undefined,
+            entreguePorNome: d.entreguePorNome ?? undefined,
+            entregueEm: d.entregueEm?.toDate?.() ?? undefined,
+          }))
+        : undefined,
+      kitPendente: data.kitPendente ?? undefined,
       criadoEm: data.criadoEm?.toDate() || new Date(),
       atualizadoEm: data.atualizadoEm?.toDate() || new Date(),
     })
@@ -129,6 +179,17 @@ export class FirebaseBatchInscriptionRepositoryAdmin implements IBatchInscriptio
         ? Timestamp.fromDate(new Date(json.dataVencimentoPagamento))
         : null,
       paymentStatus: json.paymentStatus ?? null,
+      confirmadoPor: json.confirmadoPor ?? null,
+      confirmadoPorNome: json.confirmadoPorNome ?? null,
+      confirmadoEm: json.confirmadoEm ? Timestamp.fromDate(new Date(json.confirmadoEm)) : null,
+      kitDeliveries: batch.kitDeliveries.map(d => ({
+        itemId: d.itemId,
+        entregue: d.entregue,
+        entreguePor: d.entreguePor ?? null,
+        entreguePorNome: d.entreguePorNome ?? null,
+        entregueEm: d.entregueEm ? Timestamp.fromDate(d.entregueEm) : null,
+      })),
+      kitPendente: json.kitPendente ?? null,
       criadoEm: Timestamp.fromDate(new Date(json.criadoEm)),
       atualizadoEm: Timestamp.fromDate(new Date(json.atualizadoEm)),
     }

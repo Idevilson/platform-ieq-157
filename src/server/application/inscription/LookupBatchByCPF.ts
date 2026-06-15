@@ -41,7 +41,7 @@ export class LookupBatchByCPF {
         valorTotal: batch.valorTotalCents,
         valorTotalFormatado: batch.valorTotalFormatado,
         preferredPaymentMethod: batch.preferredPaymentMethod,
-        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo })),
+        participantes: json.participantes.map(p => ({ nome: p.nome, sexo: p.sexo, tamanho: p.tamanho ?? undefined })),
         payment: json.paymentId
           ? {
               status: json.paymentStatus ?? 'PENDING',

@@ -16,6 +16,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: '/minha-conta/admin', label: 'Gerenciar Eventos', exact: true },
     { href: '/minha-conta/admin/q4-news', label: 'Q4-News' },
+    { href: '/minha-conta/admin/usuarios', label: 'Usuários' },
+    { href: '/minha-conta/admin/permissoes', label: 'Permissões' },
+    { href: '/minha-conta/admin/registros', label: 'Registros' },
   ]
 
   const isActive = (href: string, exact?: boolean) => {

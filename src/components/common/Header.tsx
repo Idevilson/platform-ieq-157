@@ -5,13 +5,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '@/hooks'
+import { EVENT_OPS_PERMISSIONS } from '@/shared/constants'
 import logoIEQ from '@/assets/images/only-logo.png'
 
 export default function Header() {
   const pathname = usePathname()
-  const { user, isAuthenticated, isAdmin, loading, logout } = useAuth()
+  const { user, isAuthenticated, isAdmin, loading, logout, permissions } = useAuth()
   const [showDropdown, setShowDropdown] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const canOperate = isAuthenticated && (isAdmin || (permissions ?? []).some((g) => EVENT_OPS_PERMISSIONS.includes(g.key)))
 
   const displayName = user?.profile?.nome || user?.displayName
 
@@ -106,6 +109,19 @@ export default function Header() {
                       Admin
                     </Link>
                   )}
+                  {canOperate && (
+                    <Link
+                      href="/minha-conta/operacao"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gold bg-gold/10 rounded-lg no-underline"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M5 3H11C11.5523 3 12 3.44772 12 4V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4C4 3.44772 4.44772 3 5 3Z" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M6.5 9L7.5 10L9.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Operação
+                    </Link>
+                  )}
                   <Link
                     href="/minha-conta"
                     onClick={() => setMobileMenuOpen(false)}
@@ -135,6 +151,18 @@ export default function Header() {
 
         {/* Desktop account section */}
         <div className="hidden md:flex flex-shrink-0 items-center gap-4">
+          {canOperate && (
+            <Link
+              href="/minha-conta/operacao"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gold border border-gold/30 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all no-underline"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M5 3H11C11.5523 3 12 3.44772 12 4V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4C4 3.44772 4.44772 3 5 3Z" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M6.5 9L7.5 10L9.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Operação
+            </Link>
+          )}
           {isAdmin && (
             <Link
               href="/minha-conta/admin"
@@ -176,6 +204,20 @@ export default function Header() {
                     <span className="text-xs text-text-muted truncate block">{user?.email}</span>
                   </div>
                   <div className="py-2">
+                    {canOperate && (
+                      <Link
+                        href="/minha-conta/operacao"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gold hover:bg-gold/5 transition-colors no-underline"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M5 3H11C11.5523 3 12 3.44772 12 4V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4C4 3.44772 4.44772 3 5 3Z" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M6 2H10V4H6V2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                          <path d="M6.5 9L7.5 10L9.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Operação
+                      </Link>
+                    )}
                     <Link
                       href="/minha-conta"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-gold/5 transition-colors no-underline"

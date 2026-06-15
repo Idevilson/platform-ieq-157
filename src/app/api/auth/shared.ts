@@ -1,5 +1,5 @@
 import { formatCPF } from '@/lib/formatters'
-import { Gender } from '@/shared/constants'
+import { Gender, GLOBAL_PERMISSION_SCOPE, UserPermissionGrant } from '@/shared/constants'
 
 export interface UserDocument {
   email: string
@@ -9,8 +9,18 @@ export interface UserDocument {
   dataNascimento?: { toDate: () => Date }
   sexo?: Gender
   role: string
+  permissions?: string[] | UserPermissionGrant[]
   criadoEm?: { toDate: () => Date }
   atualizadoEm?: { toDate: () => Date }
+}
+
+function normalizePermissions(input?: string[] | UserPermissionGrant[]): UserPermissionGrant[] {
+  if (!input?.length) return []
+  return input.map((p) =>
+    typeof p === 'string'
+      ? { key: p, eventIds: [GLOBAL_PERMISSION_SCOPE] }
+      : { key: p.key, eventIds: p.eventIds?.length ? p.eventIds : [GLOBAL_PERMISSION_SCOPE] },
+  )
 }
 
 export function extractBearerToken(authorizationHeader: string | null): string | null {
@@ -39,6 +49,7 @@ export function mapUserDocumentToResponse(documentId: string, document: UserDocu
     dataNascimento: document.dataNascimento?.toDate?.()?.toISOString(),
     sexo: document.sexo,
     role: document.role,
+    permissions: normalizePermissions(document.permissions),
     isProfileComplete: isProfileComplete(document),
     isProfileCompleteForEvent: isProfileCompleteForEvent(document),
     criadoEm: document.criadoEm?.toDate?.()?.toISOString(),

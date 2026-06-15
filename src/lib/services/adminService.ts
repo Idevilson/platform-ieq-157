@@ -1,6 +1,29 @@
 import { firebaseAuthService } from '@/lib/firebase'
 import { EventDTO } from '@/shared/types'
-import { EventStatus, InscriptionStatus, InscriptionPaymentMethod } from '@/shared/constants'
+import { EventStatus, InscriptionStatus, InscriptionPaymentMethod, UserPermissionGrant, KitDeliveryDTO, KitItemDef, Gender, AuditLogDTO } from '@/shared/constants'
+
+export interface PermissionDefDTO {
+  key: string
+  label: string
+  description?: string
+  system: boolean
+}
+
+export interface AdminUserDTO {
+  id: string
+  nome: string
+  email: string
+  cpf?: string
+  role: string
+  permissions: UserPermissionGrant[]
+}
+
+export interface EventTeamMember {
+  userId: string
+  nome: string
+  email: string
+  permissions: string[]
+}
 
 const API_BASE_URL = '/api/admin'
 
@@ -36,6 +59,7 @@ export interface InscriptionWithDetails {
   email: string
   cpf: string
   telefone: string
+  sexo?: Gender
   status: InscriptionStatus
   statusLabel: string
   valor: number
@@ -47,6 +71,9 @@ export interface InscriptionWithDetails {
   temBrinde?: boolean | null
   perkId?: string
   brindeAlocadoEm?: string
+  confirmadoPorNome?: string
+  confirmadoEm?: string
+  kitDeliveries?: KitDeliveryDTO[]
   pendingUpgrade?: PendingUpgradeDetails
   criadoEm: string
   atualizadoEm: string
@@ -189,6 +216,12 @@ async function authFetch<T>(endpoint: string, options?: RequestInit): Promise<Ap
 }
 
 export const adminService = {
+  async listAuditLogs(limit = 100): Promise<AuditLogDTO[]> {
+    const res = await authFetch<{ logs: AuditLogDTO[] }>(`/audit-logs?limit=${limit}`)
+    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao carregar registros')
+    return res.data.logs
+  },
+
   async listEvents(params?: {
     status?: EventStatus
     limit?: number
@@ -341,6 +374,90 @@ export const adminService = {
     )
     if (response.success && response.data) return response.data
     throw new Error(response.error || 'Erro ao trocar o meio de pagamento')
+  },
+
+  async listPermissions(): Promise<PermissionDefDTO[]> {
+    const response = await authFetch<{ permissions: PermissionDefDTO[] }>('/permissions')
+    if (response.success && response.data) return response.data.permissions
+    throw new Error(response.error || 'Erro ao listar permissões')
+  },
+
+  async createPermission(input: { key: string; label: string; description?: string }): Promise<PermissionDefDTO> {
+    const response = await authFetch<{ permission: PermissionDefDTO }>('/permissions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+    if (response.success && response.data) return response.data.permission
+    throw new Error(response.error || 'Erro ao criar permissão')
+  },
+
+  async updatePermission(key: string, input: { label: string; description?: string }): Promise<PermissionDefDTO> {
+    const response = await authFetch<{ permission: PermissionDefDTO }>(`/permissions/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    })
+    if (response.success && response.data) return response.data.permission
+    throw new Error(response.error || 'Erro ao atualizar permissão')
+  },
+
+  async deletePermission(key: string): Promise<void> {
+    const response = await authFetch<{ deleted: boolean }>(`/permissions/${key}`, { method: 'DELETE' })
+    if (!response.success) throw new Error(response.error || 'Erro ao remover permissão')
+  },
+
+  async listUsers(query?: string): Promise<AdminUserDTO[]> {
+    const qs = query ? `?q=${encodeURIComponent(query)}` : ''
+    const response = await authFetch<{ users: AdminUserDTO[] }>(`/users${qs}`)
+    if (response.success && response.data) return response.data.users
+    throw new Error(response.error || 'Erro ao listar usuários')
+  },
+
+  async setUserPermissions(userId: string, grants: UserPermissionGrant[]): Promise<AdminUserDTO> {
+    const response = await authFetch<{ user: AdminUserDTO }>(`/users/${userId}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ grants }),
+    })
+    if (response.success && response.data) return response.data.user
+    throw new Error(response.error || 'Erro ao atualizar permissões')
+  },
+
+  async configureEventKit(eventId: string, items: KitItemDef[]): Promise<KitItemDef[]> {
+    const response = await authFetch<{ kitItems: KitItemDef[] }>(`/events/${eventId}/kit`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
+    })
+    if (response.success && response.data) return response.data.kitItems
+    throw new Error(response.error || 'Erro ao configurar o kit')
+  },
+
+  async deliverInscriptionKit(eventId: string, inscriptionId: string): Promise<{ kitDeliveries: KitDeliveryDTO[]; comLed?: boolean }> {
+    const response = await authFetch<{ kitDeliveries: KitDeliveryDTO[]; comLed?: boolean }>(`/events/${eventId}/inscriptions/${inscriptionId}/kit`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao registrar entrega')
+  },
+
+  async deliverBatchKit(batchId: string): Promise<{ kitDeliveries: KitDeliveryDTO[]; comLed?: boolean }> {
+    const response = await authFetch<{ kitDeliveries: KitDeliveryDTO[]; comLed?: boolean }>(`/batch-inscriptions/${batchId}/kit`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao registrar entrega')
+  },
+
+  async listEventTeam(eventId: string): Promise<EventTeamMember[]> {
+    const response = await authFetch<{ team: EventTeamMember[] }>(`/events/${eventId}/team`)
+    if (response.success && response.data) return response.data.team
+    throw new Error(response.error || 'Erro ao listar o time')
+  },
+
+  async confirmBatchCash(batchId: string): Promise<{ success: boolean }> {
+    const response = await authFetch<{ success: boolean }>(`/batch-inscriptions/${batchId}/confirm-cash`, { method: 'POST' })
+    if (response.success && response.data) return response.data
+    throw new Error(response.error || 'Erro ao confirmar lote')
   },
 
   async confirmInscription(inscriptionId: string, eventId: string): Promise<ConfirmInscriptionResponse> {

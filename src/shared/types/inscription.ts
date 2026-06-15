@@ -1,6 +1,6 @@
 // Shared Inscription DTOs - used by both frontend and backend
 
-import { InscriptionStatus, Gender, PaymentStatus, InscriptionPaymentMethod } from '../constants'
+import { InscriptionStatus, Gender, PaymentStatus, InscriptionPaymentMethod, KitDeliveryDTO } from '../constants'
 
 export interface GuestDataDTO {
   nome: string
@@ -60,6 +60,7 @@ export interface BatchParticipantDTO {
   nome: string
   sexo: Gender
   tamanho?: string
+  temBrinde?: boolean
 }
 
 export interface BatchResponsavelDTO {
@@ -148,6 +149,9 @@ export interface AdminBatchListItem {
   preferredPaymentMethod: InscriptionPaymentMethod
   paymentId?: string
   paymentStatus?: string
+  confirmadoPorNome?: string
+  confirmadoEm?: string
+  kitDeliveries?: KitDeliveryDTO[]
   criadoEm: string
   participantes: BatchParticipantDTO[]
 }

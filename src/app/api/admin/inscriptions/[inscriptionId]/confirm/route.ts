@@ -2,44 +2,30 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ConfirmInscriptionManually } from '@/server/application/inscription/ConfirmInscriptionManually'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
-import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
-import { adminAuth } from '@/server/infrastructure/firebase/admin'
+import { FirebaseEventPerkRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventPerkRepositoryAdmin'
+import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
+import { FirebaseAuditLogRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseAuditLogRepositoryAdmin'
 import { ValidationError, InscriptionNotFoundError } from '@/server/domain/shared/errors'
+import { CONFIRM_CASH_PERMISSION } from '@/shared/constants'
+import { resolveActor } from '../../../_perm-shared'
 
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 const eventRepository = new FirebaseEventRepositoryAdmin()
-const userRepository = new FirebaseUserRepositoryAdmin()
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
-const confirmInscription = new ConfirmInscriptionManually(inscriptionRepository, eventRepository, paymentRepository)
+const perkRepository = new FirebaseEventPerkRepositoryAdmin()
+const userRepository = new FirebaseUserRepositoryAdmin()
+const auditLogRepository = new FirebaseAuditLogRepositoryAdmin()
+const confirmInscription = new ConfirmInscriptionManually(inscriptionRepository, eventRepository, paymentRepository, perkRepository, auditLogRepository, userRepository)
 
 interface RouteParams {
   params: Promise<{ inscriptionId: string }>
 }
 
-async function verifyAdmin(request: NextRequest): Promise<string | null> {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null
-  }
-
-  const token = authHeader.split('Bearer ')[1]
-  try {
-    const decodedToken = await adminAuth.verifyIdToken(token)
-    const user = await userRepository.findById(decodedToken.uid)
-    if (!user?.isAdmin()) {
-      return null
-    }
-    return decodedToken.uid
-  } catch {
-    return null
-  }
-}
-
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const adminId = await verifyAdmin(request)
-    if (!adminId) {
+    const actor = await resolveActor(request)
+    if (!actor) {
       return NextResponse.json({ error: 'Acesso não autorizado' }, { status: 401 })
     }
 
@@ -51,10 +37,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'eventId é obrigatório' }, { status: 400 })
     }
 
+    if (!actor.isAdmin && !actor.hasPermission(CONFIRM_CASH_PERMISSION, eventId)) {
+      return NextResponse.json({ error: 'Acesso não autorizado' }, { status: 403 })
+    }
+
     const result = await confirmInscription.execute({
       eventId,
       inscriptionId,
-      confirmedBy: adminId,
+      confirmedBy: actor.uid,
+      confirmedByNome: actor.nome,
+      requireCash: !actor.isAdmin,
     })
 
     return NextResponse.json(result)
