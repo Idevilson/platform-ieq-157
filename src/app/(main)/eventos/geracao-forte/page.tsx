@@ -16,7 +16,7 @@ import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengts
 import imgCarmona from '@/assets/images/geracao-forte/palestrantes/Martinho Carmona.jpg'
 import imgJunior from '@/assets/images/geracao-forte/palestrantes/Pr Junhao.jpg'
 import imgHeitor from '@/assets/images/geracao-forte/palestrantes/Pr Heitor Alexandre.jpg'
-import imgVal from '@/assets/images/geracao-forte/palestrantes/Evando Filho.jpg'
+import imgEvando from '@/assets/images/geracao-forte/palestrantes/Evando Filho.jpg'
 import imgOrganizadores from '@/assets/images/geracao-forte/pr-heitor-e-pra-val.jpg'
 import imgMyllaPortrait from '@/assets/images/geracao-forte/mylla-carvalho-portrait.jpg'
 import imgMyllaBanda from '@/assets/images/geracao-forte/mylla-carvalho-banda.jpg'
@@ -42,46 +42,78 @@ const SPEAKERS = [
   { name: 'PR. MARTINHO CARMONA', photo: imgCarmona  },
   { name: 'PR. JUNIOR FERNANDES', photo: imgJunior   },
   { name: 'PR. HEITOR ALEXANDRE', photo: imgHeitor   },
-  { name: 'PR. EVANDO FILHO',      photo: imgVal      },
+  { name: 'PR. EVANDO MARTINS',   photo: imgEvando  },
 ]
 
-const SCHEDULE = [
+type ScheduleItem = { time: string; activity: string; icon: string; detail?: string }
+type ScheduleBlock = { heading?: string; items: ScheduleItem[] }
+
+const SCHEDULE: { label: string; date: string; color: string; blocks: ScheduleBlock[] }[] = [
   {
     label: 'SEXTA-FEIRA',
     date: '03 de Julho',
     color: '#F5B800',
-    items: [
-      { time: '19h00', activity: 'Abertura', icon: '🎤' },
-      { time: '20h00', activity: 'Louvor', icon: '🎵' },
-      { time: '21h00', activity: 'Ministração', icon: '📖' },
-      { time: '22h30', activity: 'Encerramento', icon: '🏁' },
+    blocks: [
+      {
+        items: [
+          { time: '19h30', activity: 'Boas-vindas', detail: 'Pr. Lee Maracaipe — Coord. Regional', icon: '🎤' },
+          { time: '19h35', activity: 'Louvor', detail: 'Equipe Campo de Redenção', icon: '🎵' },
+          { time: '20h00', activity: 'Coreografia de Abertura', detail: 'Campo de Redenção', icon: '💃' },
+          { time: '20h20', activity: 'Palavra', detail: 'Pr. Heitor Alexandre — Diretor do Campo de Redenção', icon: '📖' },
+          { time: '20h30', activity: 'Palavra', detail: 'Pr. Paulo Bengtson — Coord. Estadual de Jovens', icon: '📖' },
+          { time: '20h40', activity: 'Mensagem', detail: 'Pr. Jota Ramalho', icon: '📖' },
+          { time: '22h00', activity: 'Avisos / Jantar', icon: '🍽️' },
+        ],
+      },
     ],
   },
   {
     label: 'SÁBADO',
     date: '04 de Julho',
     color: '#00AADD',
-    items: [
-      { time: '08h00', activity: 'Café da manhã', icon: '☕' },
-      { time: '09h00', activity: 'Louvor', icon: '🎵' },
-      { time: '10h00', activity: 'Ministração', icon: '📖' },
-      { time: '12h30', activity: 'Almoço', icon: '🍽️' },
-      { time: '15h00', activity: 'Ministração', icon: '📖' },
-      { time: '19h00', activity: 'Louvor noturno', icon: '🎵' },
-      { time: '20h30', activity: 'Ministração', icon: '📖' },
-      { time: '22h30', activity: 'Encerramento', icon: '🏁' },
+    blocks: [
+      {
+        heading: 'Manhã',
+        items: [
+          { time: '07h30', activity: 'Café da manhã', icon: '☕' },
+          { time: '08h30', activity: 'Louvor', detail: '1ª Região de Parauapebas', icon: '🎵' },
+          { time: '09h00', activity: 'Mensagem', detail: 'Pr. Martinho Carmona', icon: '📖' },
+          { time: '09h45', activity: 'Intervalo', icon: '⏸️' },
+          { time: '10h00', activity: 'Louvor', detail: 'Equipe de Xinguara', icon: '🎵' },
+          { time: '10h30', activity: 'Mensagem', detail: 'Pr. Júnior Fernandes', icon: '📖' },
+          { time: '11h45', activity: 'Avisos / Encerramento', icon: '📢' },
+          { time: '12h00', activity: 'Almoço', icon: '🍽️' },
+        ],
+      },
+      {
+        heading: 'Noite',
+        items: [
+          { time: '17h30', activity: 'Amostra de Artes', detail: 'Coord. Campo de Redenção', icon: '🎨' },
+          { time: '19h30', activity: 'Louvor', detail: 'Campo de Redenção', icon: '🎵' },
+          { time: '20h00', activity: 'Mensagem', detail: 'Pr. Evando Martins', icon: '📖' },
+          { time: '21h00', activity: 'Avisos / Jantar', icon: '🍽️' },
+          { time: '22h00', activity: 'Show', detail: 'Milla Carvalho e Banda', icon: '🎤' },
+        ],
+      },
     ],
   },
   {
     label: 'DOMINGO',
     date: '05 de Julho',
     color: '#7B3FB5',
-    items: [
-      { time: '08h30', activity: 'Café da manhã', icon: '☕' },
-      { time: '09h30', activity: 'Louvor', icon: '🎵' },
-      { time: '10h30', activity: 'Ministração', icon: '📖' },
-      { time: '12h00', activity: 'Santa Ceia', icon: '✝️' },
-      { time: '13h00', activity: 'Encerramento', icon: '🏁' },
+    blocks: [
+      {
+        items: [
+          { time: '07h30', activity: 'Café da manhã', icon: '☕' },
+          { time: '08h30', activity: 'Louvor', detail: 'Campo de Redenção', icon: '🎵' },
+          { time: '09h00', activity: 'Mensagem', detail: 'Pr. Heitor Alexandre', icon: '📖' },
+          { time: '10h00', activity: 'Premiação / Caravanas', icon: '🏆' },
+          { time: '10h20', activity: 'Ministração da Santa Ceia', detail: 'Pastora Val', icon: '✝️' },
+          { time: '11h00', activity: 'Agradecimentos e considerações finais', icon: '🙏' },
+          { time: '11h30', activity: 'Encerramento', icon: '🏁' },
+          { time: '12h00', activity: 'Almoço', icon: '🍽️' },
+        ],
+      },
     ],
   },
 ]
@@ -243,42 +275,135 @@ export default function GeracaoForte() {
         </div>
       </section>
 
-      <section className="relative z-10 py-16">
-        <div className="max-w-5xl mx-auto px-4">
+      <section className="relative z-10 py-20 overflow-hidden">
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute -top-32 -left-20 w-[460px] h-[460px] rounded-full blur-3xl opacity-60"
+            style={{ background: 'radial-gradient(circle, rgba(245,184,0,0.10), transparent 70%)' }}
+          />
+          <div
+            className="absolute top-1/3 -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-60"
+            style={{ background: 'radial-gradient(circle, rgba(0,170,221,0.09), transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-32 left-1/4 w-[480px] h-[480px] rounded-full blur-3xl opacity-60"
+            style={{ background: 'radial-gradient(circle, rgba(123,63,181,0.10), transparent 70%)' }}
+          />
+        </div>
 
-          {/* Badge */}
-          <div className="flex justify-center mb-6">
-            <span className="text-xs text-text-muted border border-white/10 rounded-full px-4 py-1.5 uppercase tracking-widest">
-              Programação sujeita a ajustes
-            </span>
+        <div className="relative max-w-6xl mx-auto px-4">
+
+          <div className="flex justify-center mb-5">
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-gold/70">
+              <span className="h-px w-10 bg-gradient-to-r from-transparent to-gold/40" />
+              Três dias de imersão
+              <span className="h-px w-10 bg-gradient-to-l from-transparent to-gold/40" />
+            </div>
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-white text-center uppercase tracking-tight mb-12">
+          <h2 className="text-4xl md:text-6xl font-black text-white text-center uppercase tracking-tight mb-4 text-glow">
             Cronograma
           </h2>
 
+          <p className="text-center text-text-muted text-sm md:text-base max-w-md mx-auto mb-4">
+            Programação completa do Congresso Estadual Setorizado 2026.
+          </p>
+
+          <div className="flex justify-center mb-14">
+            <span className="text-[10px] text-text-muted/80 border border-white/10 rounded-full px-3.5 py-1 uppercase tracking-[0.22em]">
+              Sujeito a ajustes
+            </span>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-6 items-start">
-            {SCHEDULE.map((day) => (
-              <div key={day.label} className="card-hover rounded-2xl overflow-hidden bg-bg-secondary" style={{ '--glow-color': `${day.color}4D` } as React.CSSProperties}>
-                <div className="px-6 py-5" style={{ borderBottom: `3px solid ${day.color}` }}>
-                  <h3 className="text-xl font-black uppercase tracking-wide" style={{ color: day.color }}>
-                    {day.label}
-                  </h3>
-                  <p className="text-text-muted text-sm mt-0.5">{day.date}</p>
+            {SCHEDULE.map((day, dayIdx) => (
+              <div
+                key={day.label}
+                className="card-hover relative rounded-3xl overflow-hidden bg-bg-secondary/70 backdrop-blur-sm border border-white/5"
+                style={{ '--glow-color': `${day.color}55` } as React.CSSProperties}
+              >
+                <div
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-1"
+                  style={{ background: `linear-gradient(90deg, transparent, ${day.color}, transparent)` }}
+                />
+
+                <div className="relative px-6 pt-7 pb-6 overflow-hidden">
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none opacity-60"
+                    style={{ background: `radial-gradient(ellipse 90% 100% at 0% 0%, ${day.color}1F, transparent 65%)` }}
+                  />
+                  <div className="relative flex items-center gap-4">
+                    <span
+                      className="text-[56px] leading-none font-black tracking-tighter"
+                      style={{ color: day.color, textShadow: `0 0 24px ${day.color}40` }}
+                    >
+                      {String(dayIdx + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-[0.28em] text-text-muted">
+                        Dia {dayIdx + 1}
+                      </span>
+                      <h3 className="text-base font-black uppercase tracking-wider" style={{ color: day.color }}>
+                        {day.label}
+                      </h3>
+                      <p className="text-text-muted text-xs mt-0.5">{day.date}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="px-6 py-5 space-y-4">
-                  {day.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
-                        style={{ backgroundColor: `${day.color}18` }}
-                      >
-                        {item.icon}
-                      </div>
-                      <div>
-                        <p className="text-text-muted text-xs">{item.time}</p>
-                        <p className="text-white text-sm font-medium">{item.activity}</p>
-                      </div>
+
+                <div className="px-6 pb-7 space-y-6">
+                  {day.blocks.map((block, blockIdx) => (
+                    <div key={blockIdx}>
+                      {block.heading && (
+                        <div className="flex items-center gap-3 mb-4">
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-[0.28em]"
+                            style={{ color: day.color }}
+                          >
+                            {block.heading}
+                          </span>
+                          <span
+                            className="flex-1 h-px"
+                            style={{ background: `linear-gradient(to right, ${day.color}55, transparent)` }}
+                          />
+                        </div>
+                      )}
+                      <ol className="relative space-y-4">
+                        <span
+                          aria-hidden
+                          className="absolute left-4 top-3 bottom-3 w-px"
+                          style={{ background: `linear-gradient(to bottom, ${day.color}55, ${day.color}10)` }}
+                        />
+                        {block.items.map((item, idx) => (
+                          <li key={idx} className="relative flex items-start gap-3.5">
+                            <div
+                              className="relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm z-10 bg-bg-secondary"
+                              style={{
+                                border: `1px solid ${day.color}55`,
+                                boxShadow: `0 0 0 4px var(--color-bg-secondary, #1a1a1a), 0 0 12px ${day.color}30`,
+                              }}
+                            >
+                              {item.icon}
+                            </div>
+                            <div className="min-w-0 pt-0.5">
+                              <p
+                                className="text-[10px] font-bold uppercase tracking-[0.22em]"
+                                style={{ color: day.color }}
+                              >
+                                {item.time}
+                              </p>
+                              <p className="text-white text-sm font-semibold leading-snug mt-0.5">
+                                {item.activity}
+                              </p>
+                              {item.detail && (
+                                <p className="text-text-muted text-xs mt-1 leading-snug">{item.detail}</p>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   ))}
                 </div>

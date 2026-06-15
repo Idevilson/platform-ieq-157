@@ -6,7 +6,7 @@ const EVENT_URL = `${SITE_URL}/eventos/geracao-forte`
 const TITLE =
   'Congresso Geração Forte 2026 · Follow Me · 03 a 05 de Julho · IEQ 157 Redenção-PA'
 const DESCRIPTION =
-  'Congresso Setorizado da Geração Forte 2026 em Redenção-PA: 3 dias de louvor, palavra e comunhão na IEQ Sede Campo 157. De 03 a 05 de julho com Pr. Paulo Bengtson, Pr. Martinho Carmona, Pr. Junior Fernandes, Pr. Heitor Alexandre, Pr. Evando Filho, Mylla Carvalho e J. Ramalho. Inscrições abertas.'
+  'Congresso Setorizado da Geração Forte 2026 em Redenção-PA: 3 dias de louvor, palavra e comunhão na IEQ Sede Campo 157. De 03 a 05 de julho com Pr. Paulo Bengtson, Pr. Martinho Carmona, Pr. Junior Fernandes, Pr. Heitor Alexandre, Pr. Evando Martins, Mylla Carvalho e J. Ramalho. Inscrições abertas.'
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -76,7 +76,7 @@ const eventJsonLd = {
     { '@type': 'Person', name: 'Pr. Martinho Carmona' },
     { '@type': 'Person', name: 'Pr. Junior Fernandes' },
     { '@type': 'Person', name: 'Pr. Heitor Alexandre' },
-    { '@type': 'Person', name: 'Pr. Evando Filho' },
+    { '@type': 'Person', name: 'Pr. Evando Martins' },
     { '@type': 'MusicGroup', name: 'Mylla Carvalho & Banda' },
     { '@type': 'Person', name: 'J. Ramalho' },
   ],
