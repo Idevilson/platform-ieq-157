@@ -16,12 +16,8 @@ interface Category {
   valorFormatado: string;
   descricao?: string;
   ordem?: number;
-  earlyBirdValor?: number;
-  earlyBirdValorFormatado?: string;
-  earlyBirdDeadline?: string;
   valorAtual?: number;
   valorAtualFormatado?: string;
-  earlyBirdAtivo?: boolean;
   beneficiosInclusos?: string[];
 }
 
@@ -89,9 +85,7 @@ export function BatchInscriptionForm({
 
   const totalFormatado = fmt(totalCents);
 
-  const perPersonFormatado = selectedCategory?.earlyBirdAtivo
-    ? (selectedCategory.valorAtualFormatado ?? selectedCategory.valorFormatado)
-    : (selectedCategory?.valorFormatado ?? "");
+  const perPersonFormatado = selectedCategory?.valorAtualFormatado ?? selectedCategory?.valorFormatado ?? "";
 
   function calcTaxaCents(total: number, method: InscriptionPaymentMethod): number {
     if (method === "PIX") return 199;

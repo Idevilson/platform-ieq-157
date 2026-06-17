@@ -11,7 +11,7 @@ import { BatchInscriptionCard } from '@/components/inscription/BatchInscriptionC
 import { BatchInscriptionDTO } from '@/shared/types/inscription'
 import { AuthModal } from '@/components/auth'
 import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
-import { DeadlineExtensionBanner } from '@/components/eventos/DeadlineExtensionBanner'
+import { PriceReductionBanner } from '@/components/eventos/PriceReductionBanner'
 
 const EVENT_ID = 'geracao-forte'
 const DETAIL_BASE = '/eventos/geracao-forte/inscricao-coletiva/confirmado'
@@ -94,7 +94,7 @@ export default function GeracaoForteBatchInscricao() {
             <h1 className="text-2xl font-bold text-text-primary">Geração Forte</h1>
             <p className="text-text-secondary mt-1">Inscrição Coletiva</p>
           </div>
-          <DeadlineExtensionBanner />
+          <PriceReductionBanner />
           <CPFLookupSection onResult={(cpf) => setCpfInput(cpf)} />
           {lookupLoading && (
             <div className="flex items-center justify-center py-8 gap-3">
@@ -197,7 +197,7 @@ export default function GeracaoForteBatchInscricao() {
           <p className="text-text-secondary mt-1">Inscrição Coletiva — até 50 participantes</p>
         </div>
 
-        <DeadlineExtensionBanner />
+        <PriceReductionBanner />
 
         {myBatchesLoading && (
           <div className="flex items-center justify-center py-8 gap-3">

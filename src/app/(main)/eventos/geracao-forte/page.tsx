@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks'
 import { SmartInscriptionForm } from '@/components/inscription'
 import { AccountBenefitsCard } from '@/components/inscription/AccountBenefitsCard'
 import { PerkCounter } from '@/components/eventos/PerkCounter'
-import { DeadlineExtensionBanner } from '@/components/eventos/DeadlineExtensionBanner'
+import { PriceReductionBanner } from '@/components/eventos/PriceReductionBanner'
 import { WhatsAppSupport } from '@/components/common/WhatsAppSupport'
 import followMeLogo from '@/assets/images/geracao-forte/follow-me-logo.png'
 import imgBengtson from '@/assets/images/geracao-forte/palestrantes/paulo bengtson ESTILOSO.jpg'
@@ -948,12 +948,9 @@ export default function GeracaoForte() {
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">04 JUL</span>
               <span className="px-4 py-2 bg-gold text-bg-primary font-bold rounded-lg">05 JUL</span>
             </div>
-            <p className="text-text-secondary">
-              Garanta o valor promocional até <strong className="text-gold">14/06/2026</strong>. A partir do dia seguinte, o preço aumenta.
-            </p>
           </div>
 
-          <DeadlineExtensionBanner />
+          <PriceReductionBanner />
 
           {!authLoading && !isAuthenticated && <AccountBenefitsCard redirectTo={`/eventos/${EVENT_ID}#inscricao`} />}
 
