@@ -1,3 +1,5 @@
+import { ValidationError } from '@/server/domain/shared/errors'
+
 export class DataNascimento {
   private constructor(private readonly value: Date) {}
 
@@ -16,10 +18,10 @@ export class DataNascimento {
 
   private static validate(data: Date): void {
     if (isNaN(data.getTime())) {
-      throw new Error('Data de nascimento inválida')
+      throw new ValidationError('Data de nascimento inválida')
     }
     if (data > new Date()) {
-      throw new Error('Data de nascimento não pode ser no futuro')
+      throw new ValidationError('Data de nascimento não pode ser no futuro')
     }
   }
 

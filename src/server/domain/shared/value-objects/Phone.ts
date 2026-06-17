@@ -1,3 +1,4 @@
+import { ValidationError } from '@/server/domain/shared/errors'
 
 export class Phone {
   private readonly value: string
@@ -8,13 +9,13 @@ export class Phone {
 
   static create(phone: string): Phone {
     if (!phone || typeof phone !== 'string') {
-      throw new Error('Telefone é obrigatório')
+      throw new ValidationError('Telefone é obrigatório')
     }
 
     const cleanPhone = Phone.clean(phone)
 
     if (!Phone.isValid(cleanPhone)) {
-      throw new Error('Telefone inválido. Use formato: (DD) 9XXXX-XXXX ou (DD) XXXX-XXXX')
+      throw new ValidationError('Telefone inválido. Use formato: (DD) 9XXXX-XXXX ou (DD) XXXX-XXXX')
     }
 
     return new Phone(cleanPhone)

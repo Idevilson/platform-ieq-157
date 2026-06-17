@@ -3,6 +3,7 @@ import { CPF } from '@/server/domain/shared/value-objects/CPF'
 import { Phone } from '@/server/domain/shared/value-objects/Phone'
 import { DataNascimento } from '@/server/domain/shared/value-objects/DataNascimento'
 import { Sexo } from '@/server/domain/shared/value-objects/Sexo'
+import { ValidationError } from '@/server/domain/shared/errors'
 import { Gender } from '@/shared/constants'
 
 export interface GuestDataInput {
@@ -58,7 +59,7 @@ export class GuestData {
 
   private static validateNome(nome: string): void {
     if (!nome || nome.trim().length < 2) {
-      throw new Error('Nome é obrigatório e deve ter pelo menos 2 caracteres')
+      throw new ValidationError('Nome é obrigatório e deve ter pelo menos 2 caracteres')
     }
   }
 

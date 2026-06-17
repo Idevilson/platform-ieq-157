@@ -1,4 +1,5 @@
 import { Gender, GENDERS } from '@/shared/constants'
+import { ValidationError } from '@/server/domain/shared/errors'
 
 export class Sexo {
   private constructor(private readonly value: Gender) {}
@@ -10,10 +11,10 @@ export class Sexo {
 
   private static validate(sexo: string): void {
     if (!sexo) {
-      throw new Error('Sexo é obrigatório')
+      throw new ValidationError('Sexo é obrigatório')
     }
     if (!GENDERS.includes(sexo as Gender)) {
-      throw new Error('Sexo deve ser masculino ou feminino')
+      throw new ValidationError('Sexo deve ser masculino ou feminino')
     }
   }
 

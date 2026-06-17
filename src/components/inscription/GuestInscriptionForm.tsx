@@ -6,6 +6,7 @@ import { CategorySelector } from './CategorySelector'
 import { InscriptionLookup } from './InscriptionLookup'
 import { useCreateGuestInscription } from '@/hooks'
 import { formatCPF, formatPhone } from '@/lib/formatters'
+import { isValidCPF } from '@/lib/cpf'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
 
 const FIELD_LABELS: Record<string, string> = {
@@ -244,6 +245,7 @@ export function GuestInscriptionForm({
               {...register('cpf', {
                 required: 'CPF e obrigatorio',
                 pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'CPF invalido' },
+                validate: (value) => isValidCPF(value) || 'CPF invalido',
               })}
               placeholder="000.000.000-00"
               onChange={handleCPFChange}

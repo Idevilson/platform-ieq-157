@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/hooks'
+import { isValidCPF } from '@/lib/cpf'
 
 interface ProfileFormData {
   nome: string
@@ -126,6 +127,7 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
               value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
               message: 'CPF inválido (use o formato 000.000.000-00)',
             },
+            validate: (value) => isValidCPF(value) || 'CPF inválido',
           })}
           placeholder="000.000.000-00"
           onChange={handleCPFChange}

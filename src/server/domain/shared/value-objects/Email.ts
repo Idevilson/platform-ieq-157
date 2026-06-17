@@ -1,3 +1,4 @@
+import { ValidationError } from '@/server/domain/shared/errors'
 
 export class Email {
   private readonly value: string
@@ -8,13 +9,13 @@ export class Email {
 
   static create(email: string): Email {
     if (!email || typeof email !== 'string') {
-      throw new Error('Email é obrigatório')
+      throw new ValidationError('Email é obrigatório')
     }
 
     const trimmedEmail = email.toLowerCase().trim()
 
     if (!Email.isValid(trimmedEmail)) {
-      throw new Error('Email inválido')
+      throw new ValidationError('Email inválido')
     }
 
     return new Email(trimmedEmail)
