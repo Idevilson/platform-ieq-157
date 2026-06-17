@@ -7,6 +7,7 @@ import { InscriptionLookup } from './InscriptionLookup'
 import { useCreateGuestInscription } from '@/hooks'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { isValidCPF } from '@/lib/cpf'
+import { fieldClass } from '@/lib/form-field-class'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
 
 const FIELD_LABELS: Record<string, string> = {
@@ -120,10 +121,9 @@ export function GuestInscriptionForm({
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, dirtyFields },
   } = useForm<GuestFormData>({
-    mode: 'onSubmit',
-    reValidateMode: 'onChange',
+    mode: 'onChange',
   })
 
   const selectedSexo = watch('sexo')
@@ -144,15 +144,15 @@ export function GuestInscriptionForm({
   }, [errors, isSubmitted])
 
   const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('cpf', formatCPF(event.target.value))
+    setValue('cpf', formatCPF(event.target.value), { shouldDirty: true, shouldValidate: true })
   }
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('telefone', formatPhone(event.target.value))
+    setValue('telefone', formatPhone(event.target.value), { shouldDirty: true, shouldValidate: true })
   }
 
   const handleCampoMissionarioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldValidate: isSubmitted })
+    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldDirty: true, shouldValidate: true })
   }
 
   const onSubmit = (data: GuestFormData) => {
@@ -208,7 +208,7 @@ export function GuestInscriptionForm({
           <input
             id="nome"
             type="text"
-            className={errors.nome ? 'input-error' : ''}
+            className={fieldClass('nome', errors, dirtyFields)}
             {...register('nome', {
               required: 'Nome e obrigatorio',
               minLength: { value: 2, message: 'Nome deve ter pelo menos 2 caracteres' },
@@ -224,7 +224,7 @@ export function GuestInscriptionForm({
           <input
             id="email"
             type="email"
-            className={errors.email ? 'input-error' : ''}
+            className={fieldClass('email', errors, dirtyFields)}
             {...register('email', {
               required: 'Email e obrigatorio',
               pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email invalido' },
@@ -241,7 +241,7 @@ export function GuestInscriptionForm({
             <input
               id="cpf"
               type="text"
-              className={errors.cpf ? 'input-error' : ''}
+              className={fieldClass('cpf', errors, dirtyFields)}
               {...register('cpf', {
                 required: 'CPF e obrigatorio',
                 pattern: { value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/, message: 'CPF invalido' },
@@ -260,7 +260,7 @@ export function GuestInscriptionForm({
             <input
               id="telefone"
               type="tel"
-              className={errors.telefone ? 'input-error' : ''}
+              className={fieldClass('telefone', errors, dirtyFields)}
               {...register('telefone', {
                 required: 'Telefone e obrigatorio',
                 pattern: { value: /^\(\d{2}\) \d{4,5}-\d{4}$/, message: 'Telefone invalido' },
@@ -279,7 +279,7 @@ export function GuestInscriptionForm({
           <input
             id="cidade"
             type="text"
-            className={errors.cidade ? 'input-error' : ''}
+            className={fieldClass('cidade', errors, dirtyFields)}
             {...register('cidade', {
               required: 'Cidade e obrigatoria',
               minLength: { value: 2, message: 'Cidade deve ter pelo menos 2 caracteres' },
@@ -296,7 +296,7 @@ export function GuestInscriptionForm({
             id="campoMissionario"
             type="text"
             inputMode="numeric"
-            className={errors.campoMissionario ? 'input-error' : ''}
+            className={fieldClass('campoMissionario', errors, dirtyFields)}
             {...register('campoMissionario', {
               required: 'Número do campo missionário é obrigatório',
               pattern: { value: /^\d+$/, message: 'O campo missionário deve conter apenas números' },
@@ -311,7 +311,7 @@ export function GuestInscriptionForm({
         <div className="form-row form-row-aligned">
           <div className="form-group">
             <label htmlFor="idade">Idade *</label>
-            <div className={`age-input-wrapper ${errors.idade ? 'has-error' : ''}`}>
+            <div className={`age-input-wrapper ${errors.idade ? 'has-error' : dirtyFields.idade ? 'has-success' : ''}`}>
               <input
                 id="idade"
                 type="number"

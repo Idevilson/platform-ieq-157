@@ -21,6 +21,14 @@ export function BatchParticipantRow({
   onRemove,
   canRemove,
 }: BatchParticipantRowProps) {
+  const nomeTrim = nome.trim()
+  const nomeBorder =
+    nomeTrim.length === 0 ? 'border-gold/20' :
+    nomeTrim.length < 2 ? 'border-red-500/60' :
+    'border-green-500/60'
+  const sexoBorder = sexo ? 'border-green-500/60' : 'border-gold/20'
+  const tamanhoBorder = tamanho ? 'border-green-500/60' : 'border-gold/20'
+
   const removeButton = (className: string) => (
     <button
       type="button"
@@ -46,7 +54,7 @@ export function BatchParticipantRow({
           value={nome}
           onChange={(e) => onChange(index, "nome", e.target.value)}
           placeholder="Nome completo"
-          className="flex-1 min-w-0 bg-bg-primary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50"
+          className={`flex-1 min-w-0 bg-bg-primary border ${nomeBorder} rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold/50`}
         />
         {removeButton("flex sm:hidden")}
       </div>
@@ -55,7 +63,7 @@ export function BatchParticipantRow({
         <select
           value={sexo}
           onChange={(e) => onChange(index, "sexo", e.target.value)}
-          className="flex-1 min-w-0 bg-bg-primary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 sm:flex-none sm:w-32"
+          className={`flex-1 min-w-0 bg-bg-primary border ${sexoBorder} rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 sm:flex-none sm:w-32`}
         >
           <option value="">Sexo</option>
           <option value="masculino">Masculino</option>
@@ -65,7 +73,7 @@ export function BatchParticipantRow({
         <select
           value={tamanho}
           onChange={(e) => onChange(index, "tamanho", e.target.value)}
-          className="flex-1 min-w-0 bg-bg-primary border border-gold/20 rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 sm:flex-none sm:w-24"
+          className={`flex-1 min-w-0 bg-bg-primary border ${tamanhoBorder} rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 sm:flex-none sm:w-24`}
         >
           <option value="">Camisa</option>
           {SHIRT_SIZES.map((s) => (

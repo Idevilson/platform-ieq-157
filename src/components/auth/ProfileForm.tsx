@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/hooks'
 import { isValidCPF } from '@/lib/cpf'
+import { fieldClass } from '@/lib/form-field-class'
 
 interface ProfileFormData {
   nome: string
@@ -26,8 +27,8 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
-  } = useForm<ProfileFormData>()
+    formState: { errors, dirtyFields },
+  } = useForm<ProfileFormData>({ mode: 'onChange' })
 
   useEffect(() => {
     if (user?.profile) {
@@ -54,12 +55,12 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value)
-    setValue('cpf', formatted)
+    setValue('cpf', formatted, { shouldDirty: true, shouldValidate: true })
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value)
-    setValue('telefone', formatted)
+    setValue('telefone', formatted, { shouldDirty: true, shouldValidate: true })
   }
 
   const onSubmit = async (data: ProfileFormData) => {
@@ -97,7 +98,7 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
         <input
           id="nome"
           type="text"
-          className="input"
+          className={`input ${fieldClass('nome', errors, dirtyFields)}`}
           {...register('nome', {
             required: 'Nome é obrigatório',
             minLength: {
@@ -120,7 +121,7 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
         <input
           id="cpf"
           type="text"
-          className="input"
+          className={`input ${fieldClass('cpf', errors, dirtyFields)}`}
           {...register('cpf', {
             required: 'CPF é obrigatório',
             pattern: {
@@ -146,7 +147,7 @@ export function ProfileForm({ onSuccess, isCompletionFlow = false }: ProfileForm
         <input
           id="telefone"
           type="tel"
-          className="input"
+          className={`input ${fieldClass('telefone', errors, dirtyFields)}`}
           {...register('telefone', {
             required: 'Telefone é obrigatório',
             pattern: {

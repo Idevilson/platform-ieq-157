@@ -6,6 +6,7 @@ import { CategorySelector } from './CategorySelector'
 import { useCreateUserInscription } from '@/hooks/mutations/useInscriptionMutations'
 import { formatCPF, formatPhone } from '@/lib/formatters'
 import { isValidCPF } from '@/lib/cpf'
+import { fieldClass } from '@/lib/form-field-class'
 import { UserDTO } from '@/shared/types'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
 
@@ -90,10 +91,9 @@ export function UserInscriptionForm({
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitted },
+    formState: { errors, isSubmitted, dirtyFields },
   } = useForm<MissingFieldsForm>({
-    mode: 'onSubmit',
-    reValidateMode: 'onChange',
+    mode: 'onChange',
   })
 
   const selectedSexo = watch('sexo')
@@ -113,15 +113,15 @@ export function UserInscriptionForm({
   }, [errors, isSubmitted])
 
   const handleCPFChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('cpf', formatCPF(event.target.value))
+    setValue('cpf', formatCPF(event.target.value), { shouldDirty: true, shouldValidate: true })
   }
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('telefone', formatPhone(event.target.value))
+    setValue('telefone', formatPhone(event.target.value), { shouldDirty: true, shouldValidate: true })
   }
 
   const handleCampoMissionarioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldValidate: isSubmitted })
+    setValue('campoMissionario', event.target.value.replace(/\D/g, ''), { shouldDirty: true, shouldValidate: true })
   }
 
   const onSubmit = (data: MissingFieldsForm) => {
@@ -219,7 +219,7 @@ export function UserInscriptionForm({
                 onChange={handleCPFChange}
                 maxLength={14}
                 disabled={isLoading}
-                className={`input ${errors.cpf ? 'input-error' : ''}`}
+                className={`input ${fieldClass('cpf', errors, dirtyFields)}`}
               />
               {errors.cpf && <span className="text-red-400 text-sm">{errors.cpf.message}</span>}
             </div>
@@ -239,7 +239,7 @@ export function UserInscriptionForm({
                 onChange={handlePhoneChange}
                 maxLength={15}
                 disabled={isLoading}
-                className={`input ${errors.telefone ? 'input-error' : ''}`}
+                className={`input ${fieldClass('telefone', errors, dirtyFields)}`}
               />
               {errors.telefone && <span className="text-red-400 text-sm">{errors.telefone.message}</span>}
             </div>
@@ -252,6 +252,8 @@ export function UserInscriptionForm({
                 <div className={`flex items-center justify-center h-[5.25rem] rounded-xl border-2 transition-all ${
                   errors.idade
                     ? 'border-red-500/50 bg-white/[0.03]'
+                    : dirtyFields.idade
+                    ? 'border-green-500/50 bg-white/[0.03]'
                     : 'border-gold/15 bg-white/[0.03] hover:border-gold/40 focus-within:border-gold/40'
                 }`}>
                   <input
@@ -336,7 +338,7 @@ export function UserInscriptionForm({
           onChange={handleCampoMissionarioChange}
           placeholder="Ex: 157"
           disabled={isLoading}
-          className={`input w-full ${errors.campoMissionario ? 'input-error' : ''}`}
+          className={`input w-full ${fieldClass('campoMissionario', errors, dirtyFields)}`}
         />
         {errors.campoMissionario && <span className="text-red-400 text-sm">{errors.campoMissionario.message}</span>}
       </div>
