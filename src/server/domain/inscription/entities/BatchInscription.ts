@@ -247,10 +247,12 @@ export class BatchInscription implements Timestamps {
     if (this._status !== 'pendente') {
       throw new Error('Apenas lotes pendentes podem ser confirmados')
     }
+    const now = new Date()
     this._status = 'confirmado'
     this._paymentId = paymentId
+    this._confirmadoEm = now
     this._kitPendente = true
-    this._atualizadoEm = new Date()
+    this._atualizadoEm = now
   }
 
   confirmCash(confirmedBy: string, confirmedByNome?: string): void {
