@@ -20,6 +20,9 @@ export interface DailyReportStats {
   receitaHoje: number
   redencao: number
   fora: number
+  pix: number
+  creditCard: number
+  cash: number
   perkAlocado?: number
   perkLimite?: number
   perkRestante?: number
@@ -145,6 +148,14 @@ export class DailyReport {
       inscriptions.filter(i => isFora(i.guestData?.cidade)).length +
       batches.filter(b => isFora(b.cidade)).reduce((sum, b) => sum + b.totalParticipantes, 0)
 
+    const countByMethod = (method: 'PIX' | 'CREDIT_CARD' | 'CASH'): number =>
+      inscriptions.filter(i => i.preferredPaymentMethod === method).length +
+      batches.filter(b => b.preferredPaymentMethod === method).reduce((sum, b) => sum + b.totalParticipantes, 0)
+
+    const pix = countByMethod('PIX')
+    const creditCard = countByMethod('CREDIT_CARD')
+    const cash = countByMethod('CASH')
+
     const total = totalAvulsas + totalColetivas
 
     return {
@@ -160,6 +171,9 @@ export class DailyReport {
       receitaHoje,
       redencao,
       fora,
+      pix,
+      creditCard,
+      cash,
       perkAlocado: this._perk ? this._perk.limiteEstoque - this._perk.quantidadeRestante : undefined,
       perkLimite: this._perk?.limiteEstoque,
       perkRestante: this._perk?.quantidadeRestante,
@@ -181,6 +195,16 @@ export class DailyReport {
 
     lines.push('', '💰 *Receita confirmada*', `   ${formatBRL(s.receita)}`)
     if (s.receitaHoje > 0) lines.push(`   ⬆️ +${formatBRL(s.receitaHoje)} hoje`)
+
+    if (s.pix + s.creditCard + s.cash > 0) {
+      lines.push(
+        '',
+        '💳 *Pagamento*',
+        `   • PIX: ${s.pix} (${pct(s.pix, s.total)}%)`,
+        `   • Cartão de crédito: ${s.creditCard} (${pct(s.creditCard, s.total)}%)`,
+        `   • Dinheiro em espécie: ${s.cash} (${pct(s.cash, s.total)}%)`,
+      )
+    }
 
     if (s.redencao + s.fora > 0) {
       lines.push(
