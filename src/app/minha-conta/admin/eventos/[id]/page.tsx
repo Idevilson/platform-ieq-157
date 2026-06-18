@@ -78,22 +78,27 @@ interface StatCardProps {
   value: string | number
   subValue?: string
   icon: React.ReactNode
-  color: 'gold' | 'green' | 'yellow' | 'blue'
+  color: 'gold' | 'green' | 'yellow' | 'blue' | 'orange'
+  action?: React.ReactNode
 }
 
-function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
+function StatCard({ label, value, subValue, icon, color, action }: StatCardProps) {
   const colorClasses = {
     gold: 'text-gold border-gold/20',
     green: 'text-green-400 border-green-500/20',
     yellow: 'text-yellow-400 border-yellow-500/20',
     blue: 'text-sky-400 border-sky-500/20',
+    orange: 'text-orange-400 border-orange-500/20',
   }
 
   return (
     <div className={`bg-bg-secondary border ${colorClasses[color]} rounded-xl p-5`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-text-secondary">{label}</span>
-        <span className={colorClasses[color]}>{icon}</span>
+        <div className="flex items-center gap-2">
+          {action}
+          <span className={colorClasses[color]}>{icon}</span>
+        </div>
       </div>
       <p className={`text-3xl font-bold ${colorClasses[color].split(' ')[0]}`}>{value}</p>
       {subValue && <p className="text-xs text-text-muted mt-1">{subValue}</p>}
@@ -403,6 +408,7 @@ export default function AdminEventDetailPage() {
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
   const [selectedInscription, setSelectedInscription] = useState<InscriptionWithDetails | null>(null)
   const [activeTab, setActiveTab] = useState<'avulsas' | 'coletivas'>('avulsas')
+  const [revenueHidden, setRevenueHidden] = useState(true)
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useEventById(eventId)
   const { data: inscriptionsData, isLoading: inscriptionsLoading, refetch: refetchInscriptions } = useAdminEventInscriptions(
@@ -471,6 +477,14 @@ export default function AdminEventDetailPage() {
   const outsideCount =
     inscriptions.filter(i => i.cidade && !isRedencao(i.cidade)).length +
     batches.filter(b => b.cidade && !isRedencao(b.cidade)).reduce((sum, b) => sum + b.totalParticipantes, 0)
+
+  const countByPaymentMethod = (method: InscriptionPaymentMethod) =>
+    inscriptions.filter(i => i.preferredPaymentMethod === method).length +
+    batches.filter(b => b.preferredPaymentMethod === method).reduce((sum, b) => sum + b.totalParticipantes, 0)
+
+  const pixCount = countByPaymentMethod('PIX')
+  const creditCardCount = countByPaymentMethod('CREDIT_CARD')
+  const cashCount = countByPaymentMethod('CASH')
 
   const handleStatusChange = async (newStatus: EventStatus) => {
     setIsStatusMenuOpen(false)
@@ -672,13 +686,33 @@ export default function AdminEventDetailPage() {
         />
         <StatCard
           label="Receita Confirmada"
-          value={`R$ ${(totalRevenue / 100).toFixed(2).replace('.', ',')}`}
+          value={revenueHidden ? 'R$ ••••••' : `R$ ${(totalRevenue / 100).toFixed(2).replace('.', ',')}`}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           }
           color="blue"
+          action={
+            <button
+              type="button"
+              onClick={() => setRevenueHidden(v => !v)}
+              aria-label={revenueHidden ? 'Mostrar receita' : 'Ocultar receita'}
+              title={revenueHidden ? 'Mostrar receita' : 'Ocultar receita'}
+              className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+            >
+              {revenueHidden ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          }
         />
       </div>
 
@@ -706,6 +740,43 @@ export default function AdminEventDetailPage() {
             </svg>
           }
           color="blue"
+        />
+      </div>
+
+      {/* Payment Method Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          label="PIX"
+          value={pixCount}
+          subValue={totalInscriptions > 0 ? `${Math.round((pixCount / totalInscriptions) * 100)}% do total` : undefined}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          }
+          color="blue"
+        />
+        <StatCard
+          label="Cartão de Crédito"
+          value={creditCardCount}
+          subValue={totalInscriptions > 0 ? `${Math.round((creditCardCount / totalInscriptions) * 100)}% do total` : undefined}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zm2 10h4" />
+            </svg>
+          }
+          color="gold"
+        />
+        <StatCard
+          label="Dinheiro em espécie"
+          value={cashCount}
+          subValue={totalInscriptions > 0 ? `${Math.round((cashCount / totalInscriptions) * 100)}% do total` : undefined}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          color="orange"
         />
       </div>
 
