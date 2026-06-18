@@ -158,7 +158,15 @@ export default function OperacaoPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-5">
-      <h1 className="text-2xl font-bold text-gold">Operação do Evento</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gold">Operação do Evento</h1>
+        <a
+          href="/minha-conta/operacao/relatorios"
+          className="text-sm text-gold border border-gold/30 hover:border-gold/60 hover:bg-gold/5 rounded-lg px-3 py-1.5 transition-colors no-underline whitespace-nowrap"
+        >
+          📄 Relatórios
+        </a>
+      </div>
 
       <EventSelect events={events} value={eventId} loading={eventsLoading} onChange={(id) => { setEventId(id); setSearch('') }} />
 

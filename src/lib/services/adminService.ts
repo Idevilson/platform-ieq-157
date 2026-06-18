@@ -522,6 +522,69 @@ export const adminService = {
     if (response.success && response.data) return response.data
     throw new Error(response.error || 'Erro ao enviar relatório')
   },
+
+  async downloadInscriptionsSnapshot(eventId: string): Promise<{ filename: string }> {
+    const token = await firebaseAuthService.getIdToken()
+    if (!token) throw new Error('Não autenticado')
+
+    const response = await fetch(
+      `${API_BASE_URL}/reports/inscriptions/snapshot?eventId=${encodeURIComponent(eventId)}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: string } | null
+      throw new Error(body?.error || `Erro ao baixar snapshot (HTTP ${response.status})`)
+    }
+
+    const filename =
+      parseFilenameFromContentDisposition(response.headers.get('Content-Disposition'))
+      ?? `inscricoes-${eventId}-${new Date().toISOString().slice(0, 10)}.json`
+
+    const blob = await response.blob()
+    triggerBlobDownload(blob, filename)
+    return { filename }
+  },
+
+  async downloadInscriptionsPdf(eventId: string): Promise<{ filename: string }> {
+    const token = await firebaseAuthService.getIdToken()
+    if (!token) throw new Error('Não autenticado')
+
+    const response = await fetch(
+      `${API_BASE_URL}/reports/inscriptions/generate?eventId=${encodeURIComponent(eventId)}`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
+    )
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: string } | null
+      throw new Error(body?.error || `Erro ao gerar PDF (HTTP ${response.status})`)
+    }
+
+    const filename =
+      parseFilenameFromContentDisposition(response.headers.get('Content-Disposition'))
+      ?? `inscricoes-${eventId}-${new Date().toISOString().slice(0, 10)}.pdf`
+
+    const blob = await response.blob()
+    triggerBlobDownload(blob, filename)
+    return { filename }
+  },
+}
+
+function parseFilenameFromContentDisposition(header: string | null): string | undefined {
+  if (!header) return undefined
+  const match = header.match(/filename="([^"]+)"/)
+  return match?.[1]
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 export interface SendDailyReportResponse {

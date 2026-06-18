@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSendDailyReport } from '@/hooks/mutations/useAdminEventMutations'
+import { useSendDailyReport, useDownloadInscriptionsSnapshot } from '@/hooks/mutations/useAdminEventMutations'
 import { SendDailyReportResponse } from '@/lib/services/adminService'
 
 interface DailyReportCardProps {
@@ -11,13 +11,15 @@ interface DailyReportCardProps {
 type ActionResult =
   | { kind: 'success'; data: SendDailyReportResponse }
   | { kind: 'error'; message: string }
+  | { kind: 'snapshot'; filename: string }
 
 export function DailyReportCard({ eventId }: DailyReportCardProps) {
   const sendReport = useSendDailyReport()
+  const downloadSnapshot = useDownloadInscriptionsSnapshot()
   const [result, setResult] = useState<ActionResult | null>(null)
-  const [lastAction, setLastAction] = useState<'preview' | 'send' | null>(null)
+  const [lastAction, setLastAction] = useState<'preview' | 'send' | 'snapshot' | null>(null)
 
-  const isLoading = sendReport.isPending
+  const isLoading = sendReport.isPending || downloadSnapshot.isPending
 
   const handleAction = async (dryRun: boolean) => {
     setLastAction(dryRun ? 'preview' : 'send')
@@ -25,6 +27,17 @@ export function DailyReportCard({ eventId }: DailyReportCardProps) {
     try {
       const data = await sendReport.mutateAsync({ eventId, dryRun })
       setResult({ kind: 'success', data })
+    } catch (error) {
+      setResult({ kind: 'error', message: error instanceof Error ? error.message : 'Erro' })
+    }
+  }
+
+  const handleSnapshot = async () => {
+    setLastAction('snapshot')
+    setResult(null)
+    try {
+      const { filename } = await downloadSnapshot.mutateAsync(eventId)
+      setResult({ kind: 'snapshot', filename })
     } catch (error) {
       setResult({ kind: 'error', message: error instanceof Error ? error.message : 'Erro' })
     }
@@ -41,7 +54,16 @@ export function DailyReportCard({ eventId }: DailyReportCardProps) {
             Envia o resumo de inscrições no grupo configurado. O cron já dispara automaticamente todo dia às 08h.
           </p>
         </div>
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={handleSnapshot}
+            disabled={isLoading}
+            title="Baixa um JSON com todos os dados do evento pra testar layout de PDF offline"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading && lastAction === 'snapshot' ? 'Baixando...' : '📥 Snapshot JSON'}
+          </button>
           <button
             type="button"
             onClick={() => handleAction(true)}
@@ -72,6 +94,20 @@ function ResultBlock({ result }: { result: ActionResult }) {
       <div className="mt-2 p-4 rounded-lg bg-red-500/10 border border-red-500/30">
         <p className="text-sm font-medium text-red-400">Erro ao executar</p>
         <p className="text-xs text-text-secondary mt-1 break-words">{result.message}</p>
+      </div>
+    )
+  }
+
+  if (result.kind === 'snapshot') {
+    return (
+      <div className="mt-2 p-4 rounded-lg bg-sky-500/10 border border-sky-500/30">
+        <p className="text-sm font-medium text-sky-400 mb-1">📥 Snapshot baixado</p>
+        <p className="text-xs text-text-secondary break-words">
+          Arquivo: <code className="text-sky-400 font-mono">{result.filename}</code>
+        </p>
+        <p className="text-xs text-text-muted mt-2">
+          Contém CPF e telefone das inscrições — não commite no git.
+        </p>
       </div>
     )
   }

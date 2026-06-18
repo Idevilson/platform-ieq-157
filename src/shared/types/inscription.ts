@@ -30,6 +30,7 @@ export interface InscriptionDTO {
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: string | Date
+  confirmadoEm?: string | Date
   criadoEm: string | Date
   atualizadoEm: string | Date
 }
@@ -94,6 +95,7 @@ export interface BatchInscriptionDTO {
   checkoutUrl?: string
   dataVencimentoPagamento?: string
   paymentStatus?: string
+  confirmadoEm?: string
   criadoEm: string
   atualizadoEm: string
 }

@@ -86,3 +86,15 @@ export function useSendDailyReport() {
     mutationFn: (vars) => adminService.sendDailyReport(vars ?? undefined),
   })
 }
+
+export function useDownloadInscriptionsSnapshot() {
+  return useMutation<{ filename: string }, Error, string>({
+    mutationFn: (eventId) => adminService.downloadInscriptionsSnapshot(eventId),
+  })
+}
+
+export function useDownloadInscriptionsPdf() {
+  return useMutation<{ filename: string }, Error, string>({
+    mutationFn: (eventId) => adminService.downloadInscriptionsPdf(eventId),
+  })
+}
