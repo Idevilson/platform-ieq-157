@@ -1,5 +1,5 @@
-import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb, PageSizes, RGB } from 'pdf-lib'
-import { EventDTO } from '@/shared/types/event'
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb, PageSizes, RGB, degrees } from 'pdf-lib'
+import { EventDTO, EventCategoryDTO } from '@/shared/types/event'
 import { InscriptionDTO, BatchInscriptionDTO } from '@/shared/types/inscription'
 import { InscriptionPaymentMethod, SHIRT_SIZES, ShirtSize } from '@/shared/constants'
 import {
@@ -15,7 +15,10 @@ const MARGIN_TOP = 40
 const MARGIN_BOTTOM = 32
 const USABLE_WIDTH = A4[0] - MARGIN_X * 2
 
-const COL_NAME = 178
+const TIER_BAR_WIDTH = 16
+const TIER_BANNER_HEIGHT = 18
+
+const COL_NAME = 162
 const COL_CONTACT = 150
 const COL_DATE = 58
 const COL_PAY = 38
@@ -23,13 +26,13 @@ const COL_STATUS = 54
 const COL_SIZE = 22
 
 const COL_X = {
-  name: MARGIN_X,
-  contact: MARGIN_X + COL_NAME,
-  date: MARGIN_X + COL_NAME + COL_CONTACT,
-  pay: MARGIN_X + COL_NAME + COL_CONTACT + COL_DATE,
-  status: MARGIN_X + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY,
-  size: MARGIN_X + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY + COL_STATUS,
-  perk: MARGIN_X + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY + COL_STATUS + COL_SIZE,
+  name: MARGIN_X + TIER_BAR_WIDTH,
+  contact: MARGIN_X + TIER_BAR_WIDTH + COL_NAME,
+  date: MARGIN_X + TIER_BAR_WIDTH + COL_NAME + COL_CONTACT,
+  pay: MARGIN_X + TIER_BAR_WIDTH + COL_NAME + COL_CONTACT + COL_DATE,
+  status: MARGIN_X + TIER_BAR_WIDTH + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY,
+  size: MARGIN_X + TIER_BAR_WIDTH + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY + COL_STATUS,
+  perk: MARGIN_X + TIER_BAR_WIDTH + COL_NAME + COL_CONTACT + COL_DATE + COL_PAY + COL_STATUS + COL_SIZE,
 }
 
 const ROW_HEIGHT = 14
@@ -45,6 +48,12 @@ const COLOR_DIVIDER = rgb(0.85, 0.85, 0.85)
 const COLOR_CONFIRMADO = rgb(0.15, 0.6, 0.25)
 const COLOR_PENDENTE = rgb(0.85, 0.6, 0.1)
 const COLOR_CANCELADO = rgb(0.75, 0.2, 0.2)
+const COLOR_SIMPLES = rgb(0.22, 0.6, 0.86)
+const COLOR_PREMIUM = rgb(0.92, 0.7, 0.05)
+const COLOR_SIMPLES_BG = rgb(0.91, 0.96, 1)
+const COLOR_PREMIUM_BG = rgb(1, 0.97, 0.85)
+
+type CategoryTier = 'Simples' | 'Premium' | null
 
 interface PersonRow {
   source: 'avulsa' | 'lote'
@@ -58,6 +67,8 @@ interface PersonRow {
   statusLabel: string
   tamanho?: string
   brinde: boolean
+  categoryId: string
+  tier: CategoryTier
 }
 
 interface CityGroup {
@@ -93,9 +104,32 @@ export class InscriptionsPdfReport {
   }
 
   async build(): Promise<Uint8Array> {
-    const groups = this.groupByCity()
+    const tierByCategory = buildTierMap(this._event.categorias)
+    const avulsasGroups = this.groupAvulsasByCity(tierByCategory)
+    const lotesGroups = this.groupLotesByCity(tierByCategory)
     const shirts = this.computeShirtSummary()
-    return renderPdf({ event: this._event, groups, shirts })
+    const tierCounts = this.countTiers(tierByCategory)
+    return renderPdf({
+      event: this._event,
+      avulsasGroups,
+      lotesGroups,
+      shirts,
+      tierCounts,
+      tierByCategory,
+    })
+  }
+
+  private countTiers(tierByCategory: Map<string, CategoryTier>): { simples: number; premium: number } {
+    let simples = 0
+    let premium = 0
+    const bump = (categoryId: string, n: number) => {
+      const tier = tierByCategory.get(categoryId)
+      if (tier === 'Simples') simples += n
+      else if (tier === 'Premium') premium += n
+    }
+    for (const i of this._inscriptions) bump(i.categoryId, 1)
+    for (const b of this._batches) bump(b.categoryId, b.totalParticipantes)
+    return { simples, premium }
   }
 
   private computeShirtSummary(): ShirtSummary {
@@ -123,40 +157,60 @@ export class InscriptionsPdfReport {
     return { bySize, semTamanho, outros, total }
   }
 
-  private groupByCity(): CityGroup[] {
+  private groupAvulsasByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
     const buckets = new Map<string, CityGroup>()
-
-    const upsert = (city: NormalizedCity): CityGroup => {
-      const key = `${city.bucket}::${city.canonical}`
-      const existing = buckets.get(key)
-      if (existing) return existing
-      const fresh: CityGroup = { city, rows: [] }
-      buckets.set(key, fresh)
-      return fresh
-    }
-
     for (const i of this._inscriptions) {
       const city = normalizeCity(i.guestData?.cidade)
-      upsert(city).rows.push(toAvulsaRow(i))
+      upsertCityGroup(buckets, city).rows.push(
+        toAvulsaRow(i, tierByCategory.get(i.categoryId) ?? null),
+      )
     }
+    return finalizeGroups(buckets)
+  }
 
+  private groupLotesByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
+    const buckets = new Map<string, CityGroup>()
     for (const b of this._batches) {
       const city = normalizeCity(b.cidade ?? b.responsavel?.cidade)
-      const group = upsert(city)
+      const group = upsertCityGroup(buckets, city)
+      const tier = tierByCategory.get(b.categoryId) ?? null
       for (const p of b.participantes) {
-        group.rows.push(toLoteRow(b, p.nome, p.tamanho, !!p.temBrinde))
+        group.rows.push(toLoteRow(b, p.nome, p.tamanho, !!p.temBrinde, tier))
       }
     }
-
-    const sorted = [...buckets.values()].sort((a, b) => compareNormalizedCity(a.city, b.city))
-    for (const g of sorted) {
-      g.rows.sort(compareByPaymentDate)
-    }
-    return sorted
+    return finalizeGroups(buckets)
   }
 }
 
-function toAvulsaRow(i: InscriptionDTO): PersonRow {
+function upsertCityGroup(buckets: Map<string, CityGroup>, city: NormalizedCity): CityGroup {
+  const key = `${city.bucket}::${city.canonical}`
+  const existing = buckets.get(key)
+  if (existing) return existing
+  const fresh: CityGroup = { city, rows: [] }
+  buckets.set(key, fresh)
+  return fresh
+}
+
+function finalizeGroups(buckets: Map<string, CityGroup>): CityGroup[] {
+  const sorted = [...buckets.values()].sort((a, b) => compareNormalizedCity(a.city, b.city))
+  for (const g of sorted) {
+    g.rows.sort(compareByPaymentDate)
+  }
+  return sorted
+}
+
+function buildTierMap(categorias: EventCategoryDTO[]): Map<string, CategoryTier> {
+  const sorted = [...categorias].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+  const map = new Map<string, CategoryTier>()
+  sorted.forEach((cat, idx) => {
+    if (idx === 0) map.set(cat.id, 'Simples')
+    else if (idx === 1) map.set(cat.id, 'Premium')
+    else map.set(cat.id, 'Premium')
+  })
+  return map
+}
+
+function toAvulsaRow(i: InscriptionDTO, tier: CategoryTier): PersonRow {
   return {
     source: 'avulsa',
     nome: i.guestData?.nome?.trim() || '—',
@@ -169,6 +223,8 @@ function toAvulsaRow(i: InscriptionDTO): PersonRow {
     statusLabel: i.statusLabel ?? i.status,
     tamanho: i.tamanho,
     brinde: i.temBrinde === true,
+    categoryId: i.categoryId,
+    tier,
   }
 }
 
@@ -177,6 +233,7 @@ function toLoteRow(
   nome: string,
   tamanho: string | undefined,
   brinde: boolean,
+  tier: CategoryTier,
 ): PersonRow {
   return {
     source: 'lote',
@@ -190,6 +247,8 @@ function toLoteRow(
     statusLabel: b.status === 'confirmado' ? 'Confirmado' : b.status === 'pendente' ? 'Pendente' : 'Cancelado',
     tamanho,
     brinde,
+    categoryId: b.categoryId,
+    tier,
   }
 }
 
@@ -293,8 +352,11 @@ interface Renderer {
 
 async function renderPdf(input: {
   event: EventDTO
-  groups: CityGroup[]
+  avulsasGroups: CityGroup[]
+  lotesGroups: CityGroup[]
   shirts: ShirtSummary
+  tierCounts: { simples: number; premium: number }
+  tierByCategory: Map<string, CategoryTier>
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const fontRegular = await doc.embedFont(StandardFonts.Helvetica)
@@ -308,20 +370,24 @@ async function renderPdf(input: {
     fontBold,
   }
 
-  const totalAvulsas = input.groups.reduce(
-    (sum, g) => sum + g.rows.filter((row) => row.source === 'avulsa').length,
-    0,
-  )
-  const totalLotes = input.groups.reduce(
-    (sum, g) => sum + g.rows.filter((row) => row.source === 'lote').length,
-    0,
-  )
+  const totalAvulsas = input.avulsasGroups.reduce((sum, g) => sum + g.rows.length, 0)
+  const totalLotes = input.lotesGroups.reduce((sum, g) => sum + g.rows.length, 0)
 
-  drawHeader(r, input.event, totalAvulsas, totalLotes)
+  drawHeader(r, input.event, totalAvulsas, totalLotes, input.tierCounts, input.tierByCategory)
   drawShirtSummary(r, input.shirts)
 
-  for (const group of input.groups) {
-    drawCitySection(r, group)
+  if (input.avulsasGroups.length > 0) {
+    drawTopLevelSection(r, 'INSCRIÇÕES AVULSAS', totalAvulsas)
+    for (const group of input.avulsasGroups) {
+      drawCitySection(r, group, input.event, input.tierByCategory)
+    }
+  }
+
+  if (input.lotesGroups.length > 0) {
+    drawTopLevelSection(r, 'INSCRIÇÕES COLETIVAS', totalLotes)
+    for (const group of input.lotesGroups) {
+      drawCitySection(r, group, input.event, input.tierByCategory)
+    }
   }
 
   drawPageNumbers(r)
@@ -329,7 +395,44 @@ async function renderPdf(input: {
   return doc.save()
 }
 
-function drawHeader(r: Renderer, event: EventDTO, totalAvulsas: number, totalLotes: number): void {
+const TOP_LEVEL_HEADER_HEIGHT = 26
+
+function drawTopLevelSection(r: Renderer, title: string, count: number): void {
+  ensureSpace(r, TOP_LEVEL_HEADER_HEIGHT + SECTION_HEADER_HEIGHT + TABLE_HEADER_HEIGHT)
+  r.page.drawRectangle({
+    x: MARGIN_X,
+    y: r.cursor - TOP_LEVEL_HEADER_HEIGHT,
+    width: USABLE_WIDTH,
+    height: TOP_LEVEL_HEADER_HEIGHT,
+    color: COLOR_GOLD,
+  })
+  drawTextAt(r, title, {
+    x: MARGIN_X + 10,
+    y: r.cursor - 17,
+    size: 12,
+    font: r.fontBold,
+    color: rgb(1, 1, 1),
+  })
+  const countText = `${count} pessoa${count === 1 ? '' : 's'}`
+  const countWidth = r.fontRegular.widthOfTextAtSize(countText, 10)
+  drawTextAt(r, countText, {
+    x: MARGIN_X + USABLE_WIDTH - 10 - countWidth,
+    y: r.cursor - 17,
+    size: 10,
+    font: r.fontRegular,
+    color: rgb(1, 1, 1),
+  })
+  r.cursor -= TOP_LEVEL_HEADER_HEIGHT + 4
+}
+
+function drawHeader(
+  r: Renderer,
+  event: EventDTO,
+  totalAvulsas: number,
+  totalLotes: number,
+  tierCounts: { simples: number; premium: number },
+  tierByCategory: Map<string, CategoryTier>,
+): void {
   drawTextAt(r, event.titulo, {
     x: MARGIN_X,
     y: r.cursor - 14,
@@ -362,6 +465,11 @@ function drawHeader(r: Renderer, event: EventDTO, totalAvulsas: number, totalLot
   })
   r.cursor -= 14
 
+  const hasTiers = tierCounts.simples > 0 || tierCounts.premium > 0
+  if (hasTiers) {
+    drawTierLegend(r, event, tierCounts, tierByCategory)
+  }
+
   const generated = `Gerado em ${formatBRDateTime(new Date())}`
   drawTextAt(r, generated, {
     x: MARGIN_X,
@@ -371,6 +479,33 @@ function drawHeader(r: Renderer, event: EventDTO, totalAvulsas: number, totalLot
     color: COLOR_MUTED,
   })
   r.cursor -= 18
+}
+
+function drawTierLegend(
+  r: Renderer,
+  event: EventDTO,
+  tierCounts: { simples: number; premium: number },
+  tierByCategory: Map<string, CategoryTier>,
+): void {
+  const y = r.cursor - 10
+  const sorted = [...event.categorias].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+  let x = MARGIN_X
+
+  const drawChip = (color: RGB, label: string, count: number, catName: string | undefined) => {
+    r.page.drawRectangle({ x, y: y - 1, width: 8, height: 8, color })
+    x += 12
+    const text = catName ? `${label} (${catName}): ${count}` : `${label}: ${count}`
+    drawTextAt(r, text, { x, y, size: 9, font: r.fontBold, color: COLOR_TEXT })
+    x += r.fontBold.widthOfTextAtSize(text, 9) + 14
+  }
+
+  const simplesCat = sorted.find((c) => tierByCategory.get(c.id) === 'Simples')
+  const premiumCat = sorted.find((c) => tierByCategory.get(c.id) === 'Premium')
+
+  drawChip(COLOR_SIMPLES, 'Simples', tierCounts.simples, simplesCat?.nome)
+  drawChip(COLOR_PREMIUM, 'Premium', tierCounts.premium, premiumCat?.nome)
+
+  r.cursor -= 14
 }
 
 function drawShirtSummary(r: Renderer, shirts: ShirtSummary): void {
@@ -419,18 +554,143 @@ function drawShirtSummary(r: Renderer, shirts: ShirtSummary): void {
   r.cursor -= BOX_HEIGHT + 8
 }
 
-function drawCitySection(r: Renderer, group: CityGroup): void {
+function drawCitySection(r: Renderer, group: CityGroup, event: EventDTO, tierByCategory: Map<string, CategoryTier>): void {
   ensureSpace(r, SECTION_HEADER_HEIGHT + TABLE_HEADER_HEIGHT + ROW_HEIGHT)
   drawSectionHeader(r, group.city, group.rows.length)
   drawTableHeader(r)
-  for (const row of group.rows) {
-    ensureSpace(r, ROW_HEIGHT, () => {
-      drawSectionHeaderContinuation(r, group.city)
+
+  const subgroups = splitByTier(group.rows)
+  for (const sub of subgroups) {
+    const descricao = sub.tier
+      ? findCategoryDescription(event, tierByCategory, sub.tier)
+      : undefined
+    drawTierSubsection(r, group.city, sub.tier, sub.rows, descricao)
+  }
+
+  r.cursor -= 6
+}
+
+interface TierSubgroup {
+  tier: CategoryTier
+  rows: PersonRow[]
+}
+
+function splitByTier(rows: PersonRow[]): TierSubgroup[] {
+  const order: CategoryTier[] = ['Simples', 'Premium', null]
+  return order
+    .map((tier) => ({ tier, rows: rows.filter((r) => r.tier === tier) }))
+    .filter((g) => g.rows.length > 0)
+}
+
+function findCategoryDescription(
+  event: EventDTO,
+  tierByCategory: Map<string, CategoryTier>,
+  tier: CategoryTier,
+): string | undefined {
+  if (!tier) return undefined
+  const cat = event.categorias.find((c) => tierByCategory.get(c.id) === tier)
+  return cat?.descricao
+}
+
+function drawTierSubsection(
+  r: Renderer,
+  city: NormalizedCity,
+  tier: CategoryTier,
+  rows: PersonRow[],
+  descricao: string | undefined,
+): void {
+  if (rows.length === 0) return
+
+  let remaining = rows
+  let isFirstChunk = true
+
+  while (remaining.length > 0) {
+    const needed = (isFirstChunk && tier ? TIER_BANNER_HEIGHT : 0) + ROW_HEIGHT
+    ensureSpace(r, needed, () => {
+      drawSectionHeaderContinuation(r, city)
       drawTableHeader(r)
     })
-    drawDataRow(r, row)
+
+    if (isFirstChunk && tier) {
+      drawTierBanner(r, tier, descricao)
+    }
+    isFirstChunk = false
+
+    const chunkTop = r.cursor
+    const available = r.cursor - MARGIN_BOTTOM
+    const maxRows = Math.max(1, Math.floor(available / ROW_HEIGHT))
+    const chunkSize = Math.min(maxRows, remaining.length)
+
+    for (let i = 0; i < chunkSize; i++) {
+      drawDataRow(r, remaining[i])
+    }
+
+    drawTierBar(r, tier, chunkTop, r.cursor)
+
+    remaining = remaining.slice(chunkSize)
   }
-  r.cursor -= 6
+}
+
+function drawTierBar(r: Renderer, tier: CategoryTier, top: number, bottom: number): void {
+  if (!tier) return
+  const height = top - bottom
+  if (height <= 0) return
+  const color = tier === 'Simples' ? COLOR_SIMPLES : COLOR_PREMIUM
+  r.page.drawRectangle({
+    x: MARGIN_X,
+    y: bottom,
+    width: TIER_BAR_WIDTH,
+    height,
+    color,
+  })
+  const label = tier.toUpperCase()
+  const labelSize = 9
+  const labelWidth = r.fontBold.widthOfTextAtSize(label, labelSize)
+  if (height >= labelWidth + 12) {
+    const textX = MARGIN_X + TIER_BAR_WIDTH / 2 + labelSize / 2 - 1
+    const textY = bottom + (height - labelWidth) / 2
+    r.page.drawText(label, {
+      x: textX,
+      y: textY,
+      size: labelSize,
+      font: r.fontBold,
+      color: rgb(1, 1, 1),
+      rotate: degrees(90),
+    })
+  }
+}
+
+function drawTierBanner(r: Renderer, tier: CategoryTier, descricao: string | undefined): void {
+  if (!tier) return
+  const bg = tier === 'Simples' ? COLOR_SIMPLES_BG : COLOR_PREMIUM_BG
+  const accent = tier === 'Simples' ? COLOR_SIMPLES : COLOR_PREMIUM
+  r.page.drawRectangle({
+    x: MARGIN_X + TIER_BAR_WIDTH,
+    y: r.cursor - TIER_BANNER_HEIGHT,
+    width: USABLE_WIDTH - TIER_BAR_WIDTH,
+    height: TIER_BANNER_HEIGHT,
+    color: bg,
+  })
+  const textY = r.cursor - 12
+  drawTextAt(r, tier.toUpperCase(), {
+    x: MARGIN_X + TIER_BAR_WIDTH + 8,
+    y: textY,
+    size: 9,
+    font: r.fontBold,
+    color: accent,
+  })
+  if (descricao) {
+    const labelWidth = r.fontBold.widthOfTextAtSize(tier.toUpperCase(), 9)
+    drawTextClipped(r, descricao, {
+      x: MARGIN_X + TIER_BAR_WIDTH + 8 + labelWidth + 8,
+      y: textY,
+      width: USABLE_WIDTH - TIER_BAR_WIDTH - 24 - labelWidth,
+      size: 8.5,
+      font: r.fontRegular,
+      color: COLOR_TEXT,
+    })
+  }
+  r.cursor -= TIER_BANNER_HEIGHT
 }
 
 function drawSectionHeader(r: Renderer, city: NormalizedCity, count: number): void {
@@ -510,15 +770,26 @@ function drawTableHeader(r: Renderer): void {
 
 function drawDataRow(r: Renderer, row: PersonRow): void {
   const y = r.cursor - 10
+
+  if (row.tier) {
+    const rowBg = row.tier === 'Simples' ? COLOR_SIMPLES_BG : COLOR_PREMIUM_BG
+    r.page.drawRectangle({
+      x: MARGIN_X + TIER_BAR_WIDTH,
+      y: r.cursor - ROW_HEIGHT + 1,
+      width: USABLE_WIDTH - TIER_BAR_WIDTH,
+      height: ROW_HEIGHT,
+      color: rowBg,
+    })
+  }
+
   r.page.drawLine({
-    start: { x: MARGIN_X, y: r.cursor - ROW_HEIGHT + 1 },
+    start: { x: MARGIN_X + TIER_BAR_WIDTH, y: r.cursor - ROW_HEIGHT + 1 },
     end: { x: MARGIN_X + USABLE_WIDTH, y: r.cursor - ROW_HEIGHT + 1 },
     thickness: 0.3,
     color: COLOR_DIVIDER,
   })
 
-  const namePrefix = row.source === 'lote' ? '[L] ' : ''
-  drawTextClipped(r, namePrefix + row.nome, {
+  drawTextClipped(r, row.nome, {
     x: COL_X.name + 4,
     y,
     width: COL_NAME - 8,

@@ -8,6 +8,8 @@ import { operacaoService, OperableEvent, OpsBatch } from '@/lib/services/operaca
 import { adminService, InscriptionWithDetails } from '@/lib/services/adminService'
 import { KitDeliveryList } from '@/components/admin/KitDeliveryList'
 import { EventSelect } from '@/components/operacao/EventSelect'
+import { getCategoryStyle } from '@/lib/eventCategoryStyle'
+import { EventCategoryDTO } from '@/shared/types/event'
 import { KitDeliveryDTO, KitItemDef, GENDER_LABELS, EVENT_OPS_PERMISSIONS, DELIVER_KITS_PERMISSION, CONFIRM_CASH_PERMISSION } from '@/shared/constants'
 
 type StatusKind = 'cash' | 'kit' | 'pix' | 'done' | 'cancel'
@@ -128,6 +130,7 @@ export default function OperacaoPage() {
 
   const active = searching ? searchResult.data : worklist.data
   const kitItems = useMemo(() => active?.kitItems ?? event?.kitItems ?? [], [active, event])
+  const categorias = useMemo(() => active?.categorias ?? [], [active])
 
   const items = useMemo(() => {
     if (!active) return []
@@ -207,6 +210,10 @@ export default function OperacaoPage() {
 
           {isLoading && <p className="text-text-secondary text-sm">Carregando...</p>}
 
+          {!isLoading && event && active && categorias.length > 0 && (
+            <CategoryLegend categorias={categorias} />
+          )}
+
           {!isLoading && event && active && (
             <div className="space-y-3">
               {items.length === 0
@@ -220,6 +227,8 @@ export default function OperacaoPage() {
                         ? row.item.categoryNome
                         : `${row.item.totalParticipantes} participantes · 🎁 ${row.item.participantes.filter((p) => p.temBrinde).length}`}
                       status={row.status}
+                      categoryId={row.item.categoryId}
+                      categorias={categorias}
                       onClick={() => setSelected(row)}
                     />
                   ))}
@@ -237,6 +246,7 @@ export default function OperacaoPage() {
           selected={selected}
           event={event}
           kitItems={kitItems}
+          categorias={categorias}
           canDeliver={canDeliver}
           canCash={canCash}
           onChanged={onChanged}
@@ -247,23 +257,53 @@ export default function OperacaoPage() {
   )
 }
 
-function SummaryRow({ kind, nome, sub, status, onClick }: {
+function CategoryLegend({ categorias }: { categorias: EventCategoryDTO[] }) {
+  const sorted = [...categorias].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+  return (
+    <div className="bg-bg-secondary/60 border border-gold/10 rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+      {sorted.map((cat) => {
+        const style = getCategoryStyle(cat.id, categorias)
+        if (!style.label) return null
+        return (
+          <span key={cat.id} className="flex items-center gap-1.5">
+            <span className={`px-2 py-0.5 rounded font-semibold uppercase tracking-wide ${style.tagClass}`}>
+              {style.label}
+            </span>
+            <span className="text-text-secondary">= {cat.nome}</span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+function SummaryRow({ kind, nome, sub, status, categoryId, categorias, onClick }: {
   kind: 'inscription' | 'batch'
   nome: string
   sub: string
   status: RowStatus
+  categoryId: string
+  categorias: EventCategoryDTO[]
   onClick: () => void
 }) {
   const isInscription = kind === 'inscription'
+  const categoryStyle = getCategoryStyle(categoryId, categorias)
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left bg-bg-secondary border border-gold/10 border-l-4 rounded-xl p-4 hover:border-gold/30 transition-colors ${isInscription ? 'border-l-sky-500/70' : 'border-l-violet-500/70'}`}
+      className={`w-full text-left rounded-xl p-4 transition-colors ${categoryStyle.cardBg || 'bg-bg-secondary border border-gold/10 border-l-4 hover:border-gold/30 ' + (isInscription ? 'border-l-sky-500/70' : 'border-l-violet-500/70')}`}
     >
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded border ${isInscription ? 'bg-sky-500/15 text-sky-300 border-sky-500/30' : 'bg-violet-500/15 text-violet-300 border-violet-500/30'}`}>
-          {isInscription ? 'Individual' : 'Coletiva'}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded border ${isInscription ? 'bg-sky-500/15 text-sky-300 border-sky-500/30' : 'bg-violet-500/15 text-violet-300 border-violet-500/30'}`}>
+            {isInscription ? 'Individual' : 'Coletiva'}
+          </span>
+          {categoryStyle.label && (
+            <span className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded ${categoryStyle.tagClass}`}>
+              {categoryStyle.label}
+            </span>
+          )}
+        </div>
         <StatusBadge status={status} />
       </div>
       <p className="text-text-primary font-medium">{nome}</p>
@@ -275,23 +315,26 @@ function SummaryRow({ kind, nome, sub, status, onClick }: {
 function DataRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null
   return (
-    <div className="flex justify-between gap-3 py-1.5 border-b border-gold/5 last:border-0">
-      <span className="text-text-muted text-sm shrink-0">{label}</span>
-      <span className="text-text-primary text-sm text-right break-words">{value}</span>
+    <div className="flex justify-between gap-3 py-1.5 border-b border-white/10 last:border-0">
+      <span className="text-text-secondary text-sm shrink-0">{label}</span>
+      <span className="text-text-primary text-sm text-right break-words font-medium">{value}</span>
     </div>
   )
 }
 
-function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChanged, onClose }: {
+function OpsDetailModal({ selected, event, kitItems, categorias, canDeliver, canCash, onChanged, onClose }: {
   selected: Selected
   event: OperableEvent
   kitItems: KitItemDef[]
+  categorias: EventCategoryDTO[]
   canDeliver: boolean
   canCash: boolean
   onChanged: () => void
   onClose: () => void
 }) {
   const isInscription = selected.kind === 'inscription'
+  const categoryStyle = getCategoryStyle(selected.item.categoryId, categorias)
+  const categoryNome = categorias.find((c) => c.id === selected.item.categoryId)?.nome
   const [kitDeliveries, setKitDeliveries] = useState<KitDeliveryDTO[]>(selected.item.kitDeliveries ?? [])
   const [status, setStatus] = useState<string>(selected.item.status)
   const [busy, setBusy] = useState(false)
@@ -377,12 +420,17 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
     <>
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={close} />
-      <div className="relative w-full sm:max-w-md bg-bg-secondary border border-gold/15 rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 z-10 bg-bg-secondary/95 backdrop-blur px-5 py-4 border-b border-gold/10 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+      <div className={`relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl ${categoryStyle.modalBg || 'bg-bg-secondary border border-gold/15'}`}>
+        <div className={`sticky top-0 z-10 backdrop-blur px-5 py-4 flex items-center justify-between gap-2 ${categoryStyle.modalHeaderBg || 'bg-bg-secondary/95 border-b border-gold/10'}`}>
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded border ${isInscription ? 'bg-sky-500/15 text-sky-300 border-sky-500/30' : 'bg-violet-500/15 text-violet-300 border-violet-500/30'}`}>
               {isInscription ? 'Individual' : 'Coletiva'}
             </span>
+            {categoryStyle.label && (
+              <span className={`text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded ${categoryStyle.tagClass}`}>
+                {categoryStyle.label}
+              </span>
+            )}
             <StatusBadge status={live} />
           </div>
           <button onClick={close} aria-label="Fechar" className="text-text-muted hover:text-text-primary p-1">
@@ -395,7 +443,7 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
         <div className="px-5 py-4 space-y-4">
           <h2 className="text-lg font-bold text-text-primary">{nome} {temBrinde ? '🎁' : ''}</h2>
 
-          <div className="bg-bg-primary/40 rounded-xl px-4 py-1">
+          <div className="bg-black/30 rounded-xl px-4 py-1">
             <DataRow label="CPF" value={cpf} />
             {isInscription ? (
               <>
@@ -410,6 +458,7 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
               </>
             ) : (
               <>
+                <DataRow label="Categoria" value={categoryNome} />
                 <DataRow label="Participantes" value={String(selected.item.totalParticipantes)} />
                 <DataRow label="Brindes" value={String(brindeCount)} />
               </>
@@ -419,15 +468,15 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
           </div>
 
           {!isInscription && (
-            <div>
-              <p className="text-sm text-gold font-medium mb-2">Participantes</p>
+            <div className="bg-black/30 rounded-xl px-4 py-3">
+              <p className="text-sm text-gold font-semibold mb-2">Participantes</p>
               <ul className="space-y-1.5">
                 {selected.item.participantes.map((p, idx) => (
                   <li key={idx} className="text-sm flex items-center justify-between gap-3">
-                    <span className="text-text-primary min-w-0 truncate">
-                      <span className="text-text-muted">{idx + 1}.</span> {p.nome} {p.temBrinde ? '🎁' : ''}
+                    <span className="text-text-primary min-w-0 truncate font-medium">
+                      <span className="text-text-secondary">{idx + 1}.</span> {p.nome} {p.temBrinde ? '🎁' : ''}
                     </span>
-                    <span className="text-xs text-text-muted whitespace-nowrap">
+                    <span className="text-xs text-text-secondary whitespace-nowrap">
                       {GENDER_LABELS[p.sexo]}{p.tamanho ? ` · ${p.tamanho}` : ' · sem tam.'}
                     </span>
                   </li>
@@ -437,7 +486,7 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
           )}
 
           {kitItems.length > 0 ? (
-            <div className="relative">
+            <div className="relative bg-black/30 rounded-xl px-4 -mt-2">
               <div className={kitEnabled ? '' : 'opacity-50 pointer-events-none select-none'}>
                 <KitDeliveryList
                   items={kitItems}
@@ -459,7 +508,7 @@ function OpsDetailModal({ selected, event, kitItems, canDeliver, canCash, onChan
               )}
             </div>
           ) : (
-            <p className="text-text-muted text-sm text-center">Nenhum item de kit configurado para este evento. Configure o kit em Admin → Evento → Kit.</p>
+            <p className="text-text-secondary text-sm text-center">Nenhum item de kit configurado para este evento. Configure o kit em Admin → Evento → Kit.</p>
           )}
 
           <button

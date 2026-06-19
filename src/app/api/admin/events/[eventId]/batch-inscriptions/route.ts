@@ -38,6 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return {
         id: batch.id,
         eventId: batch.eventId,
+        categoryId: batch.categoryId,
         responsavelNome: batch.responsavel.nome,
         responsavelCpf: batch.responsavel.cpf,
         cidade: batch.cidade,

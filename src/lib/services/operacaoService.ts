@@ -1,6 +1,7 @@
 import { firebaseAuthService } from '@/lib/firebase'
 import { InscriptionWithDetails } from './adminService'
 import { KitItemDef, InscriptionPaymentMethod, KitDeliveryDTO, Gender, ShirtSize } from '@/shared/constants'
+import { EventCategoryDTO } from '@/shared/types/event'
 
 async function authFetch<T>(endpoint: string): Promise<T> {
   const token = await firebaseAuthService.getIdToken()
@@ -22,6 +23,7 @@ export interface OperableEvent {
 
 export interface OpsBatch {
   id: string
+  categoryId: string
   responsavelNome: string
   responsavelCpf?: string
   status: 'pendente' | 'confirmado' | 'cancelado'
@@ -36,6 +38,7 @@ export interface OpsLookupResult {
   mode: 'search' | 'worklist'
   kitConfigured: boolean
   kitItems: KitItemDef[]
+  categorias: EventCategoryDTO[]
   counts: { cashPending: number; kitPending: number }
   kitPendingCapped: boolean
   inscriptions: InscriptionWithDetails[]

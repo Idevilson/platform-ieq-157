@@ -6,6 +6,7 @@ import { Inscription } from '@/server/domain/inscription/entities/Inscription'
 import { BatchInscription } from '@/server/domain/inscription/entities/BatchInscription'
 import { ValidationError } from '@/server/domain/shared/errors'
 import { InscriptionPaymentMethod, KitDeliveryDTO, KitItemDef, Gender, ShirtSize } from '@/shared/constants'
+import { EventCategoryDTO } from '@/shared/types/event'
 import { toInscriptionWithDetails } from '../inscription/toInscriptionWithDetails'
 import type { InscriptionWithDetails } from '../inscription/ListEventInscriptions'
 
@@ -13,6 +14,7 @@ const KIT_PENDING_LIMIT = 50
 
 export interface OpsBatchDTO {
   id: string
+  categoryId: string
   responsavelNome: string
   responsavelCpf?: string
   status: 'pendente' | 'confirmado' | 'cancelado'
@@ -27,6 +29,7 @@ export interface OperacaoLookupOutput {
   mode: 'search' | 'worklist'
   kitConfigured: boolean
   kitItems: KitItemDef[]
+  categorias: EventCategoryDTO[]
   counts: { cashPending: number; kitPending: number }
   kitPendingCapped: boolean
   inscriptions: InscriptionWithDetails[]
@@ -84,6 +87,7 @@ export class OperacaoLookup {
       mode: 'search',
       kitConfigured,
       kitItems: event!.kitItems,
+      categorias: event!.toJSON().categorias,
       counts: { cashPending: 0, kitPending: 0 },
       kitPendingCapped: false,
       inscriptions,
@@ -117,6 +121,7 @@ export class OperacaoLookup {
       mode: 'worklist',
       kitConfigured,
       kitItems: event!.kitItems,
+      categorias: event!.toJSON().categorias,
       counts: {
         cashPending: cashInscriptions.length + cashBatches.length,
         kitPending: kitInscCount + kitBatchCount,
@@ -137,6 +142,7 @@ function toOpsBatchDTO(batch: BatchInscription): OpsBatchDTO {
   const json = batch.toJSON()
   return {
     id: json.id,
+    categoryId: json.categoryId,
     responsavelNome: json.responsavel.nome,
     responsavelCpf: json.responsavel.cpf,
     status: json.status,

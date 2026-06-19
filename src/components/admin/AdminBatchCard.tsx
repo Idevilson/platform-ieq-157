@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { AdminBatchListItem } from "@/shared/types/inscription";
+import { EventCategoryDTO } from "@/shared/types/event";
 import { formatCPF, formatDateTime } from "@/lib/formatters";
+import { getCategoryStyle } from "@/lib/eventCategoryStyle";
 import { INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod, KitItemDef } from "@/shared/constants";
 import { useAdminUpdateBatchResponsavel, useAdminRegeneratePayment, useAdminUpdateBatchParticipants } from "@/hooks/mutations/useAdminBatchMutations";
 import { useDeliverBatchKit } from "@/hooks/mutations/useEventKit";
@@ -12,6 +14,7 @@ import { EditBatchParticipantsModal } from "./EditBatchParticipantsModal";
 
 interface AdminBatchCardProps {
   batch: AdminBatchListItem;
+  categories?: EventCategoryDTO[];
   kitItems?: KitItemDef[];
   onConfirmCash: (batchId: string) => void;
   onDelete: (batchId: string) => void;
@@ -27,12 +30,14 @@ function batchStatusClass(status: string): string {
 
 export function AdminBatchCard({
   batch,
+  categories = [],
   kitItems = [],
   onConfirmCash,
   onDelete,
   isConfirming,
   isDeleting,
 }: AdminBatchCardProps) {
+  const categoryStyle = getCategoryStyle(batch.categoryId, categories);
   const [expanded, setExpanded] = useState(false);
   const deliverKit = useDeliverBatchKit(batch.eventId);
   const [kitDeliveries, setKitDeliveries] = useState(batch.kitDeliveries ?? []);
@@ -88,13 +93,18 @@ export function AdminBatchCard({
         />
       )}
 
-      <div className="bg-bg-secondary rounded-xl border border-gold/10 p-5">
+      <div className={`rounded-xl border p-5 ${categoryStyle.cardBg || 'bg-bg-secondary border-gold/10'}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${batchStatusClass(batch.status)}`}>
                 {batch.status === "confirmado" ? "Confirmado" : batch.status === "cancelado" ? "Cancelado" : "Pendente"}
               </span>
+              {categoryStyle.label && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${categoryStyle.tagClass}`}>
+                  {categoryStyle.label}
+                </span>
+              )}
               <span className="text-xs text-text-muted">
                 {INSCRIPTION_PAYMENT_METHOD_LABELS[batch.preferredPaymentMethod as InscriptionPaymentMethod]}
               </span>

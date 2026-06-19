@@ -20,6 +20,7 @@ import { EventCategoryDTO } from '@/shared/types/event'
 import { KitItemDef } from '@/shared/constants'
 import { INSCRIPTION_STATUS_LABELS, InscriptionStatus, INSCRIPTION_STATUSES, EVENT_STATUS_LABELS, EventStatus, INSCRIPTION_PAYMENT_METHOD_LABELS, InscriptionPaymentMethod } from '@/shared/constants'
 import { formatDateTime, formatCPF, formatPhone } from '@/lib/formatters'
+import { getCategoryStyle } from '@/lib/eventCategoryStyle'
 import { InscriptionWithDetails } from '@/lib/services/adminService'
 
 function formatCPFSafe(cpf: string): string {
@@ -932,11 +933,13 @@ export default function AdminEventDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredInscriptions.map((inscription) => (
+                {filteredInscriptions.map((inscription) => {
+                  const categoryStyle = getCategoryStyle(inscription.categoryId, event.categorias)
+                  return (
                   <tr
                     key={inscription.id}
                     onClick={() => setSelectedInscription(inscription)}
-                    className="border-b border-gold/5 hover:bg-gold/5 transition-colors cursor-pointer"
+                    className={`transition-colors cursor-pointer ${categoryStyle.rowBorder || 'border-b border-gold/5'} ${categoryStyle.rowBg || 'hover:bg-gold/5'}`}
                   >
                     <td className="py-3 px-4">
                       <span className="font-medium text-text-primary text-sm">{inscription.nome ?? '-'}</span>
@@ -951,7 +954,13 @@ export default function AdminEventDetailPage() {
                       <span className="text-sm text-text-secondary font-mono">{formatCPFSafe(inscription.cpf)}</span>
                     </td>
                     <td className="hidden sm:table-cell py-3 px-4">
-                      <span className="text-sm text-text-primary">{inscription.categoryNome ?? '-'}</span>
+                      {categoryStyle.label ? (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyle.tagClass}`}>
+                          {categoryStyle.label}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-text-primary">{inscription.categoryNome ?? '-'}</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="text-sm font-medium text-gold">{inscription.valorFormatado}</span>
@@ -975,7 +984,8 @@ export default function AdminEventDetailPage() {
                       <span className="text-xs text-text-secondary">{formatDateTime(inscription.criadoEm)}</span>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -1043,6 +1053,7 @@ export default function AdminEventDetailPage() {
               <AdminBatchCard
                 key={batch.id}
                 batch={batch}
+                categories={event.categorias}
                 kitItems={event.kitItems ?? []}
                 onConfirmCash={(batchId) => confirmBatchCash.mutate(batchId)}
                 onDelete={(batchId) => deleteBatch.mutate(batchId)}

@@ -141,6 +141,7 @@ export interface BatchLookupResult {
 export interface AdminBatchListItem {
   id: string
   eventId: string
+  categoryId: string
   responsavelNome: string
   responsavelCpf: string
   cidade: string
