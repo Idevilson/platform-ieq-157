@@ -1,10 +1,10 @@
 "use client"
 
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { ShareableReceipt } from '@/components/payment/ShareableReceipt'
-import { usePaymentPolling } from '@/hooks/usePaymentPolling'
+import { usePaymentPolling, type PolledInscriptionData } from '@/hooks/usePaymentPolling'
 import { useInscriptionSSE } from '@/hooks/useInscriptionSSE'
 
 export interface EventConfirmationPageProps {
@@ -174,6 +174,12 @@ function EventConfirmationContent({
         {error && (
           <div className="card max-w-md mx-auto mb-6 bg-red-500/10 border-red-500/30">
             <p className="text-red-400 text-center">{error}</p>
+          </div>
+        )}
+
+        {!loading && inscription && (
+          <div className="mb-8">
+            <InscriptionDetailsCard inscription={inscription} participantName={participantName} />
           </div>
         )}
 
@@ -647,6 +653,69 @@ function ProcessingCard() {
       </div>
     </div>
   )
+}
+
+function InscriptionDetailsCard({
+  inscription,
+  participantName,
+}: {
+  inscription: PolledInscriptionData
+  participantName: string
+}) {
+  const nome = inscription.nome || participantName
+  return (
+    <div className="card text-left">
+      <h3 className="text-lg font-semibold text-text-primary mb-6">Detalhes da Inscrição</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+        <DetailRow label="Nome" value={nome} />
+        {inscription.cpf && <DetailRow label="CPF" value={inscription.cpf} />}
+        {inscription.telefone && <DetailRow label="Telefone" value={inscription.telefone} />}
+        {inscription.cidade && <DetailRow label="Cidade" value={inscription.cidade} />}
+        <DetailRow label="Categoria" value={inscription.categoriaNome || '—'} />
+        <DetailRow label="Tamanho da camiseta" value={inscription.tamanho || 'Não informado'} />
+        <DetailRow label="Brinde" value={inscription.temBrinde ? 'Sim 🎁' : 'Não'} />
+        <DetailRow label="Forma de pagamento" value={paymentMethodLabel(inscription.preferredPaymentMethod)} />
+        <DetailRow label="Valor" value={inscription.valorFormatado} />
+        <DetailRow
+          label="Status"
+          valueNode={
+            <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusBadgeClass(inscription.status)}`}>
+              {inscription.statusLabel || statusFallbackLabel(inscription.status)}
+            </span>
+          }
+        />
+      </div>
+    </div>
+  )
+}
+
+function DetailRow({ label, value, valueNode }: { label: string; value?: string; valueNode?: ReactNode }) {
+  return (
+    <div className="flex justify-between items-center gap-4 py-2 border-b border-gold/10">
+      <span className="text-sm text-text-muted shrink-0">{label}</span>
+      {valueNode ?? <span className="text-sm text-text-primary text-right break-words">{value}</span>}
+    </div>
+  )
+}
+
+function paymentMethodLabel(method?: string): string {
+  if (method === 'PIX') return 'PIX'
+  if (method === 'CREDIT_CARD') return 'Cartão de crédito'
+  if (method === 'CASH') return 'Dinheiro'
+  return '—'
+}
+
+function statusFallbackLabel(status: string): string {
+  if (status === 'confirmado') return 'Confirmada'
+  if (status === 'cancelado') return 'Cancelada'
+  if (status === 'pendente') return 'Pendente'
+  return status
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === 'confirmado') return 'bg-green-500/20 text-green-400'
+  if (status === 'cancelado') return 'bg-red-500/20 text-red-400'
+  return 'bg-yellow-500/20 text-yellow-400'
 }
 
 function EventDetailsCard({

@@ -3,13 +3,19 @@ import { CreatePaymentForInscription } from '@/server/application/payment/Create
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
+import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
+import { toInscriptionWithDetails } from '@/server/application/inscription/toInscriptionWithDetails'
+import { InscriptionWithDetails } from '@/server/application/inscription/ListEventInscriptions'
 import { asaasFeeCalculator } from '@/server/infrastructure/asaas/AsaasFeeCalculator'
 import { ValidationError } from '@/server/domain/shared/errors'
 import { createPaymentForInscriptionSchema } from '@/server/application/payment/schemas'
+import { Inscription } from '@/server/domain/inscription/entities/Inscription'
+import { formatPhone } from '@/lib/formatters'
 
 const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const inscriptionRepository = new FirebaseInscriptionRepositoryAdmin()
 const userRepository = new FirebaseUserRepositoryAdmin()
+const eventRepository = new FirebaseEventRepositoryAdmin()
 
 const createPayment = new CreatePaymentForInscription(
   paymentRepository,
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const inscriptionData = inscription.toJSON()
-    const participantName = await getParticipantName(inscriptionData)
+    const { details, participantName } = await resolveInscriptionDetails(inscription, inscriptionData)
     const preferredPaymentMethod = inscriptionData.preferredPaymentMethod
 
     // For cash payments, don't create Asaas payment
@@ -42,18 +48,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         payment: null,
         participantName,
         preferredPaymentMethod,
-        inscription: inscriptionData,
+        inscription: details,
       })
     }
 
     const existingPayment = await paymentRepository.findByInscriptionId(inscriptionId, inscriptionData.eventId)
 
     if (!existingPayment) {
-      return NextResponse.json({ payment: null, participantName, preferredPaymentMethod })
+      return NextResponse.json({ payment: null, participantName, preferredPaymentMethod, inscription: details })
     }
 
     if (existingPayment.isConfirmed()) {
-      return NextResponse.json({ payment: existingPayment.toJSON(), participantName, preferredPaymentMethod })
+      return NextResponse.json({ payment: existingPayment.toJSON(), participantName, preferredPaymentMethod, inscription: details })
     }
 
     const result = await createPayment.execute({
@@ -61,26 +67,76 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       inscriptionId,
     })
 
-    return NextResponse.json({ ...result, participantName, preferredPaymentMethod })
+    return NextResponse.json({ ...result, participantName, preferredPaymentMethod, inscription: details })
   } catch (error) {
     console.error('Get payment error:', error)
     return NextResponse.json({ error: 'Erro ao buscar pagamento' }, { status: 500 })
   }
 }
 
-async function getParticipantName(inscriptionData: { userId?: string; guestData?: { nome: string } }): Promise<string> {
-  if (inscriptionData.guestData?.nome) {
-    return inscriptionData.guestData.nome
+export interface ConfirmationInscriptionDTO {
+  id: string
+  status: string
+  statusLabel: string
+  nome: string
+  cpf?: string
+  telefone?: string
+  cidade?: string
+  categoriaNome: string
+  tamanho?: string
+  temBrinde: boolean
+  preferredPaymentMethod: string
+  valorFormatado: string
+}
+
+// Resolve nome/CPF (conta logada vem da coleção users) e o nome da categoria para exibir na confirmação
+async function resolveInscriptionDetails(
+  inscription: Inscription,
+  inscriptionData: { eventId: string; userId?: string; guestData?: { nome: string } },
+): Promise<{ details: ConfirmationInscriptionDTO | null; participantName: string }> {
+  const event = await eventRepository.findById(inscriptionData.eventId)
+  if (!event) {
+    return { details: null, participantName: fallbackName(inscriptionData) }
   }
 
-  if (inscriptionData.userId) {
-    const user = await userRepository.findById(inscriptionData.userId)
-    if (user) {
-      return user.toJSON().nome
-    }
-  }
+  const full = await toInscriptionWithDetails(inscription, event, userRepository)
+  return { details: toConfirmationDTO(full), participantName: full.nome || 'Participante' }
+}
 
-  return 'Participante'
+function toConfirmationDTO(d: InscriptionWithDetails): ConfirmationInscriptionDTO {
+  return {
+    id: d.id,
+    status: d.status,
+    statusLabel: d.statusLabel,
+    nome: d.nome,
+    cpf: maskCpf(d.cpf),
+    telefone: formatPhoneSafe(d.telefone),
+    cidade: d.cidade,
+    categoriaNome: d.categoryNome,
+    tamanho: d.tamanho,
+    temBrinde: d.temBrinde === true,
+    preferredPaymentMethod: d.preferredPaymentMethod,
+    valorFormatado: d.valorFormatado,
+  }
+}
+
+function maskCpf(cpf?: string): string | undefined {
+  const digits = (cpf ?? '').replace(/\D/g, '')
+  if (digits.length !== 11) return cpf || undefined
+  return `•••.${digits.slice(3, 6)}.${digits.slice(6, 9)}-••`
+}
+
+function formatPhoneSafe(phone?: string): string | undefined {
+  if (!phone) return undefined
+  try {
+    return formatPhone(phone)
+  } catch {
+    return phone
+  }
+}
+
+function fallbackName(inscriptionData: { guestData?: { nome: string } }): string {
+  return inscriptionData.guestData?.nome || 'Participante'
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {

@@ -25,6 +25,13 @@ export interface PolledPaymentData {
 export interface PolledInscriptionData {
   id: string
   status: string
+  statusLabel?: string
+  nome?: string
+  cpf?: string
+  telefone?: string
+  cidade?: string
+  categoriaNome?: string
+  tamanho?: string
   valorFormatado: string
   preferredPaymentMethod: InscriptionPaymentMethod
   temBrinde?: boolean
