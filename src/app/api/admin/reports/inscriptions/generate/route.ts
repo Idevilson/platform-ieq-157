@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FirebaseEventRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventRepositoryAdmin'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebaseBatchInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseBatchInscriptionRepositoryAdmin'
+import { FirebaseUserRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseUserRepositoryAdmin'
 import { resolveActor } from '@/app/api/admin/_perm-shared'
 import { DELIVER_KITS_PERMISSION, CONFIRM_CASH_PERMISSION } from '@/shared/constants'
 import { InscriptionsPdfReport } from '@/server/application/reports/BuildInscriptionsPdf'
+import { loadAccountProfiles } from '@/server/application/reports/loadAccountProfiles'
 import { EventDTO } from '@/shared/types/event'
 import { InscriptionDTO, BatchInscriptionDTO } from '@/shared/types/inscription'
 
@@ -42,16 +44,20 @@ export async function POST(request: NextRequest) {
 
   const inscriptionRepo = new FirebaseInscriptionRepositoryAdmin()
   const batchRepo = new FirebaseBatchInscriptionRepositoryAdmin()
+  const userRepo = new FirebaseUserRepositoryAdmin()
 
-  const [inscriptionsResult, batches] = await Promise.all([
-    inscriptionRepo.findByEventId(eventId, { limit: 5000 }),
+  const [inscriptions, batches] = await Promise.all([
+    inscriptionRepo.findAllByEventId(eventId),
     batchRepo.findByEventId(eventId),
   ])
 
+  const accountProfiles = await loadAccountProfiles(inscriptions, userRepo)
+
   const pdf = await InscriptionsPdfReport
     .for(event.toJSON() as unknown as EventDTO)
-    .withInscriptions(inscriptionsResult.items.map((i) => i.toJSON() as unknown as InscriptionDTO))
+    .withInscriptions(inscriptions.map((i) => i.toJSON() as unknown as InscriptionDTO))
     .withBatches(batches.map((b) => b.toJSON() as unknown as BatchInscriptionDTO))
+    .withAccountProfiles(accountProfiles)
     .build()
 
   const body = new Uint8Array(pdf.byteLength)

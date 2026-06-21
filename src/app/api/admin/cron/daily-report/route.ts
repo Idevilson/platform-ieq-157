@@ -65,15 +65,15 @@ async function handle(request: NextRequest) {
   const batchRepo = new FirebaseBatchInscriptionRepositoryAdmin()
   const perkRepo = new FirebaseEventPerkRepositoryAdmin()
 
-  const [inscriptionsResult, batches, primaryPerk] = await Promise.all([
-    inscriptionRepo.findByEventId(eventId, { limit: 5000 }),
+  const [inscriptions, batches, primaryPerk] = await Promise.all([
+    inscriptionRepo.findAllByEventId(eventId),
     batchRepo.findByEventId(eventId),
     perkRepo.findPrimaryByEventId(eventId),
   ])
 
   const report = DailyReport
     .for(event)
-    .withInscriptions(inscriptionsResult.items)
+    .withInscriptions(inscriptions)
     .withBatches(batches)
     .withPerk(primaryPerk?.toSummary())
     .build()

@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
   const inscriptionRepo = new FirebaseInscriptionRepositoryAdmin()
   const batchRepo = new FirebaseBatchInscriptionRepositoryAdmin()
 
-  const [inscriptionsResult, batches] = await Promise.all([
-    inscriptionRepo.findByEventId(eventId, { limit: 5000 }),
+  const [inscriptions, batches] = await Promise.all([
+    inscriptionRepo.findAllByEventId(eventId),
     batchRepo.findByEventId(eventId),
   ])
 
   const snapshot = buildInscriptionsSnapshot({
     event,
-    inscriptions: inscriptionsResult.items,
+    inscriptions,
     batches,
   })
 

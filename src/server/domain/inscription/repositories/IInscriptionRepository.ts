@@ -10,6 +10,7 @@ export interface IInscriptionRepository {
   findById(id: string, eventId?: string): Promise<Inscription | null>
   findByUserId(userId: string, params?: ListInscriptionsParams): Promise<Inscription[]>
   findByEventId(eventId: string, params?: ListInscriptionsParams): Promise<PaginatedResult<Inscription>>
+  findAllByEventId(eventId: string): Promise<Inscription[]>
   findByEventIdAndUserId(eventId: string, userId: string): Promise<Inscription | null>
   findByEventIdAndCPF(eventId: string, cpf: string): Promise<Inscription | null>
   findByCPF(cpf: string): Promise<Inscription[]>

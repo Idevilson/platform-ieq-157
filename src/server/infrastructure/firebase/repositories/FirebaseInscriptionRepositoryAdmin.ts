@@ -67,6 +67,14 @@ export class FirebaseInscriptionRepositoryAdmin implements IInscriptionRepositor
     }
   }
 
+  // orderBy('criadoEm') exclui silenciosamente docs sem o campo; relatórios precisam de TODAS as inscrições
+  async findAllByEventId(eventId: string): Promise<Inscription[]> {
+    const querySnapshot = await this.inscriptionsRef(eventId).get()
+    const inscriptions = querySnapshot.docs.map(docSnap => this.mapToEntity(docSnap, eventId))
+    inscriptions.sort((a, b) => b.criadoEm.getTime() - a.criadoEm.getTime())
+    return inscriptions
+  }
+
   async findByUserId(userId: string, params?: ListInscriptionsParams): Promise<Inscription[]> {
     let query = this.inscriptionsGroupRef
       .where('userId', '==', userId)

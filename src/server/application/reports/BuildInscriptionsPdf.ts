@@ -47,6 +47,7 @@ const COLOR_HEADER_BG = rgb(0.93, 0.93, 0.93)
 const COLOR_DIVIDER = rgb(0.85, 0.85, 0.85)
 const COLOR_CONFIRMADO = rgb(0.15, 0.6, 0.25)
 const COLOR_PENDENTE = rgb(0.85, 0.6, 0.1)
+const COLOR_PENDENTE_BG = rgb(1, 0.95, 0.82)
 const COLOR_CANCELADO = rgb(0.75, 0.2, 0.2)
 const COLOR_SIMPLES = rgb(0.22, 0.6, 0.86)
 const COLOR_PREMIUM = rgb(0.92, 0.7, 0.05)
@@ -76,6 +77,13 @@ interface CityGroup {
   rows: PersonRow[]
 }
 
+export interface ReportAccountProfile {
+  nome?: string
+  cpf?: string
+  telefone?: string
+  cidade?: string
+}
+
 interface ShirtSummary {
   bySize: Record<ShirtSize, number>
   semTamanho: number
@@ -83,9 +91,16 @@ interface ShirtSummary {
   total: number
 }
 
+interface WithheldSummary {
+  avulsas: number
+  lotePeople: number
+  total: number
+}
+
 export class InscriptionsPdfReport {
   private _inscriptions: InscriptionDTO[] = []
   private _batches: BatchInscriptionDTO[] = []
+  private _accountProfiles = new Map<string, ReportAccountProfile>()
 
   private constructor(private readonly _event: EventDTO) {}
 
@@ -95,6 +110,12 @@ export class InscriptionsPdfReport {
 
   withInscriptions(inscriptions: InscriptionDTO[]): this {
     this._inscriptions = inscriptions
+    return this
+  }
+
+  // Inscrições de conta logada não têm guestData; o nome/contato vive na coleção users
+  withAccountProfiles(profiles: Map<string, ReportAccountProfile>): this {
+    this._accountProfiles = profiles
     return this
   }
 
@@ -109,6 +130,7 @@ export class InscriptionsPdfReport {
     const lotesGroups = this.groupLotesByCity(tierByCategory)
     const shirts = this.computeShirtSummary()
     const tierCounts = this.countTiers(tierByCategory)
+    const withheld = this.computeWithheld()
     return renderPdf({
       event: this._event,
       avulsasGroups,
@@ -116,7 +138,21 @@ export class InscriptionsPdfReport {
       shirts,
       tierCounts,
       tierByCategory,
+      withheld,
     })
+  }
+
+  // Inscrições com pagamento pendente ficam fora da listagem; o total é anunciado no topo
+  private computeWithheld(): WithheldSummary {
+    let avulsas = 0
+    for (const i of this._inscriptions) {
+      if (i.status === 'pendente') avulsas += 1
+    }
+    let lotePeople = 0
+    for (const b of this._batches) {
+      if (b.status === 'pendente') lotePeople += b.totalParticipantes
+    }
+    return { avulsas, lotePeople, total: avulsas + lotePeople }
   }
 
   private countTiers(tierByCategory: Map<string, CategoryTier>): { simples: number; premium: number } {
@@ -127,8 +163,14 @@ export class InscriptionsPdfReport {
       if (tier === 'Simples') simples += n
       else if (tier === 'Premium') premium += n
     }
-    for (const i of this._inscriptions) bump(i.categoryId, 1)
-    for (const b of this._batches) bump(b.categoryId, b.totalParticipantes)
+    for (const i of this._inscriptions) {
+      if (i.status === 'pendente') continue
+      bump(i.categoryId, 1)
+    }
+    for (const b of this._batches) {
+      if (b.status === 'pendente') continue
+      bump(b.categoryId, b.totalParticipantes)
+    }
     return { simples, premium }
   }
 
@@ -160,9 +202,11 @@ export class InscriptionsPdfReport {
   private groupAvulsasByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
     const buckets = new Map<string, CityGroup>()
     for (const i of this._inscriptions) {
-      const city = normalizeCity(i.guestData?.cidade)
+      if (i.status === 'pendente') continue
+      const profile = i.guestData ? undefined : this._accountProfiles.get(i.userId ?? '')
+      const city = normalizeCity(i.guestData?.cidade ?? profile?.cidade)
       upsertCityGroup(buckets, city).rows.push(
-        toAvulsaRow(i, tierByCategory.get(i.categoryId) ?? null),
+        toAvulsaRow(i, tierByCategory.get(i.categoryId) ?? null, profile),
       )
     }
     return finalizeGroups(buckets)
@@ -171,6 +215,7 @@ export class InscriptionsPdfReport {
   private groupLotesByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
     const buckets = new Map<string, CityGroup>()
     for (const b of this._batches) {
+      if (b.status === 'pendente') continue
       const city = normalizeCity(b.cidade ?? b.responsavel?.cidade)
       const group = upsertCityGroup(buckets, city)
       const tier = tierByCategory.get(b.categoryId) ?? null
@@ -210,12 +255,14 @@ function buildTierMap(categorias: EventCategoryDTO[]): Map<string, CategoryTier>
   return map
 }
 
-function toAvulsaRow(i: InscriptionDTO, tier: CategoryTier): PersonRow {
+function toAvulsaRow(i: InscriptionDTO, tier: CategoryTier, profile?: ReportAccountProfile): PersonRow {
+  const cpfRaw = i.guestData?.cpf ?? profile?.cpf
+  const telefoneRaw = i.guestData?.telefone ?? profile?.telefone
   return {
     source: 'avulsa',
-    nome: i.guestData?.nome?.trim() || '—',
-    cpfFormatado: i.guestData?.cpf ? safeFormatCpf(i.guestData.cpf) : '—',
-    telefoneFormatado: i.guestData?.telefone ? safeFormatPhone(i.guestData.telefone) : '—',
+    nome: i.guestData?.nome?.trim() || profile?.nome?.trim() || '—',
+    cpfFormatado: cpfRaw ? safeFormatCpf(cpfRaw) : '—',
+    telefoneFormatado: telefoneRaw ? safeFormatPhone(telefoneRaw) : '—',
     confirmadoEm: paymentDateForConfirmed(i.status, i.confirmadoEm, i.atualizadoEm),
     criadoEm: toIsoString(i.criadoEm),
     pagamentoCurto: shortPayment(i.preferredPaymentMethod),
@@ -357,6 +404,7 @@ async function renderPdf(input: {
   shirts: ShirtSummary
   tierCounts: { simples: number; premium: number }
   tierByCategory: Map<string, CategoryTier>
+  withheld: WithheldSummary
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const fontRegular = await doc.embedFont(StandardFonts.Helvetica)
@@ -374,6 +422,7 @@ async function renderPdf(input: {
   const totalLotes = input.lotesGroups.reduce((sum, g) => sum + g.rows.length, 0)
 
   drawHeader(r, input.event, totalAvulsas, totalLotes, input.tierCounts, input.tierByCategory)
+  drawWithheldNotice(r, input.withheld)
   drawShirtSummary(r, input.shirts)
 
   if (input.avulsasGroups.length > 0) {
@@ -506,6 +555,55 @@ function drawTierLegend(
   drawChip(COLOR_PREMIUM, 'Premium', tierCounts.premium, premiumCat?.nome)
 
   r.cursor -= 14
+}
+
+function drawWithheldNotice(r: Renderer, withheld: WithheldSummary): void {
+  if (withheld.total <= 0) return
+
+  const BOX_HEIGHT = 32
+  const BOX_PADDING_X = 10
+  const BAR_WIDTH = 4
+
+  r.page.drawRectangle({
+    x: MARGIN_X,
+    y: r.cursor - BOX_HEIGHT,
+    width: USABLE_WIDTH,
+    height: BOX_HEIGHT,
+    color: COLOR_PENDENTE_BG,
+  })
+  r.page.drawRectangle({
+    x: MARGIN_X,
+    y: r.cursor - BOX_HEIGHT,
+    width: BAR_WIDTH,
+    height: BOX_HEIGHT,
+    color: COLOR_PENDENTE,
+  })
+
+  const plural = withheld.total === 1 ? 'inscrição não exibida' : 'inscrições não exibidas'
+  const title = `${withheld.total} ${plural} neste relatório`
+  drawTextAt(r, title, {
+    x: MARGIN_X + BAR_WIDTH + BOX_PADDING_X,
+    y: r.cursor - 13,
+    size: 10,
+    font: r.fontBold,
+    color: COLOR_TEXT,
+  })
+
+  const parts: string[] = []
+  if (withheld.avulsas > 0) parts.push(`${withheld.avulsas} avulsa${withheld.avulsas === 1 ? '' : 's'}`)
+  if (withheld.lotePeople > 0) parts.push(`${withheld.lotePeople} em lote${withheld.lotePeople === 1 ? '' : 's'} coletivo${withheld.lotePeople === 1 ? '' : 's'}`)
+  const breakdown = parts.length > 0 ? ` (${parts.join(' · ')})` : ''
+  const reason = `Motivo: pagamento não confirmado (pendente)${breakdown}`
+  drawTextClipped(r, reason, {
+    x: MARGIN_X + BAR_WIDTH + BOX_PADDING_X,
+    y: r.cursor - 25,
+    width: USABLE_WIDTH - BAR_WIDTH - BOX_PADDING_X * 2,
+    size: 8.5,
+    font: r.fontRegular,
+    color: COLOR_PENDENTE,
+  })
+
+  r.cursor -= BOX_HEIGHT + 8
 }
 
 function drawShirtSummary(r: Renderer, shirts: ShirtSummary): void {
