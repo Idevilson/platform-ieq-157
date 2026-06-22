@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DeleteInscription } from '@/server/application/inscription/DeleteInscription'
+import { UpdateInscriptionDetails } from '@/server/application/inscription/UpdateInscriptionDetails'
 import { FirebaseInscriptionRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseInscriptionRepositoryAdmin'
 import { FirebasePaymentRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebasePaymentRepositoryAdmin'
 import { FirebaseEventPerkRepositoryAdmin } from '@/server/infrastructure/firebase/repositories/FirebaseEventPerkRepositoryAdmin'
@@ -12,6 +13,7 @@ const paymentRepository = new FirebasePaymentRepositoryAdmin()
 const perkRepository = new FirebaseEventPerkRepositoryAdmin()
 const userRepository = new FirebaseUserRepositoryAdmin()
 const deleteInscription = new DeleteInscription(inscriptionRepository, paymentRepository, perkRepository)
+const updateInscriptionDetails = new UpdateInscriptionDetails(inscriptionRepository)
 
 async function verifyAdmin(request: NextRequest): Promise<string | null> {
   const authHeader = request.headers.get('Authorization')
@@ -46,6 +48,34 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
     const message = error instanceof Error ? error.message : 'Erro ao excluir inscrição'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const adminId = await verifyAdmin(request)
+  if (!adminId) {
+    return NextResponse.json({ error: 'Acesso não autorizado' }, { status: 401 })
+  }
+
+  try {
+    const { eventId, inscriptionId } = await params
+    const body = await request.json()
+    const { tamanho, campoMissionario } = body as { tamanho?: string | null; campoMissionario?: string | null }
+
+    await updateInscriptionDetails.execute({
+      eventId,
+      inscriptionId,
+      tamanho: tamanho as never,
+      campoMissionario,
+    })
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    const message = error instanceof Error ? error.message : 'Erro ao atualizar inscrição'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

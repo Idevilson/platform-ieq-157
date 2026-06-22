@@ -1,6 +1,6 @@
 import { firebaseAuthService } from '@/lib/firebase'
 import { EventDTO } from '@/shared/types'
-import { EventStatus, InscriptionStatus, InscriptionPaymentMethod, UserPermissionGrant, KitDeliveryDTO, KitItemDef, Gender, AuditLogDTO } from '@/shared/constants'
+import { EventStatus, InscriptionStatus, InscriptionPaymentMethod, UserPermissionGrant, KitDeliveryDTO, KitItemDef, Gender, AuditLogDTO, ShirtSize } from '@/shared/constants'
 
 export interface PermissionDefDTO {
   key: string
@@ -68,6 +68,7 @@ export interface InscriptionWithDetails {
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: string
+  campoMissionario?: string
   temBrinde?: boolean | null
   perkId?: string
   brindeAlocadoEm?: string
@@ -307,6 +308,18 @@ export const adminService = {
     })
     if (response.success && response.data) return response.data
     throw new Error(response.error || 'Erro ao excluir inscrição')
+  },
+
+  async updateInscriptionDetails(
+    eventId: string,
+    inscriptionId: string,
+    updates: { tamanho?: ShirtSize | null; campoMissionario?: string | null },
+  ): Promise<void> {
+    const response = await authFetch(`/events/${eventId}/inscriptions/${inscriptionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    })
+    if (!response.success) throw new Error(response.error || 'Erro ao atualizar inscrição')
   },
 
   async regenerateInscriptionPayment(eventId: string, inscriptionId: string): Promise<RegenerateInscriptionPaymentResponse> {

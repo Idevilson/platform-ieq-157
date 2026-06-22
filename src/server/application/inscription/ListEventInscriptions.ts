@@ -32,6 +32,7 @@ export interface InscriptionWithDetails {
   paymentId?: string
   preferredPaymentMethod: InscriptionPaymentMethod
   tamanho?: string
+  campoMissionario?: string
   temBrinde?: boolean
   perkId?: string
   brindeAlocadoEm?: Date

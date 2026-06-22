@@ -56,6 +56,7 @@ export async function toInscriptionWithDetails(
     paymentId: inscription.paymentId,
     preferredPaymentMethod: inscription.preferredPaymentMethod,
     tamanho: inscription.tamanho,
+    campoMissionario: inscription.campoMissionario,
     temBrinde: inscription.temBrinde,
     perkId: inscription.perkId,
     brindeAlocadoEm: inscription.brindeAlocadoEm,

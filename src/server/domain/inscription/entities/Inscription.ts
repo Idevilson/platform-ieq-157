@@ -50,7 +50,7 @@ export class Inscription implements Timestamps {
   readonly guestData?: GuestData
   private _valor: Money
   private _preferredPaymentMethod: InscriptionPaymentMethod
-  readonly tamanho?: ShirtSize
+  private _tamanho?: ShirtSize
   private _campoMissionario?: string
   private _status: InscriptionStatus
   private _paymentId?: string
@@ -74,7 +74,7 @@ export class Inscription implements Timestamps {
     this.guestData = props.guestData
     this._valor = props.valor
     this._preferredPaymentMethod = props.preferredPaymentMethod
-    this.tamanho = props.tamanho
+    this._tamanho = props.tamanho
     this._campoMissionario = props.campoMissionario
     this._status = props.status
     this._paymentId = props.paymentId
@@ -226,6 +226,15 @@ export class Inscription implements Timestamps {
     return this._campoMissionario
   }
 
+  get tamanho(): ShirtSize | undefined {
+    return this._tamanho
+  }
+
+  setTamanho(tamanho?: ShirtSize): void {
+    this._tamanho = tamanho
+    this._atualizadoEm = new Date()
+  }
+
   get atualizadoEm(): Date {
     return this._atualizadoEm
   }
@@ -347,8 +356,8 @@ export class Inscription implements Timestamps {
     this._atualizadoEm = new Date()
   }
 
-  setCampoMissionario(campo: string): void {
-    this._campoMissionario = campo
+  setCampoMissionario(campo?: string): void {
+    this._campoMissionario = campo?.trim() || undefined
     this._atualizadoEm = new Date()
   }
 

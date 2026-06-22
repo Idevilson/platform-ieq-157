@@ -13,6 +13,7 @@ import { AdminBatchCard } from '@/components/admin/AdminBatchCard'
 import { DailyReportCard } from '@/components/admin/DailyReportCard'
 import { InscriptionUpgradeSection } from '@/components/admin/InscriptionUpgradeSection'
 import { ChangePaymentMethodSection } from '@/components/admin/ChangePaymentMethodSection'
+import { EditInscriptionDetailsSection } from '@/components/admin/EditInscriptionDetailsSection'
 import { KitDeliveryList } from '@/components/admin/KitDeliveryList'
 import { EventKitConfig } from '@/components/admin/EventKitConfig'
 import { useDeliverInscriptionKit } from '@/hooks/mutations/useEventKit'
@@ -117,12 +118,13 @@ interface ConfirmModalProps {
   onDelete: () => void
   onRegeneratePayment: () => Promise<void>
   onUpgradeChanged: () => void
+  onDetailsSaved: (updates: { tamanho?: string; campoMissionario?: string }) => void
   isLoading: boolean
   isDeleting: boolean
   isRegenerating: boolean
 }
 
-function ConfirmModal({ inscription, eventId, categories, kitItems, onClose, onConfirm, onDelete, onRegeneratePayment, onUpgradeChanged, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
+function ConfirmModal({ inscription, eventId, categories, kitItems, onClose, onConfirm, onDelete, onRegeneratePayment, onUpgradeChanged, onDetailsSaved, isLoading, isDeleting, isRegenerating }: ConfirmModalProps) {
   const isPending = inscription.status === 'pendente'
   const deliverKit = useDeliverInscriptionKit()
   const [kitDeliveries, setKitDeliveries] = useState(inscription.kitDeliveries ?? [])
@@ -205,16 +207,26 @@ function ConfirmModal({ inscription, eventId, categories, kitItems, onClose, onC
             </div>
           </div>
 
-          {inscription.tamanho && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-text-muted">Tamanho Camiseta</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-text-muted">Tamanho Camiseta</label>
+              {inscription.tamanho ? (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gold/15 text-gold border border-gold/30">
                   {inscription.tamanho}
                 </span>
-              </div>
+              ) : (
+                <p className="text-text-muted text-sm italic">Não informado</p>
+              )}
             </div>
-          )}
+            <div>
+              <label className="text-xs text-text-muted">Campo Missionário</label>
+              {inscription.campoMissionario ? (
+                <p className="text-text-primary font-mono">{inscription.campoMissionario}</p>
+              ) : (
+                <p className="text-text-muted text-sm italic">Não informado</p>
+              )}
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -347,6 +359,12 @@ function ConfirmModal({ inscription, eventId, categories, kitItems, onClose, onC
             inscription={inscription}
             categories={categories}
             onChanged={onUpgradeChanged}
+          />
+
+          <EditInscriptionDetailsSection
+            eventId={eventId}
+            inscription={inscription}
+            onSaved={onDetailsSaved}
           />
 
           <div className="pt-4 border-t border-gold/10">
@@ -1008,6 +1026,10 @@ export default function AdminEventDetailPage() {
           kitItems={event.kitItems ?? []}
           onUpgradeChanged={() => {
             setSelectedInscription(null)
+            refetchInscriptions()
+          }}
+          onDetailsSaved={(updates) => {
+            setSelectedInscription((prev) => (prev ? { ...prev, ...updates } : prev))
             refetchInscriptions()
           }}
           onClose={() => setSelectedInscription(null)}
