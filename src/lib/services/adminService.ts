@@ -559,12 +559,16 @@ export const adminService = {
     return { filename }
   },
 
-  async downloadInscriptionsPdf(eventId: string): Promise<{ filename: string }> {
+  async downloadInscriptionsPdf(
+    eventId: string,
+    status: 'confirmado' | 'pendente' = 'confirmado',
+  ): Promise<{ filename: string }> {
     const token = await firebaseAuthService.getIdToken()
     if (!token) throw new Error('Não autenticado')
 
+    const statusParam = status === 'pendente' ? '&status=pendente' : ''
     const response = await fetch(
-      `${API_BASE_URL}/reports/inscriptions/generate?eventId=${encodeURIComponent(eventId)}`,
+      `${API_BASE_URL}/reports/inscriptions/generate?eventId=${encodeURIComponent(eventId)}${statusParam}`,
       { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
     )
 
@@ -573,9 +577,10 @@ export const adminService = {
       throw new Error(body?.error || `Erro ao gerar PDF (HTTP ${response.status})`)
     }
 
+    const fallbackPrefix = status === 'pendente' ? 'inscricoes-pendentes' : 'inscricoes'
     const filename =
       parseFilenameFromContentDisposition(response.headers.get('Content-Disposition'))
-      ?? `inscricoes-${eventId}-${new Date().toISOString().slice(0, 10)}.pdf`
+      ?? `${fallbackPrefix}-${eventId}-${new Date().toISOString().slice(0, 10)}.pdf`
 
     const blob = await response.blob()
     triggerBlobDownload(blob, filename)

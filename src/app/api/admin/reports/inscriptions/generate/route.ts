@@ -23,10 +23,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Acesso não autorizado' }, { status: 401 })
   }
 
-  const eventId = new URL(request.url).searchParams.get('eventId')
+  const searchParams = new URL(request.url).searchParams
+  const eventId = searchParams.get('eventId')
   if (!eventId) {
     return NextResponse.json({ error: 'eventId é obrigatório' }, { status: 400 })
   }
+  const mode = searchParams.get('status') === 'pendente' ? 'pendente' : 'confirmado'
 
   const canAccess =
     actor.isAdmin ||
@@ -55,6 +57,7 @@ export async function POST(request: NextRequest) {
 
   const pdf = await InscriptionsPdfReport
     .for(event.toJSON() as unknown as EventDTO)
+    .withMode(mode)
     .withInscriptions(inscriptions.map((i) => i.toJSON() as unknown as InscriptionDTO))
     .withBatches(batches.map((b) => b.toJSON() as unknown as BatchInscriptionDTO))
     .withAccountProfiles(accountProfiles)
@@ -63,11 +66,13 @@ export async function POST(request: NextRequest) {
   const body = new Uint8Array(pdf.byteLength)
   body.set(pdf)
 
+  const filenamePrefix = mode === 'pendente' ? 'inscricoes-pendentes' : 'inscricoes'
+
   return new NextResponse(body, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="inscricoes-${eventId}-${todayBR()}.pdf"`,
+      'Content-Disposition': `inline; filename="${filenamePrefix}-${eventId}-${todayBR()}.pdf"`,
       'Cache-Control': 'no-store',
     },
   })

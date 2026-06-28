@@ -94,7 +94,11 @@ export function useDownloadInscriptionsSnapshot() {
 }
 
 export function useDownloadInscriptionsPdf() {
-  return useMutation<{ filename: string }, Error, string>({
-    mutationFn: (eventId) => adminService.downloadInscriptionsPdf(eventId),
+  return useMutation<
+    { filename: string },
+    Error,
+    { eventId: string; status?: 'confirmado' | 'pendente' }
+  >({
+    mutationFn: ({ eventId, status }) => adminService.downloadInscriptionsPdf(eventId, status),
   })
 }

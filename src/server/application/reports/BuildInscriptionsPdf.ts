@@ -97,10 +97,40 @@ interface WithheldSummary {
   total: number
 }
 
+export type ReportMode = 'confirmado' | 'pendente'
+
+interface ReportConfig {
+  mode: ReportMode
+  badge: string | null
+  dateLabel: string
+  shirtLabel: string
+  noticeReason: string
+}
+
+function reportConfigFor(mode: ReportMode): ReportConfig {
+  if (mode === 'pendente') {
+    return {
+      mode,
+      badge: 'Inscrições pendentes · pagamento não confirmado',
+      dateLabel: 'Inscrito em',
+      shirtLabel: 'pendentes',
+      noticeReason: 'Motivo: pagamento já confirmado',
+    }
+  }
+  return {
+    mode,
+    badge: null,
+    dateLabel: 'Pago em',
+    shirtLabel: 'confirmadas',
+    noticeReason: 'Motivo: pagamento não confirmado (pendente)',
+  }
+}
+
 export class InscriptionsPdfReport {
   private _inscriptions: InscriptionDTO[] = []
   private _batches: BatchInscriptionDTO[] = []
   private _accountProfiles = new Map<string, ReportAccountProfile>()
+  private _mode: ReportMode = 'confirmado'
 
   private constructor(private readonly _event: EventDTO) {}
 
@@ -110,6 +140,11 @@ export class InscriptionsPdfReport {
 
   withInscriptions(inscriptions: InscriptionDTO[]): this {
     this._inscriptions = inscriptions
+    return this
+  }
+
+  withMode(mode: ReportMode): this {
+    this._mode = mode
     return this
   }
 
@@ -132,6 +167,7 @@ export class InscriptionsPdfReport {
     const tierCounts = this.countTiers(tierByCategory)
     const withheld = this.computeWithheld()
     return renderPdf({
+      config: reportConfigFor(this._mode),
       event: this._event,
       avulsasGroups,
       lotesGroups,
@@ -142,15 +178,28 @@ export class InscriptionsPdfReport {
     })
   }
 
-  // Inscrições com pagamento pendente ficam fora da listagem; o total é anunciado no topo
+  private isListed(status: string): boolean {
+    return this._mode === 'pendente' ? status === 'pendente' : status !== 'pendente'
+  }
+
+  private get primaryStatus(): 'confirmado' | 'pendente' {
+    return this._mode
+  }
+
+  private get noticeStatus(): 'confirmado' | 'pendente' {
+    return this._mode === 'pendente' ? 'confirmado' : 'pendente'
+  }
+
+  // Inscrições do status oposto ficam fora da listagem; o total é anunciado no topo
   private computeWithheld(): WithheldSummary {
+    const target = this.noticeStatus
     let avulsas = 0
     for (const i of this._inscriptions) {
-      if (i.status === 'pendente') avulsas += 1
+      if (i.status === target) avulsas += 1
     }
     let lotePeople = 0
     for (const b of this._batches) {
-      if (b.status === 'pendente') lotePeople += b.totalParticipantes
+      if (b.status === target) lotePeople += b.totalParticipantes
     }
     return { avulsas, lotePeople, total: avulsas + lotePeople }
   }
@@ -164,11 +213,11 @@ export class InscriptionsPdfReport {
       else if (tier === 'Premium') premium += n
     }
     for (const i of this._inscriptions) {
-      if (i.status === 'pendente') continue
+      if (!this.isListed(i.status)) continue
       bump(i.categoryId, 1)
     }
     for (const b of this._batches) {
-      if (b.status === 'pendente') continue
+      if (!this.isListed(b.status)) continue
       bump(b.categoryId, b.totalParticipantes)
     }
     return { simples, premium }
@@ -188,11 +237,12 @@ export class InscriptionsPdfReport {
       else outros += 1
     }
 
+    const primary = this.primaryStatus
     for (const i of this._inscriptions) {
-      if (i.status === 'confirmado') tally(i.tamanho)
+      if (i.status === primary) tally(i.tamanho)
     }
     for (const b of this._batches) {
-      if (b.status !== 'confirmado') continue
+      if (b.status !== primary) continue
       for (const p of b.participantes) tally(p.tamanho)
     }
 
@@ -202,7 +252,7 @@ export class InscriptionsPdfReport {
   private groupAvulsasByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
     const buckets = new Map<string, CityGroup>()
     for (const i of this._inscriptions) {
-      if (i.status === 'pendente') continue
+      if (!this.isListed(i.status)) continue
       const profile = i.guestData ? undefined : this._accountProfiles.get(i.userId ?? '')
       const city = normalizeCity(i.guestData?.cidade ?? profile?.cidade)
       upsertCityGroup(buckets, city).rows.push(
@@ -215,7 +265,7 @@ export class InscriptionsPdfReport {
   private groupLotesByCity(tierByCategory: Map<string, CategoryTier>): CityGroup[] {
     const buckets = new Map<string, CityGroup>()
     for (const b of this._batches) {
-      if (b.status === 'pendente') continue
+      if (!this.isListed(b.status)) continue
       const city = normalizeCity(b.cidade ?? b.responsavel?.cidade)
       const group = upsertCityGroup(buckets, city)
       const tier = tierByCategory.get(b.categoryId) ?? null
@@ -395,9 +445,11 @@ interface Renderer {
   cursor: number
   fontRegular: PDFFont
   fontBold: PDFFont
+  config: ReportConfig
 }
 
 async function renderPdf(input: {
+  config: ReportConfig
   event: EventDTO
   avulsasGroups: CityGroup[]
   lotesGroups: CityGroup[]
@@ -416,6 +468,7 @@ async function renderPdf(input: {
     cursor: A4[1] - MARGIN_TOP,
     fontRegular,
     fontBold,
+    config: input.config,
   }
 
   const totalAvulsas = input.avulsasGroups.reduce((sum, g) => sum + g.rows.length, 0)
@@ -500,6 +553,17 @@ function drawHeader(
     color: COLOR_MUTED,
   })
   r.cursor -= 14
+
+  if (r.config.badge) {
+    drawTextAt(r, r.config.badge, {
+      x: MARGIN_X,
+      y: r.cursor - 10,
+      size: 9,
+      font: r.fontBold,
+      color: COLOR_PENDENTE,
+    })
+    r.cursor -= 14
+  }
 
   const total = totalAvulsas + totalLotes
   const summary = `${total} pessoa${total === 1 ? '' : 's'} · ${totalAvulsas} avulsa${
@@ -593,7 +657,7 @@ function drawWithheldNotice(r: Renderer, withheld: WithheldSummary): void {
   if (withheld.avulsas > 0) parts.push(`${withheld.avulsas} avulsa${withheld.avulsas === 1 ? '' : 's'}`)
   if (withheld.lotePeople > 0) parts.push(`${withheld.lotePeople} em lote${withheld.lotePeople === 1 ? '' : 's'} coletivo${withheld.lotePeople === 1 ? '' : 's'}`)
   const breakdown = parts.length > 0 ? ` (${parts.join(' · ')})` : ''
-  const reason = `Motivo: pagamento não confirmado (pendente)${breakdown}`
+  const reason = `${r.config.noticeReason}${breakdown}`
   drawTextClipped(r, reason, {
     x: MARGIN_X + BAR_WIDTH + BOX_PADDING_X,
     y: r.cursor - 25,
@@ -620,7 +684,7 @@ function drawShirtSummary(r: Renderer, shirts: ShirtSummary): void {
     borderWidth: 0.5,
   })
 
-  const title = `Camisetas das inscrições confirmadas · ${shirts.total} total`
+  const title = `Camisetas das inscrições ${r.config.shirtLabel} · ${shirts.total} total`
   drawTextAt(r, title, {
     x: MARGIN_X + BOX_PADDING_X,
     y: r.cursor - 14,
@@ -848,7 +912,7 @@ function drawTableHeader(r: Renderer): void {
   const headers: Array<[number, string]> = [
     [COL_X.name + 4, 'Nome'],
     [COL_X.contact + 4, 'Contato'],
-    [COL_X.date + 4, 'Pago em'],
+    [COL_X.date + 4, r.config.dateLabel],
     [COL_X.pay + 4, 'Pagto'],
     [COL_X.status + 4, 'Status'],
     [COL_X.size + 4, 'Tam'],
@@ -906,12 +970,13 @@ function drawDataRow(r: Renderer, row: PersonRow): void {
     color: COLOR_MUTED,
   })
 
-  drawTextAt(r, formatDateShort(row.confirmadoEm), {
+  const dateIso = r.config.mode === 'pendente' ? row.criadoEm : row.confirmadoEm
+  drawTextAt(r, formatDateShort(dateIso), {
     x: COL_X.date + 4,
     y,
     size: 8,
     font: r.fontRegular,
-    color: row.confirmadoEm ? COLOR_TEXT : COLOR_MUTED,
+    color: dateIso ? COLOR_TEXT : COLOR_MUTED,
   })
 
   drawTextAt(r, row.pagamentoCurto, {

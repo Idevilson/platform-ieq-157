@@ -31,18 +31,22 @@ export default function RelatoriosPage() {
 
   const [eventId, setEventId] = useState('')
   const downloadPdf = useDownloadInscriptionsPdf()
+  const [pendingKind, setPendingKind] = useState<'confirmado' | 'pendente' | null>(null)
   const [lastDownload, setLastDownload] = useState<{ filename: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const handleDownload = async () => {
+  const handleDownload = async (status: 'confirmado' | 'pendente') => {
     if (!eventId) return
     setError(null)
     setLastDownload(null)
+    setPendingKind(status)
     try {
-      const result = await downloadPdf.mutateAsync(eventId)
+      const result = await downloadPdf.mutateAsync({ eventId, status })
       setLastDownload(result)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao gerar PDF')
+    } finally {
+      setPendingKind(null)
     }
   }
 
@@ -86,21 +90,43 @@ export default function RelatoriosPage() {
           <EventSelect events={events} value={eventId} onChange={setEventId} loading={eventsLoading} />
         </div>
 
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={!eventId || downloadPdf.isPending}
-          className="w-full sm:w-auto px-6 py-3 bg-gold text-bg-primary font-bold rounded-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-        >
-          {downloadPdf.isPending ? (
-            <>
-              <div className="w-4 h-4 border-2 border-bg-primary border-t-transparent rounded-full animate-spin" />
-              Gerando PDF...
-            </>
-          ) : (
-            <>📄 Gerar e baixar PDF</>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={() => handleDownload('confirmado')}
+            disabled={!eventId || downloadPdf.isPending}
+            className="w-full sm:w-auto px-6 py-3 bg-gold text-bg-primary font-bold rounded-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+          >
+            {pendingKind === 'confirmado' ? (
+              <>
+                <div className="w-4 h-4 border-2 border-bg-primary border-t-transparent rounded-full animate-spin" />
+                Gerando PDF...
+              </>
+            ) : (
+              <>📄 Confirmadas</>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownload('pendente')}
+            disabled={!eventId || downloadPdf.isPending}
+            className="w-full sm:w-auto px-6 py-3 bg-amber-500/15 text-amber-300 font-bold rounded-lg border border-amber-500/40 hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+          >
+            {pendingKind === 'pendente' ? (
+              <>
+                <div className="w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
+                Gerando PDF...
+              </>
+            ) : (
+              <>⏳ Pendentes</>
+            )}
+          </button>
+        </div>
+
+        <p className="text-xs text-text-muted">
+          <strong>Confirmadas</strong>: inscrições com pagamento confirmado. <strong>Pendentes</strong>: aguardando confirmação de pagamento.
+        </p>
 
         {lastDownload && (
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
