@@ -9,6 +9,7 @@ import { isValidCPF } from '@/lib/cpf'
 import { fieldClass } from '@/lib/form-field-class'
 import { UserDTO } from '@/shared/types'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
+import { isShirtSizeSoldOut } from '@/shared/config/shirtAvailability'
 
 const FIELD_LABELS: Record<string, string> = {
   cpf: 'CPF',
@@ -61,6 +62,7 @@ export function UserInscriptionForm({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('')
   const [selectedTamanho, setSelectedTamanho] = useState<ShirtSize | ''>('')
   const [tamanhoError, setTamanhoError] = useState(false)
+  const [soldOutNotice, setSoldOutNotice] = useState<ShirtSize | null>(null)
 
   // Pré-seleciona a categoria individual se existir
   useEffect(() => {
@@ -346,24 +348,45 @@ export function UserInscriptionForm({
       <div className="mb-6">
         <h4 className="text-base font-semibold text-text-primary mb-3">Tamanho da camiseta *</h4>
         <div className="flex flex-wrap gap-2">
-          {SHIRT_SIZES.map((size) => (
-            <button
-              key={size}
-              type="button"
-              className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
-                selectedTamanho === size
-                  ? 'bg-gold/10 border-gold text-gold'
-                  : tamanhoError && !selectedTamanho
-                  ? 'border-red-500/50 bg-bg-tertiary text-text-secondary'
-                  : 'border-transparent bg-bg-tertiary text-text-secondary hover:border-gold/30'
-              }`}
-              onClick={() => { setSelectedTamanho(size); setTamanhoError(false) }}
-              disabled={isLoading}
-            >
-              {size}
-            </button>
-          ))}
+          {SHIRT_SIZES.map((size) => {
+            if (isShirtSizeSoldOut(eventId, size)) {
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  aria-disabled
+                  title={`Tamanho ${size} esgotado`}
+                  onMouseEnter={() => setSoldOutNotice(size)}
+                  onMouseLeave={() => setSoldOutNotice((cur) => (cur === size ? null : cur))}
+                  onClick={() => setSoldOutNotice(size)}
+                  className="px-5 py-2.5 rounded-xl border-2 border-transparent bg-bg-tertiary text-text-muted/60 text-sm font-bold line-through cursor-not-allowed"
+                >
+                  {size}
+                </button>
+              )
+            }
+            return (
+              <button
+                key={size}
+                type="button"
+                className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
+                  selectedTamanho === size
+                    ? 'bg-gold/10 border-gold text-gold'
+                    : tamanhoError && !selectedTamanho
+                    ? 'border-red-500/50 bg-bg-tertiary text-text-secondary'
+                    : 'border-transparent bg-bg-tertiary text-text-secondary hover:border-gold/30'
+                }`}
+                onClick={() => { setSelectedTamanho(size); setSoldOutNotice(null); setTamanhoError(false) }}
+                disabled={isLoading}
+              >
+                {size}
+              </button>
+            )
+          })}
         </div>
+        {soldOutNotice && (
+          <p className="text-amber-300 text-sm mt-2">Tamanho {soldOutNotice} esgotado — escolha outro.</p>
+        )}
         {tamanhoError && !selectedTamanho && (
           <p className="text-red-400 text-sm mt-2">Selecione o tamanho da camiseta</p>
         )}

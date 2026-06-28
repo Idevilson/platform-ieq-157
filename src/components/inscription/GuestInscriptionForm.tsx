@@ -9,6 +9,7 @@ import { formatCPF, formatPhone } from '@/lib/formatters'
 import { isValidCPF } from '@/lib/cpf'
 import { fieldClass } from '@/lib/form-field-class'
 import { Gender, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS, ShirtSize, SHIRT_SIZES } from '@/shared/constants'
+import { isShirtSizeSoldOut } from '@/shared/config/shirtAvailability'
 
 const FIELD_LABELS: Record<string, string> = {
   nome: 'Nome completo',
@@ -128,6 +129,7 @@ export function GuestInscriptionForm({
 
   const selectedSexo = watch('sexo')
   const selectedTamanho = watch('tamanho')
+  const [soldOutNotice, setSoldOutNotice] = useState<ShirtSize | null>(null)
 
   const hasErrors = Object.keys(errors).length > 0 || (isSubmitted && !selectedCategoryId)
 
@@ -364,24 +366,45 @@ export function GuestInscriptionForm({
           <label>Tamanho da camiseta *</label>
           <input type="hidden" {...register('tamanho', { required: 'Tamanho da camiseta é obrigatório' })} />
           <div className="flex flex-wrap gap-2">
-            {SHIRT_SIZES.map((size) => (
-              <button
-                key={size}
-                type="button"
-                className={`px-4 py-2 rounded-lg border text-sm font-bold transition-colors ${
-                  selectedTamanho === size
-                    ? 'bg-gold/20 border-gold text-gold'
-                    : errors.tamanho && !selectedTamanho
-                    ? 'border-red-400/50 bg-bg-primary text-text-secondary'
-                    : 'border-gold/20 bg-bg-primary text-text-secondary hover:border-gold/40'
-                }`}
-                onClick={() => !isLoading && setValue('tamanho', size, { shouldValidate: true })}
-                disabled={isLoading}
-              >
-                {size}
-              </button>
-            ))}
+            {SHIRT_SIZES.map((size) => {
+              if (isShirtSizeSoldOut(eventId, size)) {
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    aria-disabled
+                    title={`Tamanho ${size} esgotado`}
+                    onMouseEnter={() => setSoldOutNotice(size)}
+                    onMouseLeave={() => setSoldOutNotice((cur) => (cur === size ? null : cur))}
+                    onClick={() => setSoldOutNotice(size)}
+                    className="px-4 py-2 rounded-lg border border-gold/10 bg-bg-primary text-text-muted/60 text-sm font-bold line-through cursor-not-allowed"
+                  >
+                    {size}
+                  </button>
+                )
+              }
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  className={`px-4 py-2 rounded-lg border text-sm font-bold transition-colors ${
+                    selectedTamanho === size
+                      ? 'bg-gold/20 border-gold text-gold'
+                      : errors.tamanho && !selectedTamanho
+                      ? 'border-red-400/50 bg-bg-primary text-text-secondary'
+                      : 'border-gold/20 bg-bg-primary text-text-secondary hover:border-gold/40'
+                  }`}
+                  onClick={() => { if (!isLoading) { setValue('tamanho', size, { shouldValidate: true }); setSoldOutNotice(null) } }}
+                  disabled={isLoading}
+                >
+                  {size}
+                </button>
+              )
+            })}
           </div>
+          {soldOutNotice && (
+            <p className="text-amber-300 text-sm mt-2">Tamanho {soldOutNotice} esgotado — escolha outro.</p>
+          )}
           {errors.tamanho && !selectedTamanho && <span className="error">{errors.tamanho.message}</span>}
         </div>
       </div>

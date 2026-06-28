@@ -6,6 +6,7 @@ import { BatchParticipantRow } from "./BatchParticipantRow";
 import { CategorySelector } from "./CategorySelector";
 import { useCreateBatchInscription, useCreateBatchPayment } from "@/hooks/mutations/useBatchInscriptionMutations";
 import { Gender, ShirtSize, InscriptionPaymentMethod, INSCRIPTION_PAYMENT_METHOD_LABELS } from "@/shared/constants";
+import { soldOutShirtSizes } from "@/shared/config/shirtAvailability";
 import { UserDTO } from "@/shared/types";
 import { BatchInscriptionDTO } from "@/shared/types/inscription";
 
@@ -56,6 +57,8 @@ export function BatchInscriptionForm({
     if (!userData.cpf?.trim()) missing.push("CPF");
     return missing;
   }, [userData.nome, userData.cpf]);
+
+  const soldOutSizes = useMemo(() => soldOutShirtSizes(eventId), [eventId]);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     categories.find((c) => c.nome.toLowerCase().includes("lote"))?.id ||
@@ -375,6 +378,7 @@ export function BatchInscriptionForm({
               nome={p.nome}
               sexo={p.sexo}
               tamanho={p.tamanho}
+              soldOutSizes={soldOutSizes}
               onChange={handleParticipantChange}
               onRemove={handleRemoveParticipant}
               canRemove={participants.length > 2}

@@ -7,6 +7,7 @@ interface BatchParticipantRowProps {
   nome: string;
   sexo: Gender | "";
   tamanho: ShirtSize | "";
+  soldOutSizes: readonly ShirtSize[];
   onChange: (index: number, field: "nome" | "sexo" | "tamanho", value: string) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
@@ -17,6 +18,7 @@ export function BatchParticipantRow({
   nome,
   sexo,
   tamanho,
+  soldOutSizes,
   onChange,
   onRemove,
   canRemove,
@@ -76,9 +78,14 @@ export function BatchParticipantRow({
           className={`flex-1 min-w-0 bg-bg-primary border ${tamanhoBorder} rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-gold/50 sm:flex-none sm:w-24`}
         >
           <option value="">Camisa</option>
-          {SHIRT_SIZES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
+          {SHIRT_SIZES.map((s) => {
+            const esgotado = soldOutSizes.includes(s)
+            return (
+              <option key={s} value={s} disabled={esgotado}>
+                {esgotado ? `${s} (esgotado)` : s}
+              </option>
+            )
+          })}
         </select>
       </div>
 
