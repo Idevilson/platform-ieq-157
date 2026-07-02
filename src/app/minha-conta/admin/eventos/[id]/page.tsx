@@ -424,6 +424,7 @@ export default function AdminEventDetailPage() {
   const [statusFilter, setStatusFilter] = useState<InscriptionStatus | ''>('')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<InscriptionPaymentMethod | ''>('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [batchSearchTerm, setBatchSearchTerm] = useState('')
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
   const [selectedInscription, setSelectedInscription] = useState<InscriptionWithDetails | null>(null)
   const [activeTab, setActiveTab] = useState<'avulsas' | 'coletivas'>('avulsas')
@@ -442,7 +443,7 @@ export default function AdminEventDetailPage() {
   const { data: batchesData, isLoading: batchesLoading } = useAdminBatches(eventId)
   const confirmBatchCash = useAdminConfirmBatchCash(eventId)
   const deleteBatch = useAdminDeleteBatch(eventId)
-  const batches = batchesData ?? []
+  const batches = useMemo(() => batchesData ?? [], [batchesData])
   const [editingSlug, setEditingSlug] = useState(false)
   const [newSlug, setNewSlug] = useState('')
 
@@ -472,6 +473,24 @@ export default function AdminEventDetailPage() {
       return true
     })
   }, [inscriptions, searchTerm, paymentMethodFilter])
+
+  // Filter batches by search term
+  const filteredBatches = useMemo(() => {
+    if (!batchSearchTerm) return batches
+
+    const search = batchSearchTerm.toLowerCase().trim()
+    const searchDigits = search.replace(/\D/g, '')
+
+    return batches.filter(batch => {
+      const matchesResponsavel = batch.responsavelNome?.toLowerCase().includes(search)
+      const matchesCidade = batch.cidade?.toLowerCase().includes(search)
+      // Só compara CPF quando a busca tem dígitos — senão `includes('')`
+      // casaria com todos os lotes e a busca por nome não filtraria nada.
+      const matchesCPF = searchDigits.length > 0 && !!batch.responsavelCpf?.replace(/\D/g, '').includes(searchDigits)
+      const matchesParticipante = batch.participantes?.some(p => p.nome?.toLowerCase().includes(search))
+      return matchesResponsavel || matchesCidade || matchesCPF || matchesParticipante
+    })
+  }, [batches, batchSearchTerm])
 
   if (eventLoading) return <LoadingSpinner message="Carregando evento..." />
   if (!event) return <EventNotFound />
@@ -1056,9 +1075,35 @@ export default function AdminEventDetailPage() {
       {activeTab === 'coletivas' && (
       <div className="bg-bg-secondary rounded-2xl border border-gold/10 overflow-hidden">
         <div className="p-6 border-b border-gold/10">
-          <p className="text-sm text-text-secondary">
-            {batchesLoading ? 'Carregando...' : `${batches.length} lote(s) · ${batchTotalParticipantes} participantes`}
-          </p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <p className="text-sm text-text-secondary">
+              {batchesLoading ? 'Carregando...' : `${batches.length} lote(s) · ${batchTotalParticipantes} participantes`}
+            </p>
+
+            {/* Search Input */}
+            <div className="relative lg:w-72">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Buscar por responsável, CPF, cidade..."
+                value={batchSearchTerm}
+                onChange={(e) => setBatchSearchTerm(e.target.value)}
+                className="bg-bg-tertiary border border-gold/20 rounded-lg pl-10 pr-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-gold w-full"
+              />
+            </div>
+          </div>
+
+          {batchSearchTerm && (
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-xs text-text-muted">Filtros ativos:</span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-gold/10 text-gold text-xs rounded-full">
+                Busca: {batchSearchTerm}
+                <button onClick={() => setBatchSearchTerm('')} className="hover:text-white">×</button>
+              </span>
+            </div>
+          )}
         </div>
 
         {batchesLoading ? (
@@ -1069,9 +1114,14 @@ export default function AdminEventDetailPage() {
           <div className="text-center py-12 text-text-secondary">
             Nenhuma inscrição coletiva para este evento.
           </div>
+        ) : filteredBatches.length === 0 ? (
+          <div className="text-center py-12 text-text-secondary">
+            <p>Nenhum lote encontrado</p>
+            <p className="text-sm mt-2">Tente ajustar os filtros de busca</p>
+          </div>
         ) : (
           <div className="p-6 space-y-4">
-            {batches.map((batch) => (
+            {filteredBatches.map((batch) => (
               <AdminBatchCard
                 key={batch.id}
                 batch={batch}
